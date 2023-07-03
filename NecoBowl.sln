@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NecoBowlCore", "NecoBowlCore\NecoBowlCore.csproj", "{42BC23E9-EEA9-401E-829B-76674F205AA5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NecoBowlDefinitions", "NecoBowlDefinitions\NecoBowlDefinitions.csproj", "{C0787632-3B2A-41E3-9099-44850B426F51}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NecoBowlConsole", "NecoBowlConsole\NecoBowlConsole.csproj", "{26891F0B-51B6-40E6-8AA4-E8179EA76577}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NecoBowlTest", "NecoBowlTest\NecoBowlTest.csproj", "{C2591131-3798-476D-BEDE-60E5D3F7E145}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{42BC23E9-EEA9-401E-829B-76674F205AA5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{42BC23E9-EEA9-401E-829B-76674F205AA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{42BC23E9-EEA9-401E-829B-76674F205AA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{42BC23E9-EEA9-401E-829B-76674F205AA5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C0787632-3B2A-41E3-9099-44850B426F51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C0787632-3B2A-41E3-9099-44850B426F51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C0787632-3B2A-41E3-9099-44850B426F51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C0787632-3B2A-41E3-9099-44850B426F51}.Release|Any CPU.Build.0 = Release|Any CPU
+		{26891F0B-51B6-40E6-8AA4-E8179EA76577}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26891F0B-51B6-40E6-8AA4-E8179EA76577}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{26891F0B-51B6-40E6-8AA4-E8179EA76577}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{26891F0B-51B6-40E6-8AA4-E8179EA76577}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C2591131-3798-476D-BEDE-60E5D3F7E145}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C2591131-3798-476D-BEDE-60E5D3F7E145}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C2591131-3798-476D-BEDE-60E5D3F7E145}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C2591131-3798-476D-BEDE-60E5D3F7E145}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+	EndGlobalSection
+EndGlobal
