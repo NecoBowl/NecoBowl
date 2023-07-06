@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>neco_soft.NecoBowlCore</RootNamespace>
@@ -13,7 +13,6 @@
 
     <ItemGroup>
       <PackageReference Include="NLog" Version="5.2.0" />
-      <PackageReference Include="Toe.Math" Version="1.4.0" />
     </ItemGroup>
 
     <ItemGroup>

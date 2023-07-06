@@ -134,6 +134,18 @@ public abstract class FieldActionTests
 
             Assert.IsTrue(Field[0, 1].Unit == unit3);
         }
+
+        [Test]
+        public void RotationAffectsMovementDirection()
+        {
+            var unit1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverN_Strong", 69, AbsoluteDirection.North), Player1.Id);
+            unit1.Mods.Add(new NecoUnitMod.Rotate((int)RelativeDirection.Right));
+            Field[0, 0] = new(unit1);
+
+            Play.Step();
+            
+            AssertUnitPosition(unit1, new(1, 0));
+        }
     }
 
     [TestFixture]
@@ -246,6 +258,18 @@ public abstract class FieldActionTests
             AssertUnitPosition(enemy, new(0, 2));
         }
     }
+
+    [TestFixture]
+    private class Misc : FieldActionTests
+    {
+        [Test]
+        public void ModsGetApplied()
+        {
+            var unit = new NecoUnit(NecoUnitModelCustom.Pusher("MoverN", 69, AbsoluteDirection.North), Player1.Id);
+            unit.Mods.Add(new NecoUnitMod.Rotate(2));
+            Assert.AreEqual(2, unit.GetMod<NecoUnitMod.Rotate>().Rotation);
+        }
+    }
     #endregion
     
     #region Helpers
@@ -257,7 +281,7 @@ public abstract class FieldActionTests
 
     protected void AssertUnitPosition(NecoUnit unit, Vector2i position)
     {
-        Assert.AreEqual(Field[position].Unit, unit);
+        Assert.AreEqual(unit, Field[position].Unit);
     }
 
     #endregion

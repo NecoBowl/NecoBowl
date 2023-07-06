@@ -5,22 +5,18 @@ using neco_soft.NecoBowlCore.Tags;
 
 namespace neco_soft.NecoBowlDefinitions.Unit;
 
-public class Zombie : NecoUnitModel
+public class Boar : NecoUnitModel
 {
-    public static readonly Zombie Instance = new();
+    public static readonly Boar Instance = new();
     
-    public override string Name => "Zombie";
+    public override string Name => "Boar";
     public override int Power => 1;
 
     public override IReadOnlyCollection<NecoUnitTag> Tags
-        => new NecoUnitTag[] { };
-
-    public override IEnumerable<NecoUnitPlanMod> AllowedMods
-        => new NecoUnitPlanMod[] { };
-
+        => new[] { NecoUnitTag.Pusher };
+    protected override IEnumerable<NecoPlanModPermission> ModPermissions
+        => new[] { new NecoPlanModPermission.Rotate(new[] { 0, 2, 4, 6 }) };
+    
     public override IEnumerable<NecoUnitAction> Actions
         => new[] { new NecoUnitAction.TranslateUnit(AbsoluteDirection.North) };
-
-    public override void SetupEventHandlers(NecoUnit subject, NecoUnitEventHandler handler)
-    { }
 }

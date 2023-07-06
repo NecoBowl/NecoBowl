@@ -6,7 +6,7 @@ namespace neco_soft.NecoBowlCore.Action;
 
 public abstract class NecoUnitAction
 {
-    public abstract NecoUnitActionResult Result(NecoUnitId uid, NecoField field);
+    public abstract NecoUnitActionResult Result(NecoUnitId uid, ReadOnlyNecoField field);
 
     public class TranslateUnit : NecoUnitAction
     {
@@ -17,11 +17,11 @@ public abstract class NecoUnitAction
             Direction = direction;
         }
 
-        public override NecoUnitActionResult Result(NecoUnitId uid, NecoField field)
+        public override NecoUnitActionResult Result(NecoUnitId uid, ReadOnlyNecoField field)
         { 
             var pos = field.GetUnitPosition(uid);
             var unit = field.GetUnit(pos);
-            var newPos = pos + Direction.ToVector2i();
+            var newPos = pos + Direction.RotatedBy(unit.Rotation).ToVector2i();
             if (IsPositionOutOfBounds(newPos, field)) {
                 return NecoUnitActionResult.Failure($"{unit} could not move {Direction} (out of bounds)");
             }
@@ -51,14 +51,14 @@ public abstract class NecoUnitAction
 
             return NecoUnitActionResult.Success(new NecoFieldStateChange.UnitTranslated(new(unit, newPos, pos)));
         }
-
-        private bool IsPositionOutOfBounds(Vector2i pos, NecoField field)
-            => pos.X < 0 || pos.X >= field.GetBounds().x || pos.Y < 0 || pos.Y >= field.GetBounds().y;
+        
+        private bool IsPositionOutOfBounds(Vector2i pos, ReadOnlyNecoField field)
+            => pos.X < 0 || pos.X >= field.GetBounds().X || pos.Y < 0 || pos.Y >= field.GetBounds().Y;
     }
 
     public class DoNothing : NecoUnitAction
     {
-        public override NecoUnitActionResult Result(NecoUnitId uid, NecoField field)
+        public override NecoUnitActionResult Result(NecoUnitId uid, ReadOnlyNecoField field)
         {
             return NecoUnitActionResult.Success(new NecoFieldStateChange.NothingHappened(uid));
         }
@@ -95,7 +95,8 @@ public abstract class NecoFieldStateChange
             Receiver = receiver;
         }
 
-        public override string Description { get; }
+        public override string Description
+            => $"{Pusher.Unit} pushed {Receiver}";
     }
     
     public class NothingHappened : NecoFieldStateChange

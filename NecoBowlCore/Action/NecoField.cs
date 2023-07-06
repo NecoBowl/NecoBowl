@@ -2,31 +2,31 @@ using System.Text;
 
 namespace neco_soft.NecoBowlCore.Action;
 
+public readonly record struct NecoSpaceContents(NecoUnit? Unit, bool Fooabr = false);
+
 /// <summary>
-/// A two-dimensional array of spaces. Literally that's all this is.
+/// A two-dimensional grid of <see cref="NecoSpaceContents"/>.
 /// </summary>
 public class NecoField
 {
-    public readonly record struct NecoSpaceContents(NecoUnit? Unit, bool Fooabr = false);
-
-    public readonly NecoSpaceContents[,] FieldContents;
-
+    protected readonly NecoSpaceContents[,] FieldContents;
+    
     public NecoField(uint width, uint height)
     {
         FieldContents = new NecoSpaceContents[width, height];
     }
 
-    public NecoField(NecoField other, bool deep = false)
+    public NecoField(NecoField field, bool deep = false)
     {
-        FieldContents = (NecoSpaceContents[,])other.FieldContents.Clone();
+        FieldContents = (NecoSpaceContents[,])field.FieldContents.Clone();
 
         if (deep) {
-            foreach (var (pos, unit) in other.GetAllUnits()) {
-                this[pos] = this[pos] with { Unit = new NecoUnit(unit) };
+            foreach (var u in GetAllUnits()) {
+                throw new NotImplementedException("cannot clone fields with units");
             }
         }
     }
-
+    
     public NecoSpaceContents this[Vector2i p] {
         get => FieldContents[p.X, p.Y];
         set => FieldContents[p.X, p.Y] = value;
@@ -36,12 +36,15 @@ public class NecoField
         get => this[new Vector2i(x, y)];
         set => this[new Vector2i(x, y)] = value;
     }
-
+    
     public (int x, int y) GetBounds()
         => (FieldContents.GetLength(0), FieldContents.GetLength(1));
 
     public IEnumerable<NecoSpaceContents> Spaces
         => FieldContents.Cast<NecoSpaceContents>();
+
+    private NecoSpaceContents FieldContentsByVec(Vector2i pos)
+        => FieldContents[pos.X, pos.Y];
 
     public IEnumerable<(Vector2i, NecoSpaceContents)> SpacePositions {
         get {
@@ -63,10 +66,10 @@ public class NecoField
         => SpacePositions.Single(tuple => tuple.Item2.Unit?.Id == uid).Item1;
 
     public NecoUnit GetUnit(NecoUnitId uid)
-        => this[GetUnitPosition(uid)].Unit ?? throw new NecoBowlFieldException($"no unit found with ID {uid}");
+        => FieldContentsByVec(GetUnitPosition(uid)).Unit ?? throw new NecoBowlFieldException($"no unit found with ID {uid}");
 
     public NecoUnit GetUnit(Vector2i p)
-            => this[p].Unit ?? throw new NecoBowlFieldException($"no unit found at {p}");
+            => FieldContentsByVec(p).Unit ?? throw new NecoBowlFieldException($"no unit found at {p}");
 
     public bool TryGetUnit(NecoUnitId uid, out NecoUnit? unit)
     {
@@ -142,6 +145,46 @@ public class NecoField
 
         return sb.ToString();
     }
+}
+
+/// <summary>
+/// Wrapper around a <see cref="NecoField"/> that prevents modifications to the field.
+/// </summary>
+public sealed class ReadOnlyNecoField
+{
+    private readonly NecoField Field;
+
+    public ReadOnlyNecoField(NecoField field)
+    {
+        Field = field;
+    }
+
+    public NecoSpaceContents this[int x, int y] => Field[x, y];
+    public NecoSpaceContents this[Vector2i pos] => Field[pos.X, pos.Y];
+
+    public static implicit operator ReadOnlyNecoField(NecoField field)
+        => new ReadOnlyNecoField(field);
+
+    public IEnumerable<(Vector2i, NecoUnit)> GetAllUnits()
+        => Field.GetAllUnits();
+
+    public Vector2i GetUnitPosition(NecoUnitId uid)
+        => Field.GetUnitPosition(uid);
+
+    public NecoUnit GetUnit(NecoUnitId uid)
+        => Field.GetUnit(uid);
+
+    public NecoUnit GetUnit(Vector2i p)
+        => Field.GetUnit(p);
+
+    public bool TryGetUnit(NecoUnitId uid, out NecoUnit? unit)
+        => Field.TryGetUnit(uid, out unit);
+
+    public bool TryGetUnit(Vector2i p, out NecoUnit? unit)
+        => Field.TryGetUnit(p, out unit);
+
+    public Vector2i GetBounds()
+        => Field.GetBounds();
 }
 
 public class NecoBowlFieldException : Exception

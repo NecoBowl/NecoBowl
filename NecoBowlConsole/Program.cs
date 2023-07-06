@@ -3,7 +3,7 @@ using neco_soft.NecoBowlDefinitions.Unit;
 
 const int FieldBounds = 5;
 var field = new NecoField(FieldBounds, FieldBounds);
-field[2, 2] = new NecoField.NecoSpaceContents(new NecoUnit(Zombie.Instance, "A", new()));
+field[2, 2] = new NecoSpaceContents(new NecoUnit(Chicken.Instance, "A", new()));
 
 var play = new NecoPlay(field);
     

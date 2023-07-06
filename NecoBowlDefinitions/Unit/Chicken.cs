@@ -5,22 +5,19 @@ using neco_soft.NecoBowlCore.Tags;
 
 namespace neco_soft.NecoBowlDefinitions.Unit;
 
-public class Orc : NecoUnitModel
+public class Chicken : NecoUnitModel
 {
-    public static readonly Orc Instance = new();
+    public static readonly Chicken Instance = new();
     
-    public override string Name => "Orc Footman";
+    public override string Name => "Chicken";
     public override int Power => 1;
 
     public override IReadOnlyCollection<NecoUnitTag> Tags
-        => new[] { NecoUnitTag.Pusher };
+        => new NecoUnitTag[] { };
 
-    public override IEnumerable<NecoUnitPlanMod> AllowedMods
-        => new[] { NecoUnitPlanMod.Rotate };
-
+    protected override IEnumerable<NecoPlanModPermission> ModPermissions
+        => new NecoPlanModPermission[] { };
+    
     public override IEnumerable<NecoUnitAction> Actions
         => new[] { new NecoUnitAction.TranslateUnit(AbsoluteDirection.North) };
-    
-    public override void SetupEventHandlers(NecoUnit subject, NecoUnitEventHandler handler)
-    { }
 }

@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 
 using neco_soft.NecoBowlCore.Action;
@@ -7,16 +9,20 @@ namespace neco_soft.NecoBowlCore.Model;
 
 public abstract class NecoUnitModel
 {
-    protected NecoUnitModel()
-    { }
-    
     public abstract string Name { get; }
-    public abstract int Power { get;  }
-    public abstract IReadOnlyCollection<NecoUnitTag> Tags { get; }
-    public abstract IEnumerable<NecoUnitPlanMod> AllowedMods { get; }
+    public abstract int Power { get; }
+    public abstract IEnumerable<NecoUnitTag> Tags { get; }
     public abstract IEnumerable<NecoUnitAction> Actions { get; }
-    public abstract void SetupEventHandlers(NecoUnit subject, NecoUnitEventHandler handler);
+    protected abstract IEnumerable<NecoPlanModPermission> ModPermissions { get; }
 }
+
+public class NecoUnitPlanModOptionsException : Exception
+{
+    public NecoUnitPlanModOptionsException() { }
+    public NecoUnitPlanModOptionsException(string message) : base(message) { }
+    public NecoUnitPlanModOptionsException(string message, Exception inner) : base(message, inner) { }
+}
+
 
 public class NecoUnitModelCustom : NecoUnitModel
 {
@@ -27,15 +33,14 @@ public class NecoUnitModelCustom : NecoUnitModel
         Power = power;
         Tags = tags;
         Actions = actions;
+        ModPermissions = new NecoPlanModPermission[] { };
     }
 
     public override string Name { get; }
     public override int Power { get; }
     public override IReadOnlyCollection<NecoUnitTag> Tags { get; }
     public override IEnumerable<NecoUnitAction> Actions { get; }
-    public override IEnumerable<NecoUnitPlanMod> AllowedMods => new List<NecoUnitPlanMod>();
-    public override void SetupEventHandlers(NecoUnit subject, NecoUnitEventHandler handler)
-    { }
+    protected override IEnumerable<NecoPlanModPermission> ModPermissions { get; }
 
     public static NecoUnitModelCustom Mover(string name, int power, AbsoluteDirection direction)
     {

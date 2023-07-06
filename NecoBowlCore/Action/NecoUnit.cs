@@ -37,6 +37,9 @@ public class NecoUnit : IEquatable<NecoUnit>
     private readonly Stack<NecoUnitAction> ActionStack;
     public readonly List<NecoUnit> Inventory = new();
     public readonly List<NecoUnitTag> Tags = new();
+    public readonly List<NecoUnitMod> Mods = new();
+
+    public int Rotation => GetMod<NecoUnitMod.Rotate>().Rotation;
 
     public NecoUnit(NecoUnitModel unitModel, string discriminator, NecoPlayerId ownerId)
     {
@@ -70,7 +73,7 @@ public class NecoUnit : IEquatable<NecoUnit>
         Discriminator = other.Discriminator;
         ActionStack = other.ActionStack;
         foreach (var unit in other.Inventory) {
-            Inventory.Add(new NecoUnit(unit));
+            throw new Exception("can't clone inventories yet");
         }
     }
 
@@ -90,6 +93,11 @@ public class NecoUnit : IEquatable<NecoUnit>
         }
 
         return value;
+    }
+
+    public T GetMod<T>() where T : NecoUnitMod, new()
+    {
+        return Mods.Any() ? Mods.OfType<T>().Aggregate((orig, next) => (T)next.Apply(orig)) : new T();
     }
 
     public bool Equals(NecoUnit? other)

@@ -84,7 +84,7 @@ internal class NecoPlayStepResolver
      */
 
     private IEnumerable<NecoUnitMovement> FindMovementsFromActions(
-        NecoField field,
+        ReadOnlyNecoField field,
         IDictionary<NecoUnitId, NecoUnitAction> initialActions, 
         out IDictionary<NecoUnitId, NecoUnitActionResult> results)
     {
@@ -249,7 +249,10 @@ internal class NecoPlayStepResolver
     
 }
 
-public record NecoUnitMovement(NecoUnit Unit, Vector2i NewPos, Vector2i OldPos, int Priority = 0);
+/// <summary>
+/// Record container for a unit that is moving to another space.
+/// </summary>
+public record NecoUnitMovement(NecoUnit Unit, Vector2i NewPos, Vector2i OldPos);
 
 internal record UnitPair(NecoUnitMovement Unit1, NecoUnitMovement Unit2)
 {
