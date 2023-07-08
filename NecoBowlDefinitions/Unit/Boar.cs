@@ -14,8 +14,8 @@ public class Boar : NecoUnitModel
 
     public override IReadOnlyCollection<NecoUnitTag> Tags
         => new[] { NecoUnitTag.Pusher };
-    protected override IEnumerable<NecoPlanModPermission> ModPermissions
-        => new[] { new NecoPlanModPermission.Rotate(new[] { 0, 2, 4, 6 }) };
+    protected override IEnumerable<NecoCardOptionPermission> ModPermissions
+        => new[] { new NecoCardOptionPermission.Rotate(new[] { 0, 2, 4, 6 }) };
     
     public override IEnumerable<NecoUnitAction> Actions
         => new[] { new NecoUnitAction.TranslateUnit(AbsoluteDirection.North) };

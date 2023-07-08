@@ -26,7 +26,7 @@ public class NecoPlay
         Field = field;
         Stepper = new NecoPlayStepper(this);
 
-        OriginalField = new NecoField(Field, deep: true);
+        OriginalField = new NecoField(Field, deep: false);
 
         if (autoRun) {
             StepToFinish(); 

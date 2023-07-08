@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
+using neco_soft.NecoBowlCore.Tags;
+
 namespace neco_soft.NecoBowlCore.Tags;
 
 public abstract class NecoUnitMod
@@ -47,20 +49,31 @@ public abstract class NecoUnitMod
     }
 }
 
-public abstract class NecoPlanModPermission
+public abstract class NecoCardOptionPermission
 {
-    public sealed class Rotate : NecoPlanModPermission
+    public sealed class Rotate : NecoCardOptionPermission
     {
         public readonly int[] RotationsAllowed;
         public Rotate(int[] rotationsAllowed)
         { RotationsAllowed = rotationsAllowed; }
     }
 
-    public sealed class FlipX : NecoPlanModPermission
+    public sealed class FlipX : NecoCardOptionPermission
     { }
-    public sealed class FlipY : NecoPlanModPermission
+    public sealed class FlipY : NecoCardOptionPermission
     { }
 }
+
+public abstract class NecoCardOptionValue
+{
+    public sealed class Rotate : NecoCardOptionValue<NecoCardOptionPermission.Rotate>
+    {
+         
+    }
+}
+
+public abstract class NecoCardOptionValue<T> : NecoCardOptionValue
+{ }
 
 public class InvalidModException : Exception
 {

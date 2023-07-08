@@ -15,8 +15,8 @@ public class Chicken : NecoUnitModel
     public override IReadOnlyCollection<NecoUnitTag> Tags
         => new NecoUnitTag[] { };
 
-    protected override IEnumerable<NecoPlanModPermission> ModPermissions
-        => new NecoPlanModPermission[] { };
+    protected override IEnumerable<NecoCardOptionPermission> ModPermissions
+        => new NecoCardOptionPermission[] { };
     
     public override IEnumerable<NecoUnitAction> Actions
         => new[] { new NecoUnitAction.TranslateUnit(AbsoluteDirection.North) };

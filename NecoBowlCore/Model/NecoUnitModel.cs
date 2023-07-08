@@ -13,7 +13,7 @@ public abstract class NecoUnitModel
     public abstract int Power { get; }
     public abstract IEnumerable<NecoUnitTag> Tags { get; }
     public abstract IEnumerable<NecoUnitAction> Actions { get; }
-    protected abstract IEnumerable<NecoPlanModPermission> ModPermissions { get; }
+    protected abstract IEnumerable<NecoCardOptionPermission> ModPermissions { get; }
 }
 
 public class NecoUnitPlanModOptionsException : Exception
@@ -33,14 +33,14 @@ public class NecoUnitModelCustom : NecoUnitModel
         Power = power;
         Tags = tags;
         Actions = actions;
-        ModPermissions = new NecoPlanModPermission[] { };
+        ModPermissions = new NecoCardOptionPermission[] { };
     }
 
     public override string Name { get; }
     public override int Power { get; }
     public override IReadOnlyCollection<NecoUnitTag> Tags { get; }
     public override IEnumerable<NecoUnitAction> Actions { get; }
-    protected override IEnumerable<NecoPlanModPermission> ModPermissions { get; }
+    protected override IEnumerable<NecoCardOptionPermission> ModPermissions { get; }
 
     public static NecoUnitModelCustom Mover(string name, int power, AbsoluteDirection direction)
     {

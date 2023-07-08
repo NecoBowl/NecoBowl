@@ -10,6 +10,11 @@ public readonly record struct NecoSpaceContents(NecoUnit? Unit, bool Fooabr = fa
 public class NecoField
 {
     protected readonly NecoSpaceContents[,] FieldContents;
+
+    public NecoField(NecoFieldParameters param)
+    {
+        FieldContents = new NecoSpaceContents[param.Bounds.X, param.Bounds.Y];
+    }
     
     public NecoField(uint width, uint height)
     {
@@ -26,7 +31,7 @@ public class NecoField
             }
         }
     }
-    
+
     public NecoSpaceContents this[Vector2i p] {
         get => FieldContents[p.X, p.Y];
         set => FieldContents[p.X, p.Y] = value;
@@ -146,6 +151,8 @@ public class NecoField
         return sb.ToString();
     }
 }
+
+public record class NecoFieldParameters((int X, int Y) Bounds);
 
 /// <summary>
 /// Wrapper around a <see cref="NecoField"/> that prevents modifications to the field.
