@@ -1,7 +1,4 @@
-using System.Diagnostics;
-
 using NLog;
-using NLog.Fluent;
 
 namespace neco_soft.NecoBowlCore.Action;
 
@@ -13,20 +10,23 @@ public class NecoPlay
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
     private readonly bool LogFieldAscii;
-    public NecoField Field { get; private set; }
-    private readonly NecoPlayStepper Stepper;
 
-    public int StepCount { get; private set; }
-    private readonly NecoField OriginalField;
+    public NecoUnitEventHandler UnitEventHandler;
+    public uint StepCount => PlayStepper.StepCount;
+    
+    private readonly NecoField Field;
+    private readonly NecoPlayStepper PlayStepper;
+
     public bool IsFinished => StepCount > 100;
 
     public NecoPlay(NecoField field, bool autoRun = false, bool logFieldAscii = true)
     {
-        LogFieldAscii = logFieldAscii;
+        UnitEventHandler = new();
+        
         Field = field;
-        Stepper = new NecoPlayStepper(this);
-
-        OriginalField = new NecoField(Field, deep: false);
+        PlayStepper = new NecoPlayStepper(field, UnitEventHandler);
+        
+        LogFieldAscii = logFieldAscii;
 
         if (autoRun) {
             StepToFinish(); 
@@ -41,10 +41,8 @@ public class NecoPlay
         if (LogFieldAscii && StepCount == 0) {
             LogFieldToAscii();
         }
-        
-        Stepper.Step();
-        Field = Stepper.Field;
-        StepCount++;
+
+        PlayStepper.ApplyPlayStep();
 
         if (LogFieldAscii) {
             LogFieldToAscii();

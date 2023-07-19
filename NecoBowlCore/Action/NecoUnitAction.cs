@@ -4,9 +4,21 @@ using neco_soft.NecoBowlCore.Tags;
 
 namespace neco_soft.NecoBowlCore.Action;
 
+/// <summary>
+/// A mutation on the field that would be performed by a unit during a single step of a play.
+/// </summary>
 public abstract class NecoUnitAction
 {
-    public abstract NecoUnitActionResult Result(NecoUnitId uid, ReadOnlyNecoField field);
+    public NecoUnitActionResult Result(NecoUnitId uid, ReadOnlyNecoField field)
+    {
+        try {
+            return CallResult(uid, field);
+        } catch (Exception e) {
+            return NecoUnitActionResult.Error(e);
+        }
+    }
+    
+    protected abstract NecoUnitActionResult CallResult(NecoUnitId uid, ReadOnlyNecoField field);
 
     public class TranslateUnit : NecoUnitAction
     {
@@ -17,7 +29,7 @@ public abstract class NecoUnitAction
             Direction = direction;
         }
 
-        public override NecoUnitActionResult Result(NecoUnitId uid, ReadOnlyNecoField field)
+        protected override NecoUnitActionResult CallResult(NecoUnitId uid, ReadOnlyNecoField field)
         { 
             var pos = field.GetUnitPosition(uid);
             var unit = field.GetUnit(pos);
@@ -44,12 +56,12 @@ public abstract class NecoUnitAction
                     }
                 }
                 
-                return NecoUnitActionResult.Success(new NecoFieldStateChange.UnitPushedOther(
+                return NecoUnitActionResult.Success(new NecoUnitActionOutcome.UnitPushedOther(
                         new(unit, newPos, pos),
                         new(pushReceiver!, pushReceiverNewPos, newPos))); 
             }
 
-            return NecoUnitActionResult.Success(new NecoFieldStateChange.UnitTranslated(new(unit, newPos, pos)));
+            return NecoUnitActionResult.Success(new NecoUnitActionOutcome.UnitTranslated(new(unit, newPos, pos)));
         }
         
         private bool IsPositionOutOfBounds(Vector2i pos, ReadOnlyNecoField field)
@@ -58,18 +70,23 @@ public abstract class NecoUnitAction
 
     public class DoNothing : NecoUnitAction
     {
-        public override NecoUnitActionResult Result(NecoUnitId uid, ReadOnlyNecoField field)
+        protected override NecoUnitActionResult CallResult(NecoUnitId uid, ReadOnlyNecoField field)
         {
-            return NecoUnitActionResult.Success(new NecoFieldStateChange.NothingHappened(uid));
+            return NecoUnitActionResult.Success(new NecoUnitActionOutcome.NothingHappened(uid));
         }
     }
 }
 
-public abstract class NecoFieldStateChange
+/// <summary>
+/// The final result of a unit's action, after it has considered the board state.
+///
+/// These are consumed by the <see cref="NecoPlayStepper"/>.
+/// </summary>
+public abstract class NecoUnitActionOutcome
 {
     public abstract string Description { get; }
 
-    public class UnitTranslated : NecoFieldStateChange
+    public class UnitTranslated : NecoUnitActionOutcome
     {
         public readonly NecoUnitMovement Movement;
 
@@ -84,7 +101,7 @@ public abstract class NecoFieldStateChange
             => $"{Movement.Unit} moved from {Movement.OldPos} to {Movement.NewPos}";
     }
 
-    public class UnitPushedOther : NecoFieldStateChange
+    public class UnitPushedOther : NecoUnitActionOutcome
     {
         public readonly NecoUnitMovement Pusher;
         public readonly NecoUnitMovement Receiver;
@@ -99,7 +116,7 @@ public abstract class NecoFieldStateChange
             => $"{Pusher.Unit} pushed {Receiver}";
     }
     
-    public class NothingHappened : NecoFieldStateChange
+    public class NothingHappened : NecoUnitActionOutcome
     {
         public readonly NecoUnitId UnitId;
 
@@ -115,7 +132,7 @@ public abstract class NecoFieldStateChange
 
 public class NecoUnitActionResult
 {
-    public static NecoUnitActionResult Success(NecoFieldStateChange change) 
+    public static NecoUnitActionResult Success(NecoUnitActionOutcome change) 
         => new NecoUnitActionResult(change.Description, Kind.Success, stateChange: change);
     public static NecoUnitActionResult Failure(string message) 
         => new NecoUnitActionResult(message, Kind.Failure);
@@ -124,10 +141,10 @@ public class NecoUnitActionResult
 
     public readonly string Message;
     public readonly Kind ResultKind;
-    public readonly NecoFieldStateChange? StateChange;
+    public readonly NecoUnitActionOutcome? StateChange;
     public readonly Exception? Exception;
 
-    public NecoUnitActionResult(string message, Kind resultKind, NecoFieldStateChange? stateChange = null, Exception? exception = null)
+    public NecoUnitActionResult(string message, Kind resultKind, NecoUnitActionOutcome? stateChange = null, Exception? exception = null)
     {
         Message = message;
         ResultKind = resultKind;

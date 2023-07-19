@@ -1,50 +1,63 @@
-using System.Diagnostics.CodeAnalysis;
-
 using neco_soft.NecoBowlCore.Tactics;
 
-using NLog.LayoutRenderers.Wrappers;
+using NUnit.Framework.Constraints;
+
+using Constraint = NUnit.Framework.Constraints.Constraint;
+
+// ReSharper disable AccessToStaticMemberViaDerivedType
 
 namespace NecoBowlTest;
 
 public abstract class FieldActionTests
 {
     private static NecoField NewField() => new NecoField(5, 5);
-    
-    protected NecoPlay Play = null!;
-    protected NecoField Field => Play.Field;
 
-    protected NecoPlayer Player1 = new(), Player2 = new();
+    private static NecoField Field = null!;
+    private static NecoPlay Play = null!;
+    
+    private readonly NecoPlayer Player1 = new(), Player2 = new();
 
     [SetUp]
     public void Setup()
     {
-        Play = new NecoPlay(NewField(), false);
+        Field = NewField();
+        Play = new NecoPlay(Field);
     }
 
     #region Tests
+    
     [TestFixture]
     private class Combat : FieldActionTests
     {
-        [Test]
-        public void SpaceSwapCausesCombat()
+        /// <summary>
+        /// Two units swapping spaces should fight.
+        /// </summary>
+        [Test, Combinatorial]
+        public void SpaceSwapCausesCombat(
+            [Values(1, 2)] int power1,
+            [Values(1)] int power2)
         {
-            var unitA1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverN", 69, AbsoluteDirection.North));
-            var unitA2 = new NecoUnit(NecoUnitModelCustom.Mover("MoverS", 69, AbsoluteDirection.South));
-            var unitB1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverN_Winner", 5, AbsoluteDirection.North));
-            var unitB2 = new NecoUnit(NecoUnitModelCustom.Mover("MoverS_Loser", 3, AbsoluteDirection.South));
-            Field[0, 0] = new(unitA1);
-            Field[0, 1] = new(unitA2);
-            Field[1, 0] = new(unitB1);
-            Field[1, 1] = new(unitB2);
+            // `A` units test equal power. `B` units test combat with a winner.
+            var unitA1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverN", power1, AbsoluteDirection.North));
+            var unitA2 = new NecoUnit(NecoUnitModelCustom.Mover("MoverS", power2, AbsoluteDirection.South));
 
             Play.Step();
-
-            AssertUnitIsDead(unitA1);
-            AssertUnitIsDead(unitA2);
-            AssertUnitIsDead(unitB2);
-            Assert.AreEqual(2, unitB1.Health);
+            
+            Assert.Multiple(() =>
+            {
+                if (power1 == power2) {
+                    Assert.That(unitA1, Is.Dead());
+                    Assert.That(unitA2, Is.Dead());
+                } else if (power1 > power2) {
+                    Assert.That(unitA1.Health, Is.EqualTo(power1 - power2));
+                    Assert.That(unitA2, Is.Dead());
+                }
+            });
         }
 
+        /// <summary>
+        /// Two units moving to the same space should fight.
+        /// </summary>
         [Test]
         public void SpaceConflictCausesCombat()
         {
@@ -58,13 +71,20 @@ public abstract class FieldActionTests
             Field[1, 2] = new(unitB2);
 
             Play.Step();
-
-            AssertUnitIsDead(unitA1);
-            AssertUnitIsDead(unitA2);
-            AssertUnitIsDead(unitB2);
-            Assert.AreEqual(2, unitB1.Health);
+            
+            Assert.Multiple(() =>
+            {
+                Assert.That(unitA1, Is.Dead());
+                Assert.That(unitA2, Is.Dead());
+                Assert.That(unitB2, Is.Dead());
+                Assert.That(unitB1, Is.AtFieldPosition((1, 1)));
+                Assert.That(unitB1.Health, Is.EqualTo(2));
+            });
         }
 
+        /// <summary>
+        /// After a space conflict in which both units die, another space conflict can occur on the same space.
+        /// </summary>
         [Test]
         public void SpaceConflictCanOccurMultipleTimes()
         {
@@ -79,9 +99,12 @@ public abstract class FieldActionTests
 
             Play.Step();
 
-            Assert.IsFalse(Field.GetAllUnits().Any(), "no units remain");
+            Assert.That(Field.GetAllUnits(), Is.Empty);
         }
 
+        /// <summary>
+        /// After a space conflict in which one unit survives, the surviving unit can fight another unit.
+        /// </summary>
         [Test]
         public void OneUnitCanFightMultipleOthers()
         {
@@ -96,9 +119,14 @@ public abstract class FieldActionTests
             Field[1, 1] = new(smallUnit2);
 
             Play.Step();
-
-            Assert.IsTrue(Field[0, 1].Unit == bigUnit, "the unit at (0,1) is the big unit");
-            Assert.IsTrue(bigUnit.Health == 3, "the big unit has 5 - 2 = 3 health");
+            
+            Assert.Multiple(() =>
+            {
+                Assert.That(smallUnit1, Is.Dead());
+                Assert.That(smallUnit2, Is.Dead());
+                Assert.That(bigUnit, Is.AtFieldPosition((0, 1)));
+                Assert.That(bigUnit.Health, Is.EqualTo(3));
+            });
         }
     }
 
@@ -114,10 +142,12 @@ public abstract class FieldActionTests
             Field[0, 1] = new(unit2);
 
             Play.Step();
-
-            Assert.IsTrue(Field[0, 0].Unit is null);
-            Assert.IsTrue(Field[0, 1].Unit == unit1);
-            Assert.IsTrue(Field[0, 2].Unit == unit2);
+            
+            Assert.Multiple(() =>
+            {
+                Assert.That(unit1, Is.AtFieldPosition((0, 1)));
+                Assert.That(unit2, Is.AtFieldPosition((0, 2)));
+            });
         }
 
         [Test]
@@ -131,8 +161,13 @@ public abstract class FieldActionTests
             Field[1, 1] = new(unit3);
 
             Play.Step();
-
-            Assert.IsTrue(Field[0, 1].Unit == unit3);
+            
+            Assert.Multiple(() =>
+            {
+                Assert.That(unit1, Is.Dead());
+                Assert.That(unit2, Is.Dead());
+                Assert.That(unit3, Is.AtFieldPosition((0, 1)));
+            });
         }
 
         [Test]
@@ -144,7 +179,7 @@ public abstract class FieldActionTests
 
             Play.Step();
             
-            AssertUnitPosition(unit1, new(1, 0));
+            Assert.That(unit1, Is.AtFieldPosition((1, 0)));
         }
     }
 
@@ -162,7 +197,7 @@ public abstract class FieldActionTests
 
             Play.Step();
 
-            Assert.IsTrue(Field[1, 1].Unit == unit1, "the leftmost unit took the space");
+            Assert.That(unit1, Is.AtFieldPosition((1, 1)));
         }
 
         [Test]
@@ -175,7 +210,7 @@ public abstract class FieldActionTests
             Field[0, 1] = new(unit2);
 
             Play.Step();
-            Assert.IsTrue(Field[1, 1].Unit == unit1, "the bottommost unit took the space");
+            Assert.That(unit1, Is.AtFieldPosition((1, 1)));
         }
 
         [Test]
@@ -188,8 +223,12 @@ public abstract class FieldActionTests
             Field[0, 1] = new(unit2);
 
             Play.Step();
-            Assert.IsTrue(Field[0, 0].Unit == unit1);
-            Assert.IsTrue(Field[0, 1].Unit == unit2);
+            
+            Assert.Multiple(() =>
+            {
+                Assert.That(unit1, Is.AtFieldPosition((0, 0)));
+                Assert.That(unit2, Is.AtFieldPosition((0, 1)));
+            });
         }
 
         [Test]
@@ -208,18 +247,23 @@ public abstract class FieldActionTests
             Field[1, 0] = new(unitSmall); // moves to (1, 1)
 
             Play.Step();
-
-            Assert.IsTrue(Field[1, 2].Unit == unitBig);
-            Assert.IsTrue(Field[1, 1].Unit == unitConflicter);
-            Assert.IsTrue(Field[1, 0].Unit == unitSmall);
-
+            
+            Assert.Multiple(() =>
+            {
+                Assert.That(unitBig, Is.AtFieldPosition((1, 2)));
+                Assert.That(unitConflicter, Is.AtFieldPosition((1, 1)));
+                Assert.That(unitSmall, Is.AtFieldPosition((1, 0)));
+            });
+            
             Play.Step();
-
-            Assert.IsTrue(Field[2, 2].Unit == unitBig);
-            Assert.IsTrue(Field[1, 2].Unit == unitConflicter);
-            Assert.IsTrue(Field[1, 1].Unit == unitSmall);
+            
+            Assert.Multiple(() =>
+            {
+                Assert.That(unitBig, Is.AtFieldPosition((2, 2)));
+                Assert.That(unitConflicter, Is.AtFieldPosition((1, 2)));
+                Assert.That(unitSmall, Is.AtFieldPosition((1, 1)));
+            });
         }
-
     }
 
     [TestFixture]
@@ -235,9 +279,12 @@ public abstract class FieldActionTests
             Field[0, 1] = new(unit2);
 
             Play.Step();
-
-            Assert.IsTrue(Field[0, 1].Unit == unit1);
-            Assert.IsTrue(Field[0, 2].Unit == unit2);
+            
+            Assert.Multiple(() =>
+            {
+                Assert.That(unit1, Is.AtFieldPosition((0, 1)));
+                Assert.That(unit2, Is.AtFieldPosition((0, 2)));
+            });
         }
 
         [Test]
@@ -253,36 +300,87 @@ public abstract class FieldActionTests
             
             Play.Step();
             
-            AssertUnitPosition(pusher, new(0, 0));
-            AssertUnitPosition(receiver, new(1, 1));
-            AssertUnitPosition(enemy, new(0, 2));
+            Assert.Multiple(() =>
+            {
+                Assert.That(pusher, Is.AtFieldPosition((0, 0)));
+                Assert.That(receiver, Is.AtFieldPosition((1, 1)));
+                Assert.That(enemy, Is.AtFieldPosition((0, 2)));
+            });
         }
     }
 
     [TestFixture]
-    private class Misc : FieldActionTests
+    private class Mods : FieldActionTests
     {
-        [Test]
-        public void ModsGetApplied()
+        [Test, Combinatorial]
+        public void ModsGetApplied(
+            [Values(1, 2, 3)] int mod1,
+            [Values(1, 2, 3)] int mod2)
         {
             var unit = new NecoUnit(NecoUnitModelCustom.Pusher("MoverN", 69, AbsoluteDirection.North), Player1.Id);
-            unit.Mods.Add(new NecoUnitMod.Rotate(2));
-            Assert.AreEqual(2, unit.GetMod<NecoUnitMod.Rotate>().Rotation);
+            unit.Mods.Add(new NecoUnitMod.Rotate(mod1));
+            unit.Mods.Add(new NecoUnitMod.Rotate(mod2));
+            
+            Assert.That(unit.GetMod<NecoUnitMod.Rotate>().Rotation, Is.EqualTo(mod1 + mod2));
         }
     }
+    
     #endregion
     
     #region Helpers
 
-    protected void AssertUnitIsDead(NecoUnit unit)
+    // ReSharper disable once ClassNeverInstantiated.Local
+    private class Is : NUnit.Framework.Is
     {
-        Assert.IsTrue(!Field.TryGetUnit(unit.Id, out _));
+        public static UnitDeadConstraint Dead()
+            => new();
+
+        public static UnitAtFieldPositionConstraint AtFieldPosition(Vector2i expected)
+            => new(expected);
     }
 
-    protected void AssertUnitPosition(NecoUnit unit, Vector2i position)
+    public class UnitDeadConstraint : Constraint
     {
-        Assert.AreEqual(unit, Field[position].Unit);
+        public override ConstraintResult ApplyTo<TActual>(TActual actual)
+        {
+            if (actual is NecoUnit unit) {
+                return new(this, actual, !Field.TryGetUnit(unit.Id, out _));
+            }
+            return new(this, actual, false);
+        }
+    }
+
+    public class UnitAtFieldPositionConstraint : Constraint
+    {
+        private readonly Vector2i Expected;
+        
+        public UnitAtFieldPositionConstraint(Vector2i expected)
+        {
+            Expected = expected;
+        }
+        
+        public override ConstraintResult ApplyTo<TActual>(TActual actual)
+        {
+            if (actual is not NecoUnit unit) {
+                return new(this, actual, ConstraintStatus.Error);
+            }
+
+            if (Field.TryGetUnit(unit.Id, out _, out var pos)) {
+                return new(this, actual, pos == Expected);
+            } else {
+                return new(this, actual, ConstraintStatus.Error);
+            }
+        }
     }
 
     #endregion
+}
+
+public static class NUnitExtensions
+{
+    public static FieldActionTests.UnitDeadConstraint Dead(this ConstraintExpression expr)
+        => new();
+
+    public static FieldActionTests.UnitAtFieldPositionConstraint AtFieldPosition(this ConstraintExpression expr, Vector2i expected)
+        => new(expected);
 }

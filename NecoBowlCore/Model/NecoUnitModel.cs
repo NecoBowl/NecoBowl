@@ -16,14 +16,9 @@ public abstract class NecoUnitModel
     protected abstract IEnumerable<NecoCardOptionPermission> ModPermissions { get; }
 }
 
-public class NecoUnitPlanModOptionsException : Exception
-{
-    public NecoUnitPlanModOptionsException() { }
-    public NecoUnitPlanModOptionsException(string message) : base(message) { }
-    public NecoUnitPlanModOptionsException(string message, Exception inner) : base(message, inner) { }
-}
-
-
+/// <summary>
+/// Dummy implementation of a UnitModel for testing purposes.
+/// </summary>
 public class NecoUnitModelCustom : NecoUnitModel
 {
     public NecoUnitModelCustom(string name, int power, IReadOnlyCollection<NecoUnitTag> tags, IEnumerable<NecoUnitAction> actions)
@@ -64,9 +59,17 @@ public class NecoUnitModelCustom : NecoUnitModel
         return unit;
     }
 
-    public static NecoUnitModelCustom DoNothing(string name, int power)
+    public static NecoUnitModelCustom DoNothing(string name = "DoNothing", int power = 1)
     {
         var unit = new NecoUnitModelCustom(name, power, new NecoUnitTag[] { }, new NecoUnitAction[] { new NecoUnitAction.DoNothing() });
         return unit;
     }
 }
+
+public class NecoUnitPlanModOptionsException : Exception
+{
+    public NecoUnitPlanModOptionsException() { }
+    public NecoUnitPlanModOptionsException(string message) : base(message) { }
+    public NecoUnitPlanModOptionsException(string message, Exception inner) : base(message, inner) { }
+}
+

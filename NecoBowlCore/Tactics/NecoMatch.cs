@@ -1,12 +1,18 @@
+using neco_soft.NecoBowlCore.Action;
+
 namespace neco_soft.NecoBowlCore.Tactics;
 
 public class NecoMatch
 {
-    public NecoPlayerPair Players;
+    public readonly NecoPlayerPair Players;
     public NecoPush CurrentPush;
 
-    public NecoMatch(NecoPlayerPair players)
+    internal NecoMatch(NecoPlayerPair? players = null, NecoFieldParameters? fieldParams = null)
     {
+        players ??= new(new(), new());
+        fieldParams ??= new((5, 5));
+        
         Players = players;
+        CurrentPush = new NecoPush(Players, fieldParams);
     }
 }

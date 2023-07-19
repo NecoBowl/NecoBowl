@@ -1,8 +1,7 @@
-using System.Drawing;
-using System.Numerics;
-using System.Text;
+using System.Runtime.CompilerServices;
 
-using NLog.LayoutRenderers.Wrappers;
+[assembly: InternalsVisibleTo("NecoBowlTest")]
+
 
 namespace neco_soft.NecoBowlCore;
 

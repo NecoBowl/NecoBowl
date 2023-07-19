@@ -1,57 +1,72 @@
 using System.Collections.ObjectModel;
-using System.ComponentModel.Design.Serialization;
-using System.Drawing;
-using System.Reflection.Metadata;
 
-using neco_soft.NecoBowlCore;
-using neco_soft.NecoBowlCore.Action;
-using neco_soft.NecoBowlCore.Model;
-using neco_soft.NecoBowlCore.Tactics;
 using neco_soft.NecoBowlCore.Tags;
 
 using NLog;
-using NLog.LayoutRenderers.Wrappers;
 
 namespace neco_soft.NecoBowlCore.Action;
 
-public class NecoPlayStepper
+/// <summary>
+/// </summary>
+internal class NecoPlayStepper
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-    public readonly NecoField Field;
-    public readonly NecoUnitEventHandler UnitEventHandler = new();
+    public uint StepCount = 0;
 
-    private readonly NecoPlayStepResolver Resolver;
+    private readonly NecoField Field;
+    private readonly NecoUnitEventHandler Handler;
 
-    public NecoPlayStepper(NecoPlay play)
+    public NecoPlayStepper(NecoField field, NecoUnitEventHandler handler)
     {
-        Field = play.Field;
-
-        Resolver = new(UnitEventHandler);
+        Field = field;
+        Handler = handler;
     }
-    
-    public void Step() {
+
+    public void ApplyPlayStep()
+    {
+        var resolver = new NecoPlayStepResolver(Field.AsReadOnly(), Handler);
+        
+        // Perform the step
         Dictionary<NecoUnitId, NecoUnitAction> unitActions = new();
-        foreach (var (pos, unit) in Field.GetAllUnits()) {
+        foreach (var (_, unit) in Field.GetAllUnits()) {
             unitActions[unit.Id] = unit.PopAction();
         }
+
+        var movements = resolver.FindMovementsFromActions(unitActions).ToList();
+        var mutations = resolver.FieldMutationsNew(movements).ToList();
         
-        Resolver.ApplyUnitActions(Field, unitActions);
+        // Step 1
+        foreach (var mut in mutations) {
+            mut.Pass1Mutate(Field);
+        }
+        
+        // Step 2
+        foreach (var mut in mutations) {
+            mut.Pass2Mutate(Field);
+        }
+
+        StepCount++;
     }
 }
 
 /// <summary>
-/// Takes a mutable field and a list of unit actions. Applies those actions to the corresponding units, and then handles
-/// any resulting space conflicts or other collisions.
+/// Provides methods to find the outcome of a given set of actions on a field image.
 /// </summary>
+/// <remarks>
+/// This class does not perform any modifications on its field. It only looks at the state of the field and determines
+/// the outcome of a step. It is up to the caller to apply these inputs to the field.
+/// </remarks>
 internal class NecoPlayStepResolver
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
+    private readonly ReadOnlyNecoField Field;
     private readonly NecoUnitEventHandler UnitEventHandler;
     
-    public NecoPlayStepResolver(NecoUnitEventHandler unitEventHandler)
+    public NecoPlayStepResolver(ReadOnlyNecoField field, NecoUnitEventHandler unitEventHandler)
     {
+        Field = field;
         UnitEventHandler = unitEventHandler;
     }
 
@@ -83,29 +98,31 @@ internal class NecoPlayStepResolver
      * 4. The winning unit is `u1`.
      */
 
-    private IEnumerable<NecoUnitMovement> FindMovementsFromActions(
-        ReadOnlyNecoField field,
-        IDictionary<NecoUnitId, NecoUnitAction> initialActions, 
-        out IDictionary<NecoUnitId, NecoUnitActionResult> results)
+    /// <summary>
+    /// Find the movement that each unit on the field wants to make.
+    /// </summary>
+    public IEnumerable<NecoUnitMovement> FindMovementsFromActions(IDictionary<NecoUnitId, NecoUnitAction> initialActions)
     {
+        // TODO Sort the keys by combat priority
+        
         List<UnitMovementPossibility> movements = new();
         
         foreach (var (uid, action) in initialActions) {
-            var unit = field.GetUnit(uid);
-            var result = action.Result(uid, field);
-
+            var unit = Field.GetUnit(uid);
+            var result = action.Result(uid, Field);
+            
             switch (result.StateChange) {
-                case NecoFieldStateChange.UnitTranslated translation: {
+                case NecoUnitActionOutcome.UnitTranslated translation: {
                     movements.Add(new(translation.Movement, result));
                     break;
                 }
-                case NecoFieldStateChange.UnitPushedOther push: {
+                case NecoUnitActionOutcome.UnitPushedOther push: {
                     movements.Add(new(push.Pusher, result));
                     movements.Add(new(push.Receiver, result, 1));
                     break;
                 }
                 default: {
-                    var pos = field.GetUnitPosition(uid);
+                    var pos = Field.GetUnitPosition(uid);
                     movements.Add(new(new(unit, pos, pos), result));
                     break;
                 }
@@ -118,135 +135,104 @@ internal class NecoPlayStepResolver
             .Select(g => g.First())
             .ToList();
         
-        results = movements.ToDictionary(m => m.Movement.Unit.Id, m => m.Result);
         return movements.Select(m => m.Movement);
     }
 
-    public void ApplyUnitActions(NecoField field, IDictionary<NecoUnitId, NecoUnitAction> initialActions)
+    public IEnumerable<NecoPlayfieldMutation> FieldMutationsNew(IEnumerable<NecoUnitMovement> initialMovements)
     {
-        var movements = FindMovementsFromActions(field, initialActions, out var actionResults).ToList();
-        
-        // Search through all of the movement events to find any instances of collision or space swap.
-        Dictionary<NecoUnit, Vector2i> movementResults = new();
-        List<NecoUnit> culledUnits = new();
+        var movements = initialMovements.OrderByCombatPriority().ToList();
+        var mutations = new List<NecoPlayfieldMutation>();
 
-        void HandleCollision(NecoUnitMovement unit1, NecoUnitMovement unit2)
+        foreach (var (pos, unit) in Field.GetAllUnits()) {
+            if (movements.All(m => m.Unit.Id != unit.Id)) {
+                movements.Add(new(unit, pos, pos));
+            }
+        }
+
+        // All movements except for those of units that have died this step.
+        IEnumerable<NecoUnitMovement> ActiveMovements()
+            => movements!
+                .ExceptBy(mutations!.OfType<NecoPlayfieldMutation.UnitDied>().Select(mut => mut.Subject), m => m.Unit.Id);
+        
+        void ResetUnitMovement(NecoUnitMovement movement)
         {
-            var unitPair = new UnitPair(unit1, unit2);
-            if (unitPair.UnitsAreEnemies()) {
-                // Enemy collision
-                var winner = unitPair.GetCombatWinner(out var damageIncurred, out var loser);
-                if (winner is not null) {
-                    Logger.Debug($"Combat between {unit1.Unit} and {unit2.Unit} (Winner {winner.Unit})");
-                    winner.Unit.DamageTaken += damageIncurred; 
-                    movementResults[winner.Unit] = winner.NewPos;
-                    culledUnits.Add(loser!.Unit);
-                } else {
-                    Logger.Debug($"Combat between {unit1.Unit} and {unit2.Unit} (No winner)");
-                    culledUnits.Add(unit1.Unit);
-                    culledUnits.Add(unit2.Unit);
-                    // Neither of them gets to move.
-                }
-            } else {
-                if (unit1.NewPos == unit2.OldPos && unit2.NewPos == unit1.OldPos) {
-                    // If they're just swapping spaces, force them to do nothing.
-                    movementResults[unit1.Unit] = unit1.OldPos;
-                    movementResults[unit2.Unit] = unit2.OldPos;
-                    return;
-                }
-                
-                var winner = unitPair.Collection.OrderByCombatPriority().First();
-                var loser = unitPair.Collection.OrderByCombatPriority().Last();
-                
-                movementResults[winner.Unit] = winner.NewPos;
-                movementResults[loser.Unit] = loser.OldPos;
-            } 
+            movements.Remove(movement);
+            movements.Add(movement with { NewPos = movement.OldPos });
         }
-        
-        IEnumerable<NecoUnitMovement> MovementsWithChanges()
-            => movements.ExceptBy(culledUnits, u => u.Unit)
-                .Select(m => m with { NewPos = movementResults.GetValueOrDefault(m.Unit, m.NewPos) });
 
-        // Conflict resolution loop.
-        do {
-            var sortedMovements = MovementsWithChanges()
-                .OrderBy(u => u.OldPos.Y)
-                .ThenBy(u => u.OldPos.X)
-                .ToList();
-
-            // Tracker list for movements that have been acknowledged/handled.
-            List<NecoUnitMovement> processedMovements = new();
-            IEnumerable<NecoUnitMovement> UnprocessedUnits() => MovementsWithChanges().Except(processedMovements);
-
-            foreach (var movement in sortedMovements) {
-                if (processedMovements.Contains(movement)) {
-                    Logger.Debug($"Skipping movement processing for {movement.Unit} because it has already been handled");
-                    continue;
-                }
-
-                // Handle units swapping spaces
-                var spaceSwapPartner = UnprocessedUnits().FirstOrDefault(m 
-                        => m.OldPos == movement.NewPos && movement.OldPos == m.NewPos && m != movement);
-                if (spaceSwapPartner is not null) {
-                    Logger.Debug($"Handling space swap between {movement.Unit} and {spaceSwapPartner.Unit}");
-                    HandleCollision(movement, spaceSwapPartner);
-                    processedMovements.Add(movement);
-                    processedMovements.Add(spaceSwapPartner);
-                    continue;
-                }
-
-                // Handle units moving to the same space
-                var spaceConflicts = UnprocessedUnits()
-                    .Concat(movementResults.Select(kv => new NecoUnitMovement(kv.Key, kv.Value, kv.Value)))
-                    .Where(m => m.NewPos == movement.NewPos && m != movement)
-                    .OrderByCombatPriority()
-                    .ToList();
-
-                var spaceConflictPartner = spaceConflicts.FirstOrDefault();
-                if (spaceConflictPartner != movement && spaceConflictPartner is not null) {
-                    // Prioritize fighting enemies
-                    var enemy = spaceConflicts.FirstOrDefault(m
-                            => m.Unit.OwnerId != movement.Unit.OwnerId && !m.Unit.OwnerId.IsNeutral);
-                    spaceConflictPartner = enemy ?? spaceConflictPartner;
-                    if (enemy is not null) {
-                        Logger.Debug($"Handling enemy space conflict between {movement.Unit} and {enemy.Unit}");
-                        HandleCollision(movement, enemy);
-                    } else {
-                        Logger.Debug(
-                            $"Handling friendly space conflict between {movement.Unit} and {spaceConflictPartner.Unit}");
-                        HandleCollision(movement, spaceConflictPartner);
-                    }
-
-                    processedMovements.Add(movement);
-                    processedMovements.Add(spaceConflictPartner);
-                    continue;
-                }
-
-                // There's no conflict, just apply the move.
-                movementResults[movement.Unit] = movement.NewPos;
-                processedMovements.Add(movement);
-                Logger.Debug($"{movement.Unit} moves to {movement.NewPos}");
+        void HandleCombat(UnitPair unitPair)
+        {
+            var unit1 = unitPair.Unit1;
+            var unit2 = unitPair.Unit2;
+            var winner = unitPair.GetCombatWinner(out var damageIncurred, out var loser);
+            if (winner is not null) {
+                // A unit wins
+                Logger.Debug($"Combat between {unit1.Unit} and {unit2.Unit} (Winner {winner.Unit})");
+                mutations.Add(new NecoPlayfieldMutation.UnitTookDamage(winner.Unit.Id, (uint)damageIncurred));
+                mutations.Add(new NecoPlayfieldMutation.UnitTookDamage(loser!.Unit.Id, (uint)winner.Unit.Power));
+                ResetUnitMovement(loser!);
+            } else {
+                // Both units kill each other
+                Logger.Debug($"Combat between {unit1.Unit} and {unit2.Unit} (No winner)");
+                mutations.Add(new NecoPlayfieldMutation.UnitTookDamage(unit1.Unit.Id, (uint)unit2.Unit.Power));
+                mutations.Add(new NecoPlayfieldMutation.UnitTookDamage(unit2.Unit.Id, (uint)unit1.Unit.Power));
+                ResetUnitMovement(unit1);
+                ResetUnitMovement(unit2);
             }
-        } while (MovementsWithChanges().GroupByFriendlyUnitCollisions().Any());
 
-        // Wipe moved units from the field...
-        foreach (var unit in movements) {
-            field.GetAndRemoveUnit(unit.OldPos);
+            // Add death mutation if the unit died
+            foreach (var unit in unitPair.Collection) {
+                if (mutations.OfType<NecoPlayfieldMutation.UnitDied>().Any(mut => mut.Subject == unit.Unit.Id)) {
+                    continue;
+                }
+                var totalDamageThisStep = mutations
+                    .OfType<NecoPlayfieldMutation.UnitTookDamage>()
+                    .Where(mut => mut.Subject == unit.Unit.Id)
+                    .Aggregate(0, (acc, dam) => acc + (int)dam.DamageAmount);
+                if (unit.Unit.Health - totalDamageThisStep <= 0) {
+                    mutations.Add(new NecoPlayfieldMutation.UnitDied(unit.Unit.Id)); 
+                }
+            }
+        }
+
+        while (ActiveMovements().GroupBySpaceSwaps().Any()) {
+            var swap = ActiveMovements().GroupBySpaceSwaps().First();
+            if (swap.UnitsAreEnemies()) {
+                HandleCombat(swap);        
+            } else {
+                ResetUnitMovement(swap.Unit1);
+                ResetUnitMovement(swap.Unit2);
+            }
+        }
+
+        while (ActiveMovements().GroupByCollisions().Any()) {
+            var collision = ActiveMovements().GroupByCollisions().First();
             
-            // ...and put the surviving units in their new locations.
-            if (movementResults.Keys.Contains(unit.Unit)) {
-                field[movementResults[unit.Unit]] = field[movementResults[unit.Unit]] with { Unit = unit.Unit };
+            var unit1 = collision[0];
+            var unit2 = collision[1];
+            var unitPair = new UnitPair(unit1, unit2);
+
+            if (unitPair.UnitsAreEnemies()) {
+                HandleCombat(unitPair);
             } else {
-                Logger.Debug($"Culling unit {unit.Unit}");
+                // Friendly conflict; give the movement to the highest-priority unit
+                var loser = unitPair.Collection.OrderByCombatPriority().Last();
+                ResetUnitMovement(loser);
             }
         }
 
-        // ...and then only put back the winners (in their new locations).
-        foreach (var (unit, pos) in movementResults) {
-            field[pos] = field[pos] with { Unit = unit };
-        }
+        // Create a new Move mutation for any unit that is still alive and also has a real move.
+        var finalMutations = mutations.Concat(
+            movements
+            .Where(m
+                => mutations.OfType<NecoPlayfieldMutation.UnitDied>().All(mut => mut.Subject != m.Unit.Id))
+            .Where(m => m.OldPos != m.NewPos)
+            .Select(m
+                => new NecoPlayfieldMutation.UnitMoved(m.Unit.Id, m.OldPos, m.NewPos))
+        );
+
+        return finalMutations;
     }
-    
 }
 
 /// <summary>
@@ -315,5 +301,38 @@ internal static class PlayStepperExt
         return units.GroupBy(u => (u.NewPos, u.Unit.OwnerId))
             .Where(g => g.Count() > 1)
             .Select(g => g.ToArray());
+    }
+
+    public static IEnumerable<NecoUnitMovement[]> GroupByCollisions(
+        this IEnumerable<NecoUnitMovement> units)
+    {
+        return units.GroupBy(u => u.NewPos)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.ToArray());
+    }
+
+    public static IEnumerable<UnitPair> GroupBySpaceSwaps(this IEnumerable<NecoUnitMovement> movements)
+    {
+        var movementsTemp = movements.ToList();
+        var construct = new List<UnitPair>();
+        var usedUnits = new List<NecoUnitMovement>();
+        
+        foreach (var move in movementsTemp) {
+            if (usedUnits.Contains(move)) {
+                continue;
+            }
+            
+            var swap = movementsTemp.FirstOrDefault(m 
+                => m.NewPos == move.OldPos 
+                     && move.NewPos == m.OldPos
+                     && move.Unit != m.Unit);
+            if (swap is not null) {
+                construct.Add(new UnitPair(move, swap)); 
+                usedUnits.Add(move);
+                usedUnits.Add(swap);
+            }
+        }
+
+        return construct;
     }
 }

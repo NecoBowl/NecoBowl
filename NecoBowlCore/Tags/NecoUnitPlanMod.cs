@@ -68,7 +68,6 @@ public abstract class NecoCardOptionValue
 {
     public sealed class Rotate : NecoCardOptionValue<NecoCardOptionPermission.Rotate>
     {
-         
     }
 }
 

@@ -7,9 +7,15 @@ public readonly record struct NecoSpaceContents(NecoUnit? Unit, bool Fooabr = fa
 /// <summary>
 /// A two-dimensional grid of <see cref="NecoSpaceContents"/>.
 /// </summary>
+/// <remarks>
+/// The <see cref="NecoUnit"/> in a <see cref="NecoSpaceContents"/> is a reference to a mutable unit. Therefore, attempting to copy a
+/// <c>NecoField</c> will result in that field having references to the units in the original field. If that original field is then
+/// mutated in some way, properties like the unit's health will change on BOTH the original and copy of the field. The contents of the
+/// copy are effectively garbage at that point. Basically, do not try to copy a field without careful consideration!
+/// </remarks>
 public class NecoField
 {
-    protected readonly NecoSpaceContents[,] FieldContents;
+    private readonly NecoSpaceContents[,] FieldContents;
 
     public NecoField(NecoFieldParameters param)
     {
@@ -19,17 +25,6 @@ public class NecoField
     public NecoField(uint width, uint height)
     {
         FieldContents = new NecoSpaceContents[width, height];
-    }
-
-    public NecoField(NecoField field, bool deep = false)
-    {
-        FieldContents = (NecoSpaceContents[,])field.FieldContents.Clone();
-
-        if (deep) {
-            foreach (var u in GetAllUnits()) {
-                throw new NotImplementedException("cannot clone fields with units");
-            }
-        }
     }
 
     public NecoSpaceContents this[Vector2i p] {
@@ -77,12 +72,15 @@ public class NecoField
             => FieldContentsByVec(p).Unit ?? throw new NecoBowlFieldException($"no unit found at {p}");
 
     public bool TryGetUnit(NecoUnitId uid, out NecoUnit? unit)
+        => TryGetUnit(uid, out unit, out _);
+    
+    public bool TryGetUnit(NecoUnitId uid, out NecoUnit? unit, out Vector2i pos)
     {
-        Vector2i pos;
         try {
             pos = GetUnitPosition(uid);
         } catch (InvalidOperationException) {
             unit = null;
+            pos = default;
             return false;
         }
 
@@ -107,6 +105,17 @@ public class NecoField
         this[p] = this[p] with { Unit = null };
         return unit;
     }
+
+    public NecoUnit GetAndRemoveUnit(NecoUnitId uid)
+        => GetAndRemoveUnit(GetUnitPosition(uid));
+
+    public NecoUnit GetAndRemoveUnit(NecoUnitId uid, out Vector2i pos)
+    {
+        pos = GetUnitPosition(uid); 
+        return GetAndRemoveUnit(pos);   
+    } 
+
+    public ReadOnlyNecoField AsReadOnly() => new ReadOnlyNecoField(this);
 
     public string ToAscii(string linePrefix = "> ")
     {
@@ -157,6 +166,9 @@ public record class NecoFieldParameters((int X, int Y) Bounds);
 /// <summary>
 /// Wrapper around a <see cref="NecoField"/> that prevents modifications to the field.
 /// </summary>
+/// <remarks>
+/// Note that this field is not immutable; changes made to the field from which the read-only field is derived will still appear when reading from the read-only field.
+/// </remarks>
 public sealed class ReadOnlyNecoField
 {
     private readonly NecoField Field;
@@ -168,9 +180,6 @@ public sealed class ReadOnlyNecoField
 
     public NecoSpaceContents this[int x, int y] => Field[x, y];
     public NecoSpaceContents this[Vector2i pos] => Field[pos.X, pos.Y];
-
-    public static implicit operator ReadOnlyNecoField(NecoField field)
-        => new ReadOnlyNecoField(field);
 
     public IEnumerable<(Vector2i, NecoUnit)> GetAllUnits()
         => Field.GetAllUnits();
@@ -192,6 +201,8 @@ public sealed class ReadOnlyNecoField
 
     public Vector2i GetBounds()
         => Field.GetBounds();
+
+    public string ToAscii(string prefix = "> ") => Field.ToAscii(prefix);
 }
 
 public class NecoBowlFieldException : Exception

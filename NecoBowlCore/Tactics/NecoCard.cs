@@ -14,6 +14,19 @@ public class NecoCard
         CardModel = cardModel;
         Cost = CardModel.Cost;
     }
+
+    public bool IsUnitCard() => CardModel is NecoUnitCardModel;
+
+    public bool IsUnitCard(out NecoUnitCard? unitCard)
+    {
+        if (IsUnitCard()) {
+            unitCard = (NecoUnitCard)this;
+            return true;
+        }
+
+        unitCard = null;
+        return false;
+    }
 }
 
 public class NecoUnitCard : NecoCard

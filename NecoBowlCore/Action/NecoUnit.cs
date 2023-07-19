@@ -8,7 +8,7 @@ using neco_soft.NecoBowlCore.Tags;
 
 namespace neco_soft.NecoBowlCore.Action;
 
-public readonly record struct NecoUnitId()
+public record NecoUnitId()
 {
     public readonly Guid Value = Guid.NewGuid();
 
@@ -18,10 +18,8 @@ public readonly record struct NecoUnitId()
 
 /// <summary>
 /// A unit as exists during a play.
-///
-/// DESIGN NOTE: PLEASE don't copy this (except for internals purposes).
 /// </summary>
-public class NecoUnit : IEquatable<NecoUnit>
+public sealed class NecoUnit : IEquatable<NecoUnit>
 {
     private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
@@ -60,22 +58,6 @@ public class NecoUnit : IEquatable<NecoUnit>
     public NecoUnit(NecoUnitModel unitModel)
         : this(unitModel, new())
     { }
-
-    /// <summary>
-    /// Creates a new instance that is a copy of another instance.
-    /// This should only be used for internal purposes (namely, duplicating fields for rewind).
-    /// </summary>
-    internal NecoUnit(NecoUnit other)
-    {
-        Id = other.Id;
-        OwnerId = other.OwnerId;
-        UnitModel = other.UnitModel;
-        Discriminator = other.Discriminator;
-        ActionStack = other.ActionStack;
-        foreach (var unit in other.Inventory) {
-            throw new Exception("can't clone inventories yet");
-        }
-    }
 
     public NecoUnitAction PopAction()
     {

@@ -3,7 +3,7 @@ using neco_soft.NecoBowlCore.Action;
 namespace neco_soft.NecoBowlCore.Tactics;
 
 /// <summary>
-/// The cards placed onto the field by a single player.
+/// The cards placed onto the field by a single player. Mutated over the course of the runtime of a <see cref="NecoPush"/>.
 /// </summary>
 public class NecoPlan
 {
@@ -17,13 +17,6 @@ public class NecoPlan
     {
     }
 
-    public void AddCardPlay(NecoCard card, Vector2i position)
-    {
-        CardPlays.Add(new (card, position));   
-    }
-    
-    public void AddCardPlay(CardPlay play)
-    {
-        CardPlays.Add(play);   
-    }
+    public void AddCardPlays(IEnumerable<CardPlay> plays)
+        => CardPlays.AddRange(plays);
 }

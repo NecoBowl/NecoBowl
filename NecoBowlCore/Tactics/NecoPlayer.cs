@@ -3,13 +3,13 @@ namespace neco_soft.NecoBowlCore.Tactics;
 public readonly record struct NecoPlayerId()
 {
     public readonly Guid Value = Guid.NewGuid();
-
     public bool IsNeutral => Value == default;
 }
 
 public class NecoPlayer
 {
     public readonly NecoPlayerId Id = new();
+    public bool IsNeutral => Id.IsNeutral;
 }
 
 public record class NecoPlayerPair(NecoPlayer Offense, NecoPlayer Defense)
@@ -17,6 +17,9 @@ public record class NecoPlayerPair(NecoPlayer Offense, NecoPlayer Defense)
     public IEnumerable<NecoPlayer> Enumerate() => new[] { Offense, Defense };
 
     public NecoPlayer this[NecoPlayerRole role] => FromRole(role);
+
+    public NecoPlayer? PlayerByIdOrNull(NecoPlayerId playerId)
+        => Enumerate().SingleOrDefault(p => p.Id == playerId);
 
     public NecoPlayerRole RoleOf(NecoPlayerId playerId) 
         => Enum.GetValues<NecoPlayerRole>().Single(v 
