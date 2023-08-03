@@ -1,3 +1,5 @@
+using System;
+
 using neco_soft.NecoBowlCore.Tactics;
 using neco_soft.NecoBowlCore.Tags;
 
@@ -28,13 +30,15 @@ public abstract class NecoInput
     public sealed class SetPlanMod : NecoInput
     {
         public readonly NecoCard Card;
-        public readonly NecoCardOptionValue Mod;
+        public readonly string OptionIdentifier;
+        public readonly object OptionValue;
 
-        public SetPlanMod(NecoPlayer player, NecoCard card, NecoCardOptionValue mod)
+        public SetPlanMod(NecoPlayer player, NecoCard card, string optionIdentifier, object optionValue)
             : base(player)
         {
             Card = card;
-            Mod = mod;
+            OptionIdentifier = optionIdentifier;
+            OptionValue = optionValue;
         }
     }
 }

@@ -1,3 +1,7 @@
+using System;
+using System.Collections.ObjectModel;
+using System.Runtime.CompilerServices;
+
 using neco_soft.NecoBowlCore.Tags;
 
 namespace neco_soft.NecoBowlCore.Model;
@@ -8,13 +12,16 @@ public abstract class NecoCardModel
 {
     public abstract string Name { get; }
     public abstract int Cost { get; }
+
+    public virtual IReadOnlyCollection<NecoCardOptionPermission> OptionPermissions { get; }
+        = new List<NecoCardOptionPermission>();
 }
 
 public abstract class NecoUnitCardModel : NecoCardModel
 {
     public abstract NecoUnitModel Model { get; }
 
-    public override sealed string Name => Model.Name;
+    public sealed override string Name => Model.Name;
 }
 
 public class NecoCardModelCustom : NecoCardModel

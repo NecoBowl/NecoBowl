@@ -1,7 +1,13 @@
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 using neco_soft.NecoBowlCore.Action;
+using neco_soft.NecoBowlCore.Input;
+
+using NLog.LayoutRenderers;
 
 namespace neco_soft.NecoBowlCore.Tactics;
 
@@ -11,7 +17,7 @@ namespace neco_soft.NecoBowlCore.Tactics;
 ///
 /// Pushes are used to create a <see cref="NecoPlay"/> to hand off to the Action of the game.
 /// </summary>
-public class NecoPush
+internal class NecoPush : INecoPushInformation
 {
     /// <summary>
     /// Stores the <see cref="NecoPlan"/> of each player, indexed by the player role.
@@ -19,18 +25,29 @@ public class NecoPush
     public readonly ImmutableDictionary<NecoPlayerRole, NecoPlan> Plans;
     
     public readonly NecoFieldParameters FieldParameters;
-    public NecoTurn CurrentTurn { get; private set; }
+    public NecoTurn CurrentTurn;
     private NecoPlay? TempPlay;
 
-    private uint TurnIndex = 0;
+    public uint CurrentTurnIndex => CurrentTurn.TurnIndex;
+    public uint CurrentBaseMoney => CurrentTurn.BaseMoney;
+    public bool IsTurnFinished => CurrentTurn.Finished;
 
     public NecoPush(NecoPlayerPair players, NecoFieldParameters fieldParameters)
     {
         FieldParameters = fieldParameters;
-        CurrentTurn = new NecoTurn(TurnIndex, players);
+        CurrentTurn = new NecoTurn(0, players);
 
         Plans = Enum.GetValues<NecoPlayerRole>().ToImmutableDictionary(r => r, r => new NecoPlan());
     }
+
+    public NecoInputResponse SendInput(NecoInput input)
+        => CurrentTurn.TakeInput(input);
+    
+    public IEnumerable<NecoInput> GetInputs()
+        => CurrentTurn.GetInputs();
+
+    public int RemainingMoney(NecoPlayerRole role)
+        => CurrentTurn.RemainingMoney(role);
 
     public void FinishTurn()
     {
@@ -42,16 +59,19 @@ public class NecoPush
         }
     }
     
+    /// <summary>
+    /// Advances the state of this push to the next turn.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">If the current turn has not been finished (see <see cref="NecoTurn.Finished"/>).</exception>
     public void AdvancePushStage()
     {
         if (!CurrentTurn.Finished)
-            throw new InvalidOperationException("cannot advance turn before finishing the previous one");
-        
-        // Perform the play to deal with any board effects
-        TempPlay ??= CreatePlay(false);
-        TempPlay.StepToFinish();
+            throw new InvalidOperationException("cannot advance push before finishing the previous one");
 
-        CurrentTurn = CurrentTurn.NextTurn(out TurnIndex);
+        if (TempPlay is null || !TempPlay.IsFinished)
+            throw new InvalidOperationException("cannot advance push before running play");
+        
+        CurrentTurn = CurrentTurn.NextTurn();
     }
 
     /// <summary>
@@ -59,12 +79,16 @@ public class NecoPush
     /// on the state of the match.
     /// </summary>
     /// <seealso cref="CreateField"/>
-    public NecoPlay CreatePlay(bool isPreview = false)
+    public NecoPlay CreatePlay(bool isPreview = false, bool preprocessUnits = false)
     {
         var field = CreateField(isPreview);
-        var play = new NecoPlay(field);
-        if (!isPreview)
+        var play = new NecoPlay(field, preprocessUnits: preprocessUnits);
+        if (!isPreview) {
+            if (!IsTurnFinished)
+                throw new InvalidOperationException("cannot run real play before finishing turn");
             TempPlay = play;
+        }
+
         return play;
     }
 
@@ -86,14 +110,18 @@ public class NecoPush
 
             foreach (var cardPlay in plays) {
                 if (cardPlay.Card.IsUnitCard(out var unitCard)) {
-                    field[cardPlay.Position] = field[cardPlay.Position] with { Unit = new NecoUnit(unitCard!.UnitModel) };
+                    field[cardPlay.Position] = field[cardPlay.Position] with { Unit = unitCard!.ToUnit(cardPlay.Player) };
                 }
             }
         }
 
         return field;
     }
+}
 
-    public class PlayerRoleMap : Dictionary<NecoPlayerId, NecoPlayerRole>
-    { }
+public interface INecoPushInformation
+{
+    public uint CurrentTurnIndex { get; }
+    public uint CurrentBaseMoney { get; }
+    public int RemainingMoney(NecoPlayerRole role);
 }

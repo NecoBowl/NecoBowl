@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 using neco_soft.NecoBowlCore.Action;
 
 namespace neco_soft.NecoBowlCore.Tactics;
@@ -7,7 +9,7 @@ namespace neco_soft.NecoBowlCore.Tactics;
 /// </summary>
 public class NecoPlan
 {
-    public readonly record struct CardPlay(NecoCard Card, Vector2i Position);
+    public record class CardPlay(NecoPlayerId Player, NecoCard Card, Vector2i Position);
 
     // Gradually build up over multiple turns
     private readonly List<CardPlay> CardPlays = new();
@@ -16,6 +18,9 @@ public class NecoPlan
     public NecoPlan()
     {
     }
+
+    public void AddCardPlay(CardPlay play)
+        => CardPlays.Add(play);
 
     public void AddCardPlays(IEnumerable<CardPlay> plays)
         => CardPlays.AddRange(plays);

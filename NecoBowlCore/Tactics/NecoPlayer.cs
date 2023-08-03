@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 namespace neco_soft.NecoBowlCore.Tactics;
 
 public readonly record struct NecoPlayerId()
@@ -31,6 +35,10 @@ public record class NecoPlayerPair(NecoPlayer Offense, NecoPlayer Defense)
         NecoPlayerRole.Defense => Defense,
         _ => throw new()
     };
+
+    public NecoPlayerPair()
+        : this(new(), new())
+    { }
 }
 
 public enum NecoPlayerRole

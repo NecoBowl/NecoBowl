@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 using neco_soft.NecoBowlCore.Tags;
 
@@ -15,17 +17,15 @@ internal class NecoPlayStepper
     public uint StepCount = 0;
 
     private readonly NecoField Field;
-    private readonly NecoUnitEventHandler Handler;
 
-    public NecoPlayStepper(NecoField field, NecoUnitEventHandler handler)
+    public NecoPlayStepper(NecoField field)
     {
         Field = field;
-        Handler = handler;
     }
 
-    public void ApplyPlayStep()
+    public IEnumerable<NecoPlayfieldMutation> ApplyPlayStep()
     {
-        var resolver = new NecoPlayStepResolver(Field.AsReadOnly(), Handler);
+        var resolver = new NecoPlayStepResolver(Field.AsReadOnly());
         
         // Perform the step
         Dictionary<NecoUnitId, NecoUnitAction> unitActions = new();
@@ -47,6 +47,8 @@ internal class NecoPlayStepper
         }
 
         StepCount++;
+
+        return mutations;
     }
 }
 
@@ -62,12 +64,10 @@ internal class NecoPlayStepResolver
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
     private readonly ReadOnlyNecoField Field;
-    private readonly NecoUnitEventHandler UnitEventHandler;
     
-    public NecoPlayStepResolver(ReadOnlyNecoField field, NecoUnitEventHandler unitEventHandler)
+    public NecoPlayStepResolver(ReadOnlyNecoField field)
     {
         Field = field;
-        UnitEventHandler = unitEventHandler;
     }
 
     private record UnitMovementPossibility
@@ -75,7 +75,7 @@ internal class NecoPlayStepResolver
         public readonly NecoUnitMovement Movement;
         public readonly NecoUnitActionResult Result;
         public readonly int Priority;
-        
+
         public UnitMovementPossibility(NecoUnitMovement movement, NecoUnitActionResult result, int priority = 0)
         {
             Movement = movement with { };
@@ -142,6 +142,7 @@ internal class NecoPlayStepResolver
     {
         var movements = initialMovements.OrderByCombatPriority().ToList();
         var mutations = new List<NecoPlayfieldMutation>();
+        var handledCombatPairs = new List<UnitPair>();
 
         foreach (var (pos, unit) in Field.GetAllUnits()) {
             if (movements.All(m => m.Unit.Id != unit.Id)) {
@@ -152,7 +153,7 @@ internal class NecoPlayStepResolver
         // All movements except for those of units that have died this step.
         IEnumerable<NecoUnitMovement> ActiveMovements()
             => movements!
-                .ExceptBy(mutations!.OfType<NecoPlayfieldMutation.UnitDied>().Select(mut => mut.Subject), m => m.Unit.Id);
+                .ExceptBy(mutations!.OfType<NecoPlayfieldMutation.KillUnit>().Select(mut => mut.Subject), m => m.Unit.Id);
         
         void ResetUnitMovement(NecoUnitMovement movement)
         {
@@ -160,46 +161,55 @@ internal class NecoPlayStepResolver
             movements.Add(movement with { NewPos = movement.OldPos });
         }
 
+        int GetUnitHealthAtEndOfStep(NecoUnit unit)
+        {
+            return mutations!
+                .OfType<NecoPlayfieldMutation.DamageUnit>()
+                .Where(mut => mut.Subject == unit.Id)
+                .Aggregate(unit.CurrentHealth, (health, mut) => health - (int)mut.DamageAmount);
+        }
+
         void HandleCombat(UnitPair unitPair)
         {
+            if (handledCombatPairs.Any(p => p.IsSameUnitsAs(unitPair))) {
+                return;
+            }
+            
             var unit1 = unitPair.Unit1;
             var unit2 = unitPair.Unit2;
-            var winner = unitPair.GetCombatWinner(out var damageIncurred, out var loser);
-            if (winner is not null) {
-                // A unit wins
-                Logger.Debug($"Combat between {unit1.Unit} and {unit2.Unit} (Winner {winner.Unit})");
-                mutations.Add(new NecoPlayfieldMutation.UnitTookDamage(winner.Unit.Id, (uint)damageIncurred));
-                mutations.Add(new NecoPlayfieldMutation.UnitTookDamage(loser!.Unit.Id, (uint)winner.Unit.Power));
-                ResetUnitMovement(loser!);
-            } else {
-                // Both units kill each other
-                Logger.Debug($"Combat between {unit1.Unit} and {unit2.Unit} (No winner)");
-                mutations.Add(new NecoPlayfieldMutation.UnitTookDamage(unit1.Unit.Id, (uint)unit2.Unit.Power));
-                mutations.Add(new NecoPlayfieldMutation.UnitTookDamage(unit2.Unit.Id, (uint)unit1.Unit.Power));
+            
+            mutations.Add(new NecoPlayfieldMutation.FightUnits(unit1.UnitId, unit2.UnitId));
+            mutations.Add(new NecoPlayfieldMutation.DamageUnit(unit1.Unit.Id, (uint)unit2.Unit.Power));
+            mutations.Add(new NecoPlayfieldMutation.DamageUnit(unit2.Unit.Id, (uint)unit1.Unit.Power));
+
+            var survivingUnits = unitPair.Collection.Where(u => GetUnitHealthAtEndOfStep(u.Unit) > 0);
+            if (survivingUnits.Count() == 2) {
+                // Both units survived
                 ResetUnitMovement(unit1);
                 ResetUnitMovement(unit2);
             }
 
-            // Add death mutation if the unit died
             foreach (var unit in unitPair.Collection) {
-                if (mutations.OfType<NecoPlayfieldMutation.UnitDied>().Any(mut => mut.Subject == unit.Unit.Id)) {
+                // Skip this if the unit has already been marked dead.
+                if (mutations.OfType<NecoPlayfieldMutation.KillUnit>().Any(mut => mut.Subject == unit.Unit.Id)) {
                     continue;
                 }
-                var totalDamageThisStep = mutations
-                    .OfType<NecoPlayfieldMutation.UnitTookDamage>()
-                    .Where(mut => mut.Subject == unit.Unit.Id)
-                    .Aggregate(0, (acc, dam) => acc + (int)dam.DamageAmount);
-                if (unit.Unit.Health - totalDamageThisStep <= 0) {
-                    mutations.Add(new NecoPlayfieldMutation.UnitDied(unit.Unit.Id)); 
+                
+                if (GetUnitHealthAtEndOfStep(unit.Unit) <= 0) {
+                    ResetUnitMovement(unit);
+                    mutations.Add(new NecoPlayfieldMutation.KillUnit(unit.UnitId));
                 }
             }
+            
+            handledCombatPairs.Add(unitPair);
         }
 
         while (ActiveMovements().GroupBySpaceSwaps().Any()) {
             var swap = ActiveMovements().GroupBySpaceSwaps().First();
             if (swap.UnitsAreEnemies()) {
-                HandleCombat(swap);        
+                HandleCombat(swap);
             } else {
+                mutations.Add(new NecoPlayfieldMutation.BumpUnits(swap.Unit1.UnitId, swap.Unit2.UnitId));
                 ResetUnitMovement(swap.Unit1);
                 ResetUnitMovement(swap.Unit2);
             }
@@ -217,18 +227,23 @@ internal class NecoPlayStepResolver
             } else {
                 // Friendly conflict; give the movement to the highest-priority unit
                 var loser = unitPair.Collection.OrderByCombatPriority().Last();
-                ResetUnitMovement(loser);
+                if (loser.NewPos == loser.OldPos) {
+                    // Reset the winner instead (?)
+                    var winner = unitPair.Collection.OrderByCombatPriority().First();
+                    ResetUnitMovement(winner);
+                } else {
+                    ResetUnitMovement(loser);
+                }
             }
         }
 
-        // Create a new Move mutation for any unit that is still alive and also has a real move.
+        // Create a new Move or Push mutation for any unit that is still alive and also has a real move.
         var finalMutations = mutations.Concat(
             movements
             .Where(m
-                => mutations.OfType<NecoPlayfieldMutation.UnitDied>().All(mut => mut.Subject != m.Unit.Id))
+                => mutations.OfType<NecoPlayfieldMutation.KillUnit>().All(mut => mut.Subject != m.Unit.Id))
             .Where(m => m.OldPos != m.NewPos)
-            .Select(m
-                => new NecoPlayfieldMutation.UnitMoved(m.Unit.Id, m.OldPos, m.NewPos))
+            .Select(m => m.ToPlayfieldMutation())
         );
 
         return finalMutations;
@@ -238,7 +253,31 @@ internal class NecoPlayStepResolver
 /// <summary>
 /// Record container for a unit that is moving to another space.
 /// </summary>
-public record NecoUnitMovement(NecoUnit Unit, Vector2i NewPos, Vector2i OldPos);
+public record NecoUnitMovement
+{
+    internal readonly NecoUnit Unit;
+    public Vector2i NewPos;
+    public Vector2i OldPos;
+    
+    // Hack to let the end of step calculation see what initiated the movements (push vs manual move).
+    internal readonly NecoUnitActionResult? Source;
+
+    public NecoUnitMovement(NecoUnit unit, Vector2i newPos, Vector2i oldPos, NecoUnitActionResult? source = null)
+    {
+        Unit = unit;
+        NewPos = newPos;
+        OldPos = oldPos;
+        Source = source;
+    }
+
+    public NecoUnitId UnitId => Unit.Id;
+
+    internal NecoPlayfieldMutation ToPlayfieldMutation()
+        => Source?.StateChange switch {
+            NecoUnitActionOutcome.UnitPushedOther pushed => new NecoPlayfieldMutation.PushUnit(Unit.Id, OldPos, NewPos, pushed.Pusher.UnitId),
+            _ => new NecoPlayfieldMutation.MoveUnit(Unit.Id, OldPos, NewPos)
+        };
+}
 
 internal record UnitPair(NecoUnitMovement Unit1, NecoUnitMovement Unit2)
 {
@@ -257,33 +296,8 @@ internal record UnitPair(NecoUnitMovement Unit1, NecoUnitMovement Unit2)
     public bool UnitsAreEnemies()
         => Unit1.Unit.OwnerId != default && Unit2.Unit.OwnerId != default && Unit1.Unit.OwnerId != Unit2.Unit.OwnerId;
 
-    /// <summary>
-    /// Calculate the winner of a one-on-one combat between the units in this pair.
-    /// </summary>
-    /// <param name="damageIncurred">The damage dealt to the winning unit. 0 if there is no winner.</param>
-    /// <param name="loser">The loser of the combat. Null if there is no winner.</param>
-    /// <returns>The winner of the combat. Null if there is no winner.</returns>
-    public NecoUnitMovement? GetCombatWinner(out int damageIncurred, out NecoUnitMovement? loser)
-    {
-        if (Unit1.Unit.Power == Unit2.Unit.Power) {
-            // Power tie.
-            loser = null;
-            damageIncurred = 0;
-            
-            // Units with defender win here.
-            var defenderUnit = UnitWithTag(NecoUnitTag.Defender, out var nonDefenderUnit);
-            if (defenderUnit is not null && nonDefenderUnit is not null) {
-                return defenderUnit;
-            }
-            
-            return null;
-        }
-
-        var winnerOrder = Collection.OrderByDescending(u => u.Unit.Power).ToList();
-        damageIncurred = winnerOrder.Last().Unit.Power;
-        loser = winnerOrder.Last();
-        return winnerOrder.First();
-    }
+    public bool IsSameUnitsAs(UnitPair other)
+        => (Unit1 == other.Unit1 && Unit2 == other.Unit2) || (Unit2 == other.Unit1 && Unit1 == other.Unit2);
 }
 
 internal static class PlayStepperExt

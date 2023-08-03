@@ -1,6 +1,9 @@
+using System;
 using System.Drawing;
 
 using neco_soft.NecoBowlCore.Tags;
+
+using NLog.LayoutRenderers.Wrappers;
 
 namespace neco_soft.NecoBowlCore.Action;
 
@@ -22,9 +25,9 @@ public abstract class NecoUnitAction
 
     public class TranslateUnit : NecoUnitAction
     {
-        private readonly AbsoluteDirection Direction;
+        private readonly RelativeDirection Direction;
 
-        public TranslateUnit(AbsoluteDirection direction)
+        public TranslateUnit(RelativeDirection direction)
         {
             Direction = direction;
         }
@@ -33,7 +36,8 @@ public abstract class NecoUnitAction
         { 
             var pos = field.GetUnitPosition(uid);
             var unit = field.GetUnit(pos);
-            var newPos = pos + Direction.RotatedBy(unit.Rotation).ToVector2i();
+            var movementDirection = unit.Facing.RotatedBy(Direction);
+            var newPos = pos + movementDirection.ToVector2i();
             if (IsPositionOutOfBounds(newPos, field)) {
                 return NecoUnitActionResult.Failure($"{unit} could not move {Direction} (out of bounds)");
             }
@@ -41,7 +45,7 @@ public abstract class NecoUnitAction
             // PUSHER
             if (unit.Tags.Contains(NecoUnitTag.Pusher)
                 && field.TryGetUnit(newPos, out var pushReceiver)) {
-                var pushReceiverNewPos = newPos + Direction.ToVector2i();
+                var pushReceiverNewPos = newPos + movementDirection.ToVector2i();
                 var pushReceiverMovement = new NecoUnitMovement(pushReceiver!, pushReceiverNewPos, newPos); 
 
                 if (IsPositionOutOfBounds(pushReceiverNewPos, field)) {
@@ -68,6 +72,42 @@ public abstract class NecoUnitAction
             => pos.X < 0 || pos.X >= field.GetBounds().X || pos.Y < 0 || pos.Y >= field.GetBounds().Y;
     }
 
+    public class TranslateUnitCrabwalk : NecoUnitAction
+    {
+        protected override NecoUnitActionResult CallResult(NecoUnitId uid, ReadOnlyNecoField field)
+        {
+            var pos = field.GetUnitPosition(uid);
+            var unit = field.GetUnit(pos);
+
+            var (ballPos, ball) = field.GetAllUnits().SingleOrDefault(tup => tup.Item2.Tags.Contains(NecoUnitTag.TheBall));
+            if (ball is null) {
+                throw new NecoUnitActionException("no ball found on field");
+            }
+
+            bool leftOn = false, rightOn = false;
+            float leftDist = float.MaxValue, rightDist = float.MaxValue;
+            var checkDir = pos + RelativeDirection.Left.ToVector2i(unit.Facing);
+            if (field.IsInBounds(checkDir)) {
+                leftDist = (pos - checkDir).LengthSquared;
+                leftOn = true;
+            }
+
+            checkDir = pos + RelativeDirection.Right.ToVector2i(unit.Facing);
+            if (field.IsInBounds(checkDir)) {
+                rightDist = (pos - checkDir).LengthSquared;
+                rightOn = true;
+            }
+
+            if (rightOn && leftDist > rightDist) {
+                return new TranslateUnit(RelativeDirection.Right).CallResult(uid, field);
+            } else if (leftOn && rightDist > leftDist) {
+                return new TranslateUnit(RelativeDirection.Left).CallResult(uid, field);
+            } else {
+                return NecoUnitActionResult.Success(new NecoUnitActionOutcome.NothingHappened(uid));
+            }
+        }
+    }
+
     public class DoNothing : NecoUnitAction
     {
         protected override NecoUnitActionResult CallResult(NecoUnitId uid, ReadOnlyNecoField field)
@@ -88,7 +128,7 @@ public abstract class NecoUnitActionOutcome
 
     public class UnitTranslated : NecoUnitActionOutcome
     {
-        public readonly NecoUnitMovement Movement;
+        internal readonly NecoUnitMovement Movement;
 
         public UnitTranslated(NecoUnitMovement movement)
         {
@@ -103,8 +143,8 @@ public abstract class NecoUnitActionOutcome
 
     public class UnitPushedOther : NecoUnitActionOutcome
     {
-        public readonly NecoUnitMovement Pusher;
-        public readonly NecoUnitMovement Receiver;
+        internal readonly NecoUnitMovement Pusher;
+        internal readonly NecoUnitMovement Receiver;
 
         public UnitPushedOther(NecoUnitMovement pusher, NecoUnitMovement receiver)
         {

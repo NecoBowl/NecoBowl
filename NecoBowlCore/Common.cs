@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("NecoBowlTest")]
@@ -7,14 +8,14 @@ namespace neco_soft.NecoBowlCore;
 
 public enum AbsoluteDirection : uint
 {
-    South = 0,
-    SouthWest = 1,
-    West = 2,
-    NorthWest = 3,
-    North = 4,
-    NorthEast = 5,
-    East = 6,
-    SouthEast = 7
+    South = 4,
+    SouthWest = 5,
+    West = 6,
+    NorthWest = 7,
+    North = 0,
+    NorthEast = 1,
+    East = 2,
+    SouthEast = 3
 }
 
 public enum RelativeDirection : uint
@@ -71,7 +72,6 @@ public static class AbsoluteDirectionExt
         => RotatedBy(direction, (int)rel);
     public static AbsoluteDirection RotatedBy(this AbsoluteDirection direction, int rotation)
         => (AbsoluteDirection)(((uint)direction + rotation) % 8);
-
     // ReSharper disable once InconsistentNaming
     public static Vector2i ToVector2i(this AbsoluteDirection direction)
         => direction switch {
@@ -85,6 +85,13 @@ public static class AbsoluteDirectionExt
             AbsoluteDirection.NorthWest => Vector2i.Up + Vector2i.Left,
             _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
         };
+
+    public static Vector2i ToVector2i(this RelativeDirection direction, AbsoluteDirection facing)
+        => facing.RotatedBy(direction).ToVector2i();
+    
+    public static RelativeDirection RotatedBy(this RelativeDirection direction, int rotation)
+        => (RelativeDirection)(((uint)direction + rotation) % 8);
+
 }
 
 public static class Ext

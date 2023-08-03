@@ -1,3 +1,5 @@
+using System;
+
 namespace neco_soft.NecoBowlCore.Action;
 
 public class NecoUnitActionException : ApplicationException

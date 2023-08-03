@@ -1,3 +1,8 @@
+using System;
+
+using neco_soft.NecoBowlCore.Tactics;
+using neco_soft.NecoBowlCore.Tags;
+
 using NLog;
 
 namespace neco_soft.NecoBowlCore.Action;
@@ -11,7 +16,6 @@ public class NecoPlay
 
     private readonly bool LogFieldAscii;
 
-    public NecoUnitEventHandler UnitEventHandler;
     public uint StepCount => PlayStepper.StepCount;
     
     private readonly NecoField Field;
@@ -19,21 +23,25 @@ public class NecoPlay
 
     public bool IsFinished => StepCount > 100;
 
-    public NecoPlay(NecoField field, bool autoRun = false, bool logFieldAscii = true)
+    public ReadOnlyNecoField GetField() => Field.AsReadOnly();
+
+    internal NecoPlay(NecoField field, bool autoRun = false, bool logFieldAscii = true, bool preprocessUnits = false)
     {
-        UnitEventHandler = new();
-        
         Field = field;
-        PlayStepper = new NecoPlayStepper(field, UnitEventHandler);
+        PlayStepper = new NecoPlayStepper(field);
         
         LogFieldAscii = logFieldAscii;
+
+        if (preprocessUnits) {
+            InitializeField();
+        }
 
         if (autoRun) {
             StepToFinish(); 
         }
     }
 
-    public void Step()
+    public IEnumerable<NecoPlayfieldMutation> Step()
     {
         if (IsFinished)
             throw new InvalidOperationException("cannot step a play that has finished");
@@ -42,11 +50,13 @@ public class NecoPlay
             LogFieldToAscii();
         }
 
-        PlayStepper.ApplyPlayStep();
+        var step = PlayStepper.ApplyPlayStep();
 
         if (LogFieldAscii) {
             LogFieldToAscii();
-        } 
+        }
+
+        return step;
     }
 
     public void Step(uint count)
@@ -61,6 +71,17 @@ public class NecoPlay
         while (!IsFinished) {
             Step();
         }
+    }
+
+    private void InitializeField()
+    {
+        foreach (var (pos, unit) in Field.GetAllUnits()) {
+            if (Field.FieldParameters.GetPlayerAffiliation(pos) == NecoPlayerRole.Defense)
+                unit.Mods.Add(new NecoUnitMod.Rotate(4)); 
+        }
+        
+        Field[Field.FieldParameters.BallSpawnPoint] = Field[Field.FieldParameters.BallSpawnPoint] 
+            with { Unit = new NecoUnit(BuiltInDefinitions.Ball.Instance, default) };
     }
 
     public void LogFieldToAscii(string prefix = "> ")

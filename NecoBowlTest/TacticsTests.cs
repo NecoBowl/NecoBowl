@@ -4,16 +4,24 @@ using System.Text.RegularExpressions;
 using neco_soft.NecoBowlCore.Input;
 using neco_soft.NecoBowlCore.Tactics;
 
+using NLog;
+
 using NUnit.Framework.Constraints;
+using NUnit.Framework.Internal;
 
-namespace NecoBowlTest;
+using Logger = NLog.Logger;
 
-public abstract class TacticsTests
+namespace neco_soft.NecoBowlTest.Tactics;
+
+internal abstract class TacticsTests
 {
-    private NecoBowlContext Context;
-    private NecoPlayerPair Players;
+    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-    public TacticsTests()
+    private NecoBowlContext Context = null!;
+    private NecoPlayerPair Players = null!;
+
+    [SetUp]
+    public void Setup()
     {
         Players = new NecoPlayerPair(new(), new());
         Context = new NecoBowlContext(Players);
@@ -25,30 +33,102 @@ public abstract class TacticsTests
         [Test]
         public void CardPlaysAppearInPlay()
         {
-            var card = new NecoUnitCard(NecoCardModelCustom.FromUnitModel(NecoUnitModelCustom.DoNothing()));
-            Context.SendInput(new NecoInput.PlaceCard(Players.Offense, card, (0, 0)));
-
-            var play = Context.GetPlay();
+            var card = TestHelpers.TestCard();
             
-            Assert.IsNotNull(Context.GetField(true)[0, 0].Unit);
-            play.LogFieldToAscii();
-        }
+            var resp = Context.SendInput(new NecoInput.PlaceCard(Players.Offense, card, (0, 0)));
+            Assert.That(resp.ResponseKind, Is.EqualTo(NecoInputResponse.Kind.Success));
 
-        
+            Context.FinishTurn();
+            var play = Context.BeginPlay();
+
+            Assert.That(play.Field[0, 0].Unit, Is.Not.Null);
+            Assert.That(play.Field[0, 0].Unit!.UnitModel, Is.EqualTo(card.UnitModel));
+        }
     }
 
-    private class Conflicts : TacticsTests
+    private class Turn : TacticsTests
     {
+        [Test]
+        public void CardsCostMoney()
+        {
+            var card = TestHelpers.TestCard(1);
+            
+            var startingMoney = Context.Push.RemainingMoney(NecoPlayerRole.Offense);
+            Context.AssertSendInput(new NecoInput.PlaceCard(Players.Offense, card, (0, 0)));
+            
+            Assert.That(Context.Push.RemainingMoney(NecoPlayerRole.Offense), Is.EqualTo(startingMoney - 1));
+        }
+        
         [Test]
         public void CannotOverspendOnTurn()
         {
+            var card1 = TestHelpers.TestCard(2);
+            var card2 = TestHelpers.TestCard(2);
+            
+            while (Context.Push.CurrentBaseMoney < 3) {
+                Context.AdvancePush();
+            }
+
+            NecoInputResponse resp;
+
+            Context.AssertSendInput(new NecoInput.PlaceCard(Players.Offense, card1, (0, 0)));
+            Context.AssertSendInput(new NecoInput.PlaceCard(Players.Offense, card2, (0, 1)), NecoInputResponse.Kind.Illegal);
+            
+            Context.FinishTurn();
+            
+            Assert.That(Context.BeginPlay().Field[0, 1].Unit, Is.Null);
+        }
+
+        [Test]
+        public void PreviewReflectsCurrentInputs()
+        {
+            var card1 = TestHelpers.TestCard(2);
+            var card2 = TestHelpers.TestCard(2);
+            
+            NecoInputResponse resp;
+            Context.AssertSendInput(new NecoInput.PlaceCard(Players.Offense, card1, (0, 0)));
+            var preview = Context.GetPlayPreview();
         }
     }
-    
-    #region Helpers
-    
-    private NecoUnitCard TestCard(int cost = 0)
-        => new NecoUnitCard(NecoCardModelCustom.FromUnitModel(NecoUnitModelCustom.DoNothing(), cost));
 
-    #endregion
+    private class Push : TacticsTests
+    {
+        [Test]
+        [Order(1)]
+        public void TurnMustBeFinishedToShowPlay()
+        {
+            Assert.That(() => Context.AdvancePush(), Throws.InvalidOperationException);
+        }
+
+        [Test]
+        [Order(2)]
+        public void PlayMustBeRunToAdvanceTurn()
+        {
+            Context.FinishTurn();
+            Assert.That(() => Context.AdvancePush(), Throws.InvalidOperationException); 
+        }
+
+        [Test]
+        [Order(3)]
+        public void TurnMustBeFinishedToBeginPlay()
+        {
+            Assert.That(() => Context.BeginPlay(), Throws.InvalidOperationException);
+        }
+
+        [Test]
+        [Order(4)]
+        public void PlayGoesToNextTurn()
+        {
+            var turnIndex = Context.Push.CurrentTurnIndex;
+            Context.FinishTurn();
+            var play = Context.BeginPlay();
+            play.StepToFinish();
+            Context.AdvancePush();
+            Assert.That(Context.Push.CurrentTurnIndex, Is.EqualTo(turnIndex + 1));
+        }
+    }
+
+#region Helpers
+    
+#endregion
 }

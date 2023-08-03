@@ -1,5 +1,8 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
 using neco_soft.NecoBowlCore.Model;
@@ -30,14 +33,18 @@ public sealed class NecoUnit : IEquatable<NecoUnit>
     public readonly string Discriminator;
 
     public int Power => UnitModel.Power;
-    public int Health => UnitModel.Power - DamageTaken;
+    public int MaxHealth => UnitModel.Health;
+    public int CurrentHealth => MaxHealth - DamageTaken;
     public int DamageTaken;
-    private readonly Stack<NecoUnitAction> ActionStack;
+    public readonly Stack<NecoUnitAction> ActionStack;
     public readonly List<NecoUnit> Inventory = new();
     public readonly List<NecoUnitTag> Tags = new();
     public readonly List<NecoUnitMod> Mods = new();
 
     public int Rotation => GetMod<NecoUnitMod.Rotate>().Rotation;
+    public AbsoluteDirection Facing => (AbsoluteDirection)Rotation;
+
+    public string FullName => $"{UnitModel.Name}{(Discriminator != string.Empty ? $" {Discriminator}" : "")}";
 
     public NecoUnit(NecoUnitModel unitModel, string discriminator, NecoPlayerId ownerId)
     {
@@ -55,11 +62,11 @@ public sealed class NecoUnit : IEquatable<NecoUnit>
         : this(unitModel, "", playerId)
     { }
 
-    public NecoUnit(NecoUnitModel unitModel)
-        : this(unitModel, new())
+    internal NecoUnit(NecoUnitModel unitModel)
+        : this(unitModel, "", new())
     { }
 
-    public NecoUnitAction PopAction()
+    internal NecoUnitAction PopAction()
     {
         if (!ActionStack.Any()) {
             throw new NecoBowlFieldException($"unit {this} has no actions");

@@ -6,14 +6,14 @@ using Constraint = NUnit.Framework.Constraints.Constraint;
 
 // ReSharper disable AccessToStaticMemberViaDerivedType
 
-namespace NecoBowlTest;
+namespace neco_soft.NecoBowlTest.Playfield;
 
-public abstract class FieldActionTests
+internal abstract class FieldActionTests
 {
-    private static NecoField NewField() => new NecoField(5, 5);
+    public static NecoField NewField() => new NecoField(new((5, 5), (0, 0)));
 
-    private static NecoField Field = null!;
-    private static NecoPlay Play = null!;
+    public static NecoField Field = null!;
+    public static NecoPlay Play = null!;
     
     private readonly NecoPlayer Player1 = new(), Player2 = new();
 
@@ -24,22 +24,21 @@ public abstract class FieldActionTests
         Play = new NecoPlay(Field);
     }
 
-    #region Tests
-    
     [TestFixture]
-    private class Combat : FieldActionTests
+    private class EnemyCollision : FieldActionTests
     {
         /// <summary>
-        /// Two units swapping spaces should fight.
+        /// Opposing units swapping spaces should fight.
         /// </summary>
         [Test, Combinatorial]
         public void SpaceSwapCausesCombat(
             [Values(1, 2)] int power1,
             [Values(1)] int power2)
         {
-            // `A` units test equal power. `B` units test combat with a winner.
             var unitA1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverN", power1, AbsoluteDirection.North));
             var unitA2 = new NecoUnit(NecoUnitModelCustom.Mover("MoverS", power2, AbsoluteDirection.South));
+            Field[0, 0] = new(unitA1);
+            Field[0, 1] = new(unitA2);
 
             Play.Step();
             
@@ -49,14 +48,14 @@ public abstract class FieldActionTests
                     Assert.That(unitA1, Is.Dead());
                     Assert.That(unitA2, Is.Dead());
                 } else if (power1 > power2) {
-                    Assert.That(unitA1.Health, Is.EqualTo(power1 - power2));
+                    Assert.That(unitA1.CurrentHealth, Is.EqualTo(power1 - power2));
                     Assert.That(unitA2, Is.Dead());
                 }
             });
         }
 
         /// <summary>
-        /// Two units moving to the same space should fight.
+        /// Opposing units moving to the same space should fight.
         /// </summary>
         [Test]
         public void SpaceConflictCausesCombat()
@@ -78,7 +77,7 @@ public abstract class FieldActionTests
                 Assert.That(unitA2, Is.Dead());
                 Assert.That(unitB2, Is.Dead());
                 Assert.That(unitB1, Is.AtFieldPosition((1, 1)));
-                Assert.That(unitB1.Health, Is.EqualTo(2));
+                Assert.That(unitB1.CurrentHealth, Is.EqualTo(2));
             });
         }
 
@@ -125,8 +124,37 @@ public abstract class FieldActionTests
                 Assert.That(smallUnit1, Is.Dead());
                 Assert.That(smallUnit2, Is.Dead());
                 Assert.That(bigUnit, Is.AtFieldPosition((0, 1)));
-                Assert.That(bigUnit.Health, Is.EqualTo(3));
+                Assert.That(bigUnit.CurrentHealth, Is.EqualTo(3));
             });
+        }
+
+        [Test]
+        public void UnitsCanWaitForCombatOverMultipleTurns()
+        {
+            const int combatantHealth = 3;
+            
+            var fighter1 = new NecoUnit(NecoUnitModelCustom.Mover("Combatant1", combatantHealth, 1, AbsoluteDirection.East), Player1.Id);
+            var fighter2 = new NecoUnit(NecoUnitModelCustom.Mover("Combatant2", combatantHealth, 1, AbsoluteDirection.West), Player2.Id);
+            var mover = new NecoUnit(NecoUnitModelCustom.Mover("Mover", 3, 1, AbsoluteDirection.North), Player1.Id);
+            Field[0, 1] = new(fighter1);
+            Field[1, 1] = new(fighter2);
+            Field[0, 0] = new(mover);
+
+            Play.Step();
+            
+            Assert.That(fighter1.CurrentHealth, Is.EqualTo(combatantHealth - 1));  
+            Assert.That(fighter2.CurrentHealth, Is.EqualTo(combatantHealth - 1));  
+            
+            Play.Step();
+            
+            Assert.That(fighter1.CurrentHealth, Is.EqualTo(combatantHealth - 2));  
+            Assert.That(fighter2.CurrentHealth, Is.EqualTo(combatantHealth - 2));  
+            
+            Play.Step();
+
+            Assert.That(fighter1, Is.Dead());
+            Assert.That(fighter2, Is.Dead());
+            Assert.That(mover, Is.AtFieldPosition((0, 1)));
         }
     }
 
@@ -170,21 +198,27 @@ public abstract class FieldActionTests
             });
         }
 
-        [Test]
-        public void RotationAffectsMovementDirection()
+        [TestCaseSource(nameof(RotationCases))]
+        public void RotationAffectsMovementDirection(RelativeDirection direction, (int, int) expectedResult)
         {
             var unit1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverN_Strong", 69, AbsoluteDirection.North), Player1.Id);
-            unit1.Mods.Add(new NecoUnitMod.Rotate((int)RelativeDirection.Right));
-            Field[0, 0] = new(unit1);
+            unit1.Mods.Add(new NecoUnitMod.Rotate((int)direction));
+            Field[1, 1] = new(unit1);
 
             Play.Step();
             
-            Assert.That(unit1, Is.AtFieldPosition((1, 0)));
+            Assert.That(unit1, Is.AtFieldPosition(expectedResult));
         }
+        private static object[] RotationCases = {
+            new object[] { RelativeDirection.Right, (2, 1) },
+            new object[] { RelativeDirection.Left, (0, 1) },
+            new object[] { RelativeDirection.Up, (1, 2) },
+            new object[] { RelativeDirection.Down, (1, 0) },
+        };
     }
 
     [TestFixture]
-    private class SpaceConflict : FieldActionTests
+    private class FriendlyCollision : FieldActionTests
     {
         [Test]
         public void LeftmostUnitWins()
@@ -232,7 +266,7 @@ public abstract class FieldActionTests
         }
 
         [Test]
-        public void BackupSituationResolvesCorrectly()
+        public void UnitThatLostFriendlySpaceConflictKeepsOldSpace()
         {
             // Takes the space from Conflicter
             var unitBig = new NecoUnit(NecoUnitModelCustom.Mover("BigFella", 69, AbsoluteDirection.East), Player1.Id);
@@ -324,63 +358,92 @@ public abstract class FieldActionTests
             Assert.That(unit.GetMod<NecoUnitMod.Rotate>().Rotation, Is.EqualTo(mod1 + mod2));
         }
     }
+
+    [TestFixture]
+    private class Units : FieldActionTests
+    {
+        [Test]
+        public void Crabwalk()
+        {
+            var unit = new NecoUnit(new NecoUnitModelCustom("Crab",
+                1,
+                new NecoUnitTag[] { },
+                new NecoUnitAction[] { new NecoUnitAction.TranslateUnitCrabwalk() }));
+            var ball = new NecoUnit(NecoUnitModelCustom.Ball());
+
+            Field[0, 0] = new(unit);
+            Field[3, 1] = new(ball);
+
+            Play.Step();
+            
+            Assert.That(unit, Is.AtFieldPosition((1, 0)));
+        }
+    }
+}
+
+#region Helpers
+
+// ReSharper disable once ClassNeverInstantiated.Global
+public class Is : NUnit.Framework.Is
+{
+    public static UnitDeadConstraint Dead()
+        => new();
+
+    public static UnitAtFieldPositionConstraint AtFieldPosition(Vector2i expected)
+        => new(expected);
+}
+
+public class UnitDeadConstraint : Constraint
+{
+    public override ConstraintResult ApplyTo<TActual>(TActual actual)
+    {
+        if (actual is NecoUnit unit) {
+            return new(this, actual, !FieldActionTests.Field.TryGetUnit(unit.Id, out _));
+        }
+        return new(this, actual, false);
+    }
+}
+
+public class UnitAtFieldPositionConstraint : Constraint
+{
+    private readonly Vector2i Expected;
     
-    #endregion
+    public UnitAtFieldPositionConstraint(Vector2i expected)
+    {
+        Expected = expected;
+    }
     
-    #region Helpers
-
-    // ReSharper disable once ClassNeverInstantiated.Local
-    private class Is : NUnit.Framework.Is
+    public override ConstraintResult ApplyTo<TActual>(TActual actual)
     {
-        public static UnitDeadConstraint Dead()
-            => new();
+        if (actual is not NecoUnit unit) {
+            throw new ConstraintException(actual);
+        }
 
-        public static UnitAtFieldPositionConstraint AtFieldPosition(Vector2i expected)
-            => new(expected);
-    }
-
-    public class UnitDeadConstraint : Constraint
-    {
-        public override ConstraintResult ApplyTo<TActual>(TActual actual)
-        {
-            if (actual is NecoUnit unit) {
-                return new(this, actual, !Field.TryGetUnit(unit.Id, out _));
-            }
-            return new(this, actual, false);
+        if (FieldActionTests.Field.TryGetUnit(unit.Id, out _, out var pos)) {
+            return new(this, pos, pos == Expected);
+        } else {
+            return new(this, "not on field", ConstraintStatus.Failure);
         }
     }
 
-    public class UnitAtFieldPositionConstraint : Constraint
-    {
-        private readonly Vector2i Expected;
-        
-        public UnitAtFieldPositionConstraint(Vector2i expected)
-        {
-            Expected = expected;
-        }
-        
-        public override ConstraintResult ApplyTo<TActual>(TActual actual)
-        {
-            if (actual is not NecoUnit unit) {
-                return new(this, actual, ConstraintStatus.Error);
-            }
-
-            if (Field.TryGetUnit(unit.Id, out _, out var pos)) {
-                return new(this, actual, pos == Expected);
-            } else {
-                return new(this, actual, ConstraintStatus.Error);
-            }
-        }
-    }
-
-    #endregion
+    public override string Description
+        => Expected.ToString();
 }
 
 public static class NUnitExtensions
 {
-    public static FieldActionTests.UnitDeadConstraint Dead(this ConstraintExpression expr)
+    public static UnitDeadConstraint Dead(this ConstraintExpression expr)
         => new();
-
-    public static FieldActionTests.UnitAtFieldPositionConstraint AtFieldPosition(this ConstraintExpression expr, Vector2i expected)
+    public static UnitAtFieldPositionConstraint AtFieldPosition(this ConstraintExpression expr, Vector2i expected)
         => new(expected);
 }
+
+public class ConstraintException : Exception
+{
+    public ConstraintException(object o)
+        : base($"invalid type for constraint: {o.GetType()}")
+    { }
+}
+
+
+#endregion

@@ -1,4 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 using neco_soft.NecoBowlCore.Input;
+using neco_soft.NecoBowlCore.Tags;
+
+using NLog;
 
 using CardPlayMap = System.Collections.Generic.Dictionary<neco_soft.NecoBowlCore.Tactics.NecoPlayerId, System.Collections.Generic.List<neco_soft.NecoBowlCore.Tactics.NecoPlan.CardPlay>>;
 
@@ -12,18 +19,25 @@ namespace neco_soft.NecoBowlCore.Tactics;
 ///
 /// Turns are applied to a <see cref="NecoPush"/>.
 /// </summary>
-public class NecoTurn
+internal class NecoTurn
 {
+    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
     public bool Finished { get; private set; } = false;
     
-    private readonly uint TurnIndex = 0;
-    private uint BaseMoney => 3;
+    public readonly uint TurnIndex = 0;
+    public uint BaseMoney => 3;
 
-    public readonly CardPlayMap CardPlays = new();
+    private readonly CardPlayMap CardPlays = new();
     public readonly NecoPlayerPair PlayerPair;
+
+    private List<NecoInput> AcceptedInputs = new();
 
     public int RemainingMoney(NecoPlayerRole role)
         => CardPlays[PlayerPair[role].Id].Aggregate((int)BaseMoney, (val, play) => val - play.Card.Cost);
+
+    public IEnumerable<NecoPlan.CardPlay> AllCardPlays
+        => CardPlays.Values.Aggregate((orig, next) => orig.Concat(next).ToList());
 
     public IReadOnlyDictionary<NecoPlayerRole, List<NecoPlan.CardPlay>> CardPlaysByRole
         => CardPlays.ToDictionary(kv => PlayerPair.RoleOf(kv.Key), kv => kv.Value);
@@ -44,7 +58,7 @@ public class NecoTurn
     {
         CardPlays = new(plays);
     }
-
+    
     public void Finish()
     {
         Finished = true;
@@ -54,17 +68,29 @@ public class NecoTurn
     /// Gets the Turn object that would come after this one. Note that this does not check if this turn is Finished; that is up
     /// to the caller to check if this is being used to progress the game.
     /// </summary>
-    public NecoTurn NextTurn(out uint turnIndex)
+    public NecoTurn NextTurn()
     {
-        turnIndex = TurnIndex + 1;
-        return new NecoTurn(turnIndex, PlayerPair, CardPlays);
+        return new NecoTurn(TurnIndex + 1, PlayerPair, CardPlays);
     }
+
+    public IEnumerable<NecoInput> GetInputs()
+        => AcceptedInputs;
 
     public NecoInputResponse TakeInput(NecoInput input)
     {
+        Logger.Info($"Input: {input}");
+        
         try {
-            return ProcessInput(input);
+            var resp = ProcessInput(input);
+            if (resp.ResponseKind == NecoInputResponse.Kind.Success) {
+                AcceptedInputs.Add(input);
+            }
+            
+            Logger.Info(resp.ResponseKind);
+
+            return resp;
         } catch (Exception e) {
+            Logger.Error(e.Message + "\n" + e.StackTrace);
             return NecoInputResponse.Error(e);
         }
     }
@@ -95,7 +121,16 @@ public class NecoTurn
             return NecoInputResponse.Illegal($"Not enough money (cost {input.Card.Cost}, have {RemainingMoney(PlayerPair.RoleOf(input.PlayerId))})");
         }
         
-        CardPlays[input.PlayerId].Add(new(input.Card, input.Position));
+        if (AllCardPlays.Any(p => p.Position == input.Position)) {
+            return NecoInputResponse.Illegal($"The space {input.Position} is already occupied.");
+        }
+
+        // TAG:SMELLY
+        if (input.Card.IsUnitCard(out var unitCard) && unitCard!.UnitModel.Tags.Contains(NecoUnitTag.Smelly)) {
+                 
+        }
+        
+        CardPlays[input.PlayerId].Add(new(input.PlayerId, input.Card, input.Position));
         return NecoInputResponse.Success();
     }
 
@@ -104,8 +139,8 @@ public class NecoTurn
         if (!CardPlays.Values.Any(list => list.Any(cp => cp.Card == input.Card))) {
             throw new NecoInputException($"card {input.Card} not found in this turn");
         }
-
-        input.Card.Options.Add(input.Mod);
+        
+        input.Card.Options.SetValue(input.OptionIdentifier, input.OptionValue);
         return NecoInputResponse.Success();
     }
 }

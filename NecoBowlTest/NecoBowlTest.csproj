@@ -6,6 +6,8 @@
         <Nullable>enable</Nullable>
 
         <IsPackable>false</IsPackable>
+
+        <RootNamespace>neco_soft.NecoBowlTest</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -18,6 +20,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\NecoBowlCore\NecoBowlCore.csproj" />
+      <ProjectReference Include="..\NecoBowlDefinitions\NecoBowlDefinitions.csproj" />
     </ItemGroup>
 
 </Project>

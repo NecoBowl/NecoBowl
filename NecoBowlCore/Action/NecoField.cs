@@ -1,4 +1,9 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+
+using neco_soft.NecoBowlCore.Tactics;
 
 namespace neco_soft.NecoBowlCore.Action;
 
@@ -13,20 +18,17 @@ public readonly record struct NecoSpaceContents(NecoUnit? Unit, bool Fooabr = fa
 /// mutated in some way, properties like the unit's health will change on BOTH the original and copy of the field. The contents of the
 /// copy are effectively garbage at that point. Basically, do not try to copy a field without careful consideration!
 /// </remarks>
-public class NecoField
+internal class NecoField
 {
     private readonly NecoSpaceContents[,] FieldContents;
+    public readonly NecoFieldParameters FieldParameters;
 
     public NecoField(NecoFieldParameters param)
     {
+        FieldParameters = param;
         FieldContents = new NecoSpaceContents[param.Bounds.X, param.Bounds.Y];
     }
     
-    public NecoField(uint width, uint height)
-    {
-        FieldContents = new NecoSpaceContents[width, height];
-    }
-
     public NecoSpaceContents this[Vector2i p] {
         get => FieldContents[p.X, p.Y];
         set => FieldContents[p.X, p.Y] = value;
@@ -73,7 +75,7 @@ public class NecoField
 
     public bool TryGetUnit(NecoUnitId uid, out NecoUnit? unit)
         => TryGetUnit(uid, out unit, out _);
-    
+
     public bool TryGetUnit(NecoUnitId uid, out NecoUnit? unit, out Vector2i pos)
     {
         try {
@@ -151,7 +153,7 @@ public class NecoField
         AddBorderH();
 
         foreach (var (unit, icon) in unitIcons) {
-            sb.AppendLine($"{icon}: {unit}");
+            sb.AppendLine($"{icon}: {unit} ({unit.CurrentHealth} HP)");
         }
 
         sb.Insert(0, linePrefix);
@@ -161,7 +163,13 @@ public class NecoField
     }
 }
 
-public record class NecoFieldParameters((int X, int Y) Bounds);
+public record class NecoFieldParameters((int X, int Y) Bounds, (int X, int Y) BallSpawnPoint, int TeamSideSize = 4)
+{
+    public NecoPlayerRole? GetPlayerAffiliation((int x, int y) pos)
+        => (pos.y >= 0 && pos.y < TeamSideSize) ? NecoPlayerRole.Offense
+            : (pos.y >= Bounds.Y - TeamSideSize && pos.y < Bounds.Y) ? NecoPlayerRole.Defense
+            : null;
+}
 
 /// <summary>
 /// Wrapper around a <see cref="NecoField"/> that prevents modifications to the field.
@@ -173,7 +181,7 @@ public sealed class ReadOnlyNecoField
 {
     private readonly NecoField Field;
 
-    public ReadOnlyNecoField(NecoField field)
+    internal ReadOnlyNecoField(NecoField field)
     {
         Field = field;
     }
@@ -202,6 +210,11 @@ public sealed class ReadOnlyNecoField
     public Vector2i GetBounds()
         => Field.GetBounds();
 
+    public bool IsInBounds((int x, int y) pos)
+        => !(pos.x < 0 || pos.x >= GetBounds().X || pos.y < 0 || pos.y >= GetBounds().Y);
+
+    public NecoFieldParameters FieldParameters => Field.FieldParameters;
+    
     public string ToAscii(string prefix = "> ") => Field.ToAscii(prefix);
 }
 
