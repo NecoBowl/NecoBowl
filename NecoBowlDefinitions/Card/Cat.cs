@@ -13,5 +13,5 @@ public class Cat : NecoUnitCardModel
     public override NecoUnitModel Model => Unit.Cat.Instance;
     
     public override IReadOnlyCollection<NecoCardOptionPermission> OptionPermissions 
-        => new NecoCardOptionPermission[] { new NecoCardOptionPermission.Rotate(new int[]{ 1 }, 1) };
+        => new NecoCardOptionPermission[] { new NecoCardOptionPermission.Rotate(new[] { 1, 3, 5, 7 }, 1) };
 }

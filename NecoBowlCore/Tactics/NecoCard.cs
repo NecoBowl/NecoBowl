@@ -14,6 +14,7 @@ namespace neco_soft.NecoBowlCore.Tactics;
 
 public class NecoCard
 {
+    public string Name => CardModel.Name;
     public readonly NecoCardModel CardModel;
     public int Cost;
     public readonly NecoCardOptions Options;

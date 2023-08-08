@@ -19,4 +19,7 @@ public class Crab : NecoUnitModel
 
     public override IEnumerable<NecoUnitAction> Actions
         => new[] { new NecoUnitAction.TranslateUnitCrabwalk() };
+
+    public override string BehaviorDescription
+        => "Walks horizontally to align with the ball.";
 }

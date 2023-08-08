@@ -19,4 +19,7 @@ public class Dog : NecoUnitModel
 
     public override IEnumerable<NecoUnitAction> Actions
         => new NecoUnitAction[] { new NecoUnitAction.TranslateUnit(RelativeDirection.Up) };
+
+    public override string BehaviorDescription
+        => "Walks forward. Turns around upon picking up.";
 }

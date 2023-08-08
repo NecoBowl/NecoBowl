@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
+using neco_soft.NecoBowlCore.Input;
 using neco_soft.NecoBowlCore.Tags;
 
 using NLog;
@@ -35,17 +36,13 @@ internal class NecoPlayStepper
 
         var movements = resolver.FindMovementsFromActions(unitActions).ToList();
         var mutations = resolver.FieldMutationsNew(movements).ToList();
-        
-        // Step 1
-        foreach (var mut in mutations) {
-            mut.Pass1Mutate(Field);
-        }
-        
-        // Step 2
-        foreach (var mut in mutations) {
-            mut.Pass2Mutate(Field);
-        }
 
+        foreach (var action in NecoPlayfieldMutation.ExecutionOrder) {
+            foreach (var mut in mutations) {
+                action.Invoke(mut, Field);
+            }
+        }
+        
         StepCount++;
 
         return mutations;
@@ -225,7 +222,18 @@ internal class NecoPlayStepResolver
             if (unitPair.UnitsAreEnemies()) {
                 HandleCombat(unitPair);
             } else {
-                // Friendly conflict; give the movement to the highest-priority unit
+                {
+                    // A stationary unit can be picked up by the moving unit.
+                    var stationaryUnit = unitPair.UnitWhereSingle(m => !m.IsChange, out var movingUnit);
+                    if (stationaryUnit is not null && stationaryUnit.Unit.Tags.Contains(NecoUnitTag.Item) 
+                        && movingUnit!.Unit.Tags.Contains(NecoUnitTag.Carrier)) {
+                        movements.Remove(stationaryUnit); // we don't call ResetUnitMovement because that adds a new movement entry
+                        mutations.Add(new NecoPlayfieldMutation.UnitPickedUpItem(movingUnit!.UnitId, stationaryUnit.UnitId));
+                        continue;
+                    }
+                }
+                
+                // Friendly/neutral conflict; give the movement to the highest-priority unit
                 var loser = unitPair.Collection.OrderByCombatPriority().Last();
                 if (loser.NewPos == loser.OldPos) {
                     // Reset the winner instead (?)
@@ -272,6 +280,8 @@ public record NecoUnitMovement
 
     public NecoUnitId UnitId => Unit.Id;
 
+    public bool IsChange => NewPos != OldPos;
+
     internal NecoPlayfieldMutation ToPlayfieldMutation()
         => Source?.StateChange switch {
             NecoUnitActionOutcome.UnitPushedOther pushed => new NecoPlayfieldMutation.PushUnit(Unit.Id, OldPos, NewPos, pushed.Pusher.UnitId),
@@ -293,11 +303,38 @@ internal record UnitPair(NecoUnitMovement Unit1, NecoUnitMovement Unit2)
         return Collection.FirstOrDefault(u => u.Unit.UnitModel.Tags.Contains(tag));
     }
 
+    /// <summary>
+    /// Finds the single unit that matches a condition. Throws an exception if both items in the pair match the
+    /// condition.
+    /// </summary>
+    /// <param name="predicate">The condition to check for.</param>
+    /// <param name="other">The unit of the pair that did not match the condition. Null if neither unit matches.</param>
+    /// <returns>The unit in the pair that matches the condition. Null if neither unit matches.</returns>
+    public NecoUnitMovement? UnitWhereSingle(Func<NecoUnitMovement, bool> predicate, out NecoUnitMovement? other)
+    {
+        var movement = Collection.SingleOrDefault(predicate);
+        other = movement is not null ? OtherMovement(movement) : null;
+        return movement;
+    }
+
     public bool UnitsAreEnemies()
         => Unit1.Unit.OwnerId != default && Unit2.Unit.OwnerId != default && Unit1.Unit.OwnerId != Unit2.Unit.OwnerId;
 
     public bool IsSameUnitsAs(UnitPair other)
         => (Unit1 == other.Unit1 && Unit2 == other.Unit2) || (Unit2 == other.Unit1 && Unit1 == other.Unit2);
+
+    public NecoUnitMovement OtherMovement(NecoUnitMovement movement)
+    {
+        if (Unit1 == movement && Unit2 != movement) {
+            return Unit2;
+        } else if (Unit2 == movement && Unit1 != movement) {
+            return Unit1;
+        } else if (Unit1 != movement && Unit2 != movement) {
+            throw new NecoBowlException("movement is not in pair");
+        } else {
+            throw new NecoBowlException("both units are the same");
+        }
+    }
 }
 
 internal static class PlayStepperExt

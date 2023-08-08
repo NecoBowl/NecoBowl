@@ -30,7 +30,7 @@ public abstract class IoTest
     #region Helpers
     
     private NecoUnitCard TestCard(int cost = 0)
-        => new NecoUnitCard(NecoCardModelCustom.FromUnitModel(NecoUnitModelCustom.DoNothing(), cost));
+        => new NecoUnitCard(NecoCardModelCustom.FromUnitModel(NecoUnitModelCustom_HealthEqualsPower.DoNothing(), cost));
     
     #endregion
 }

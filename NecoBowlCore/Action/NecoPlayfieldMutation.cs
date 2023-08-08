@@ -7,17 +7,21 @@ namespace neco_soft.NecoBowlCore.Action;
 /// <summary>
 /// 
 /// </summary>
-/// <remarks>
-/// Distinction between Mutations and Events:
-/// 
-/// Mutations represent the most generic method of modifying the field object. For example, Moving and Dying are
-/// mutations, but Pushing is not, as it is an incidental event that occurs as a result of the Move.
-/// </remarks>
 public abstract class NecoPlayfieldMutation
 {
+    internal virtual void Prepare(ReadOnlyNecoField field) { }
     internal virtual void Pass1Mutate(NecoField field) { }
     internal virtual void Pass2Mutate(NecoField field) { }
-    
+    internal virtual void Pass3Mutate(NecoField field) { }
+    internal virtual NecoPlayfieldMutation[] ResultantMutations() => new NecoPlayfieldMutation[] { };
+
+    internal static readonly Action<NecoPlayfieldMutation, NecoField>[] ExecutionOrder = new Action<NecoPlayfieldMutation, NecoField>[] {
+        (m, f) => m.Prepare(f.AsReadOnly()),
+        (m, f) => m.Pass1Mutate(f),
+        (m, f) => m.Pass2Mutate(f),
+        (m, f) => m.Pass3Mutate(f),
+    };
+
     public class MoveUnit : NecoPlayfieldMutation
     {
         public readonly NecoUnitId Subject;
@@ -145,6 +149,32 @@ public abstract class NecoPlayfieldMutation
 
         internal override void Pass2Mutate(NecoField field)
         {
+        }
+    }
+
+    public class UnitPickedUpItem : NecoPlayfieldMutation
+    {
+        public readonly NecoUnitId Subject;
+        public readonly NecoUnitId Item;
+
+        private NecoUnit? TempUnitItem;
+
+        public UnitPickedUpItem(NecoUnitId subject, NecoUnitId item)
+        {
+            Subject = subject;
+            Item = item;
+        }
+
+        internal override void Pass1Mutate(NecoField field)
+        {
+            var itemUnit = field.GetAndRemoveUnit(Item);
+            TempUnitItem = itemUnit;
+        }
+
+        internal override void Pass3Mutate(NecoField field)
+        {
+            var subject = field.GetUnit(Subject);
+            subject.Inventory.Add(TempUnitItem!);
         }
     }
 }

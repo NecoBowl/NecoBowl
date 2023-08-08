@@ -14,6 +14,15 @@ public class NecoPlayer
 {
     public readonly NecoPlayerId Id = new();
     public bool IsNeutral => Id.IsNeutral;
+    
+    public NecoPlayer() { }
+
+    internal NecoPlayer(NecoPlayerId id)
+    {
+        Id = id;
+    }
+
+    public static readonly NecoPlayer NeutralPlayer = new NecoPlayer(default);
 }
 
 public record class NecoPlayerPair(NecoPlayer Offense, NecoPlayer Defense)

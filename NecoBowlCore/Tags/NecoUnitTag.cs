@@ -10,9 +10,24 @@ public enum NecoUnitTag
     Item,
     
     /// <summary>
-    /// Takes no damage unless the damage is greater than the unit's current health.
+    /// When this unit moves onto or contests the square of a unit tagged with Item, this unit puts the Item into its inventory.
+    /// </summary>
+    Carrier,
+    
+    /// <summary>
+    /// Cannot attack units by moving onto their space.
     /// </summary>
     Defender,
+    
+    /// <summary>
+    /// Attacks any unit that attacks it.
+    /// </summary>
+    Counterattack,
+    
+    /// <summary>
+    /// Resets health to its maximum after each step.
+    /// </summary>
+    Regenerator,
     
     /// <summary>
     /// (Preempt) Upon colliding with a unit, pushes that unit in the direction this unit was moving.
@@ -41,7 +56,7 @@ public enum NecoUnitTag
     Opportunist,
     
     /// <summary>
-    /// Units cannot be placed next to this one.
+    /// Units cannot be placed next to this unit. Cannot place this unit next to others.
     /// </summary>
     Smelly,
     

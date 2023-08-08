@@ -22,4 +22,7 @@ public class Cat : NecoUnitModel
         => new NecoUnitTag[] { };
     public override IEnumerable<NecoUnitAction> Actions 
         => new NecoUnitAction[] { new NecoUnitAction.TranslateUnit(RelativeDirection.Up) };
+
+    public override string BehaviorDescription
+        => "Walks forward across diagonals.";
 }

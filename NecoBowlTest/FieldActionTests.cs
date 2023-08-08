@@ -35,8 +35,8 @@ internal abstract class FieldActionTests
             [Values(1, 2)] int power1,
             [Values(1)] int power2)
         {
-            var unitA1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverN", power1, AbsoluteDirection.North));
-            var unitA2 = new NecoUnit(NecoUnitModelCustom.Mover("MoverS", power2, AbsoluteDirection.South));
+            var unitA1 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("MoverN", power1, AbsoluteDirection.North));
+            var unitA2 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("MoverS", power2, AbsoluteDirection.South));
             Field[0, 0] = new(unitA1);
             Field[0, 1] = new(unitA2);
 
@@ -60,10 +60,10 @@ internal abstract class FieldActionTests
         [Test]
         public void SpaceConflictCausesCombat()
         {
-            var unitA1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverN", 69, AbsoluteDirection.North));
-            var unitA2 = new NecoUnit(NecoUnitModelCustom.Mover("MoverS", 69, AbsoluteDirection.South));
-            var unitB1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverN_Winner", 5, AbsoluteDirection.North));
-            var unitB2 = new NecoUnit(NecoUnitModelCustom.Mover("MoverS_Loser", 3, AbsoluteDirection.South));
+            var unitA1 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("MoverN", 69, AbsoluteDirection.North));
+            var unitA2 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("MoverS", 69, AbsoluteDirection.South));
+            var unitB1 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("MoverN_Winner", 5, AbsoluteDirection.North));
+            var unitB2 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("MoverS_Loser", 3, AbsoluteDirection.South));
             Field[0, 0] = new(unitA1);
             Field[0, 2] = new(unitA2);
             Field[1, 0] = new(unitB1);
@@ -87,10 +87,10 @@ internal abstract class FieldActionTests
         [Test]
         public void SpaceConflictCanOccurMultipleTimes()
         {
-            var unit1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverN", 69, AbsoluteDirection.North), Player1.Id);
-            var unit2 = new NecoUnit(NecoUnitModelCustom.Mover("SouthMover", 69, AbsoluteDirection.South), Player2.Id);
-            var unit3 = new NecoUnit(NecoUnitModelCustom.Mover("WestMover", 1, AbsoluteDirection.West), Player1.Id);
-            var unit4 = new NecoUnit(NecoUnitModelCustom.Mover("EastMover", 1, AbsoluteDirection.East), Player2.Id);
+            var unit1 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("MoverN", 69, AbsoluteDirection.North), Player1.Id);
+            var unit2 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("SouthMover", 69, AbsoluteDirection.South), Player2.Id);
+            var unit3 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("WestMover", 1, AbsoluteDirection.West), Player1.Id);
+            var unit4 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("EastMover", 1, AbsoluteDirection.East), Player2.Id);
             Field[1, 1] = new(unit1);
             Field[1, 3] = new(unit2);
             Field[2, 2] = new(unit3);
@@ -107,10 +107,10 @@ internal abstract class FieldActionTests
         [Test]
         public void OneUnitCanFightMultipleOthers()
         {
-            var bigUnit = new NecoUnit(NecoUnitModelCustom.DoNothing("DoNothing_Strong", 5), Player1.Id);
-            var smallUnit1 = new NecoUnit(NecoUnitModelCustom.Mover("SouthMover_Weak", 1, AbsoluteDirection.South),
+            var bigUnit = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.DoNothing("DoNothing_Strong", 5), Player1.Id);
+            var smallUnit1 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("SouthMover_Weak", 1, AbsoluteDirection.South),
                 Player2.Id);
-            var smallUnit2 = new NecoUnit(NecoUnitModelCustom.Mover("WestMover_Weak", 1, AbsoluteDirection.West),
+            var smallUnit2 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("WestMover_Weak", 1, AbsoluteDirection.West),
                 Player2.Id);
 
             Field[0, 1] = new(bigUnit);
@@ -133,9 +133,9 @@ internal abstract class FieldActionTests
         {
             const int combatantHealth = 3;
             
-            var fighter1 = new NecoUnit(NecoUnitModelCustom.Mover("Combatant1", combatantHealth, 1, AbsoluteDirection.East), Player1.Id);
-            var fighter2 = new NecoUnit(NecoUnitModelCustom.Mover("Combatant2", combatantHealth, 1, AbsoluteDirection.West), Player2.Id);
-            var mover = new NecoUnit(NecoUnitModelCustom.Mover("Mover", 3, 1, AbsoluteDirection.North), Player1.Id);
+            var fighter1 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("Combatant1", combatantHealth, 1, AbsoluteDirection.East), Player1.Id);
+            var fighter2 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("Combatant2", combatantHealth, 1, AbsoluteDirection.West), Player2.Id);
+            var mover = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("Mover", 3, 1, AbsoluteDirection.North), Player1.Id);
             Field[0, 1] = new(fighter1);
             Field[1, 1] = new(fighter2);
             Field[0, 0] = new(mover);
@@ -164,8 +164,8 @@ internal abstract class FieldActionTests
         [Test]
         public void UnitCanMoveFollowingBehindAnother()
         {
-            var unit1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverN", 69, AbsoluteDirection.North));
-            var unit2 = new NecoUnit(NecoUnitModelCustom.Mover("MoverN", 69, AbsoluteDirection.North));
+            var unit1 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("MoverN", 69, AbsoluteDirection.North));
+            var unit2 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("MoverN", 69, AbsoluteDirection.North));
             Field[0, 0] = new(unit1);
             Field[0, 1] = new(unit2);
 
@@ -181,9 +181,9 @@ internal abstract class FieldActionTests
         [Test]
         public void WeakerUnitCanTakeSpaceAfterStrongerUnitsFight()
         {
-            var unit1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverN_Strong", 69, AbsoluteDirection.North), Player1.Id);
-            var unit2 = new NecoUnit(NecoUnitModelCustom.Mover("MoverS_Strong", 69, AbsoluteDirection.South), Player2.Id);
-            var unit3 = new NecoUnit(NecoUnitModelCustom.Mover("MoverW_Weak", 1, AbsoluteDirection.West), Player1.Id);
+            var unit1 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("MoverN_Strong", 69, AbsoluteDirection.North), Player1.Id);
+            var unit2 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("MoverS_Strong", 69, AbsoluteDirection.South), Player2.Id);
+            var unit3 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("MoverW_Weak", 1, AbsoluteDirection.West), Player1.Id);
             Field[0, 0] = new(unit1);
             Field[0, 2] = new(unit2);
             Field[1, 1] = new(unit3);
@@ -201,7 +201,7 @@ internal abstract class FieldActionTests
         [TestCaseSource(nameof(RotationCases))]
         public void RotationAffectsMovementDirection(RelativeDirection direction, (int, int) expectedResult)
         {
-            var unit1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverN_Strong", 69, AbsoluteDirection.North), Player1.Id);
+            var unit1 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("MoverN_Strong", 69, AbsoluteDirection.North), Player1.Id);
             unit1.Mods.Add(new NecoUnitMod.Rotate((int)direction));
             Field[1, 1] = new(unit1);
 
@@ -223,8 +223,8 @@ internal abstract class FieldActionTests
         [Test]
         public void LeftmostUnitWins()
         {
-            var unit1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverNE", 69, AbsoluteDirection.NorthEast), Player1.Id);
-            var unit2 = new NecoUnit(NecoUnitModelCustom.Mover("MoverN", 69, AbsoluteDirection.North), Player1.Id);
+            var unit1 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("MoverNE", 69, AbsoluteDirection.NorthEast), Player1.Id);
+            var unit2 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("MoverN", 69, AbsoluteDirection.North), Player1.Id);
 
             Field[0, 0] = new(unit1);
             Field[1, 0] = new(unit2);
@@ -237,8 +237,8 @@ internal abstract class FieldActionTests
         [Test]
         public void BottommostUnitWins()
         {
-            var unit1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverN", 69, AbsoluteDirection.North), Player1.Id);
-            var unit2 = new NecoUnit(NecoUnitModelCustom.Mover("MoverE", 69, AbsoluteDirection.East), Player1.Id);
+            var unit1 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("MoverN", 69, AbsoluteDirection.North), Player1.Id);
+            var unit2 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("MoverE", 69, AbsoluteDirection.East), Player1.Id);
 
             Field[1, 0] = new(unit1);
             Field[0, 1] = new(unit2);
@@ -250,8 +250,8 @@ internal abstract class FieldActionTests
         [Test]
         public void SpaceSwapCausesNoMovement()
         {
-            var unit1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverN", 69, AbsoluteDirection.North), Player1.Id);
-            var unit2 = new NecoUnit(NecoUnitModelCustom.Mover("MoverS", 69, AbsoluteDirection.South), Player1.Id);
+            var unit1 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("MoverN", 69, AbsoluteDirection.North), Player1.Id);
+            var unit2 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("MoverS", 69, AbsoluteDirection.South), Player1.Id);
 
             Field[0, 0] = new(unit1);
             Field[0, 1] = new(unit2);
@@ -269,12 +269,12 @@ internal abstract class FieldActionTests
         public void UnitThatLostFriendlySpaceConflictKeepsOldSpace()
         {
             // Takes the space from Conflicter
-            var unitBig = new NecoUnit(NecoUnitModelCustom.Mover("BigFella", 69, AbsoluteDirection.East), Player1.Id);
+            var unitBig = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("BigFella", 69, AbsoluteDirection.East), Player1.Id);
             // Attempts to move into the space that Big takes
-            var unitConflicter = new NecoUnit(NecoUnitModelCustom.Mover("Conflicter", 5, AbsoluteDirection.North),
+            var unitConflicter = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("Conflicter", 5, AbsoluteDirection.North),
                 Player1.Id);
             // Tries to move into Conflicter's space
-            var unitSmall = new NecoUnit(NecoUnitModelCustom.Mover("LittleMan", 1, AbsoluteDirection.North), Player1.Id);
+            var unitSmall = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("LittleMan", 1, AbsoluteDirection.North), Player1.Id);
 
             Field[0, 2] = new(unitBig); // moves to (1, 2)
             Field[1, 1] = new(unitConflicter); // moves to (1, 2)
@@ -306,8 +306,8 @@ internal abstract class FieldActionTests
         [Test]
         public void FriendlyUnitsCanPush()
         {
-            var unit1 = new NecoUnit(NecoUnitModelCustom.Pusher("MoverN", 69, AbsoluteDirection.North), Player1.Id);
-            var unit2 = new NecoUnit(NecoUnitModelCustom.DoNothing("Nothing", 69), Player1.Id);
+            var unit1 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Pusher("MoverN", 69, AbsoluteDirection.North), Player1.Id);
+            var unit2 = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.DoNothing("Nothing", 69), Player1.Id);
 
             Field[0, 0] = new(unit1);
             Field[0, 1] = new(unit2);
@@ -324,9 +324,9 @@ internal abstract class FieldActionTests
         [Test]
         public void CannotPushFriendlyIntoEnemy()
         {
-            var pusher = new NecoUnit(NecoUnitModelCustom.Pusher("MoverN", 69, AbsoluteDirection.North), Player1.Id);
-            var receiver = new NecoUnit(NecoUnitModelCustom.Mover("MoverE", 69, AbsoluteDirection.East), Player1.Id);
-            var enemy = new NecoUnit(NecoUnitModelCustom.DoNothing("EnemyWall", 70), Player2.Id);
+            var pusher = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Pusher("MoverN", 69, AbsoluteDirection.North), Player1.Id);
+            var receiver = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Mover("MoverE", 69, AbsoluteDirection.East), Player1.Id);
+            var enemy = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.DoNothing("EnemyWall", 70), Player2.Id);
 
             Field[0, 0] = new(pusher);
             Field[0, 1] = new(receiver);
@@ -351,7 +351,7 @@ internal abstract class FieldActionTests
             [Values(1, 2, 3)] int mod1,
             [Values(1, 2, 3)] int mod2)
         {
-            var unit = new NecoUnit(NecoUnitModelCustom.Pusher("MoverN", 69, AbsoluteDirection.North), Player1.Id);
+            var unit = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Pusher("MoverN", 69, AbsoluteDirection.North), Player1.Id);
             unit.Mods.Add(new NecoUnitMod.Rotate(mod1));
             unit.Mods.Add(new NecoUnitMod.Rotate(mod2));
             
@@ -365,11 +365,11 @@ internal abstract class FieldActionTests
         [Test]
         public void Crabwalk()
         {
-            var unit = new NecoUnit(new NecoUnitModelCustom("Crab",
+            var unit = new NecoUnit(new NecoUnitModelCustom_HealthEqualsPower("Crab",
                 1,
                 new NecoUnitTag[] { },
                 new NecoUnitAction[] { new NecoUnitAction.TranslateUnitCrabwalk() }));
-            var ball = new NecoUnit(NecoUnitModelCustom.Ball());
+            var ball = new NecoUnit(NecoUnitModelCustom_HealthEqualsPower.Ball());
 
             Field[0, 0] = new(unit);
             Field[3, 1] = new(ball);
@@ -378,10 +378,28 @@ internal abstract class FieldActionTests
             
             Assert.That(unit, Is.AtFieldPosition((1, 0)));
         }
+
+        [Test]
+        public void Pickup()
+        {
+            var unit = NecoUnitModelCustom.Mover(direction: RelativeDirection.Up).ToUnit(Player1);
+            var ball = NecoUnitModelCustom.Item().ToUnit(NecoPlayer.NeutralPlayer);
+
+            Field[0, 0] = new(unit);
+            Field[0, 1] = new(ball);
+
+            Play.Step();
+        }
     }
+
+    #region Helpers
+
+    
+
+    #endregion
 }
 
-#region Helpers
+#region Custom constraints
 
 // ReSharper disable once ClassNeverInstantiated.Global
 public class Is : NUnit.Framework.Is

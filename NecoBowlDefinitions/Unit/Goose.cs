@@ -17,4 +17,7 @@ public class Goose : NecoUnitModel
     public override int Power => 5;
     public override IEnumerable<NecoUnitTag> Tags => new List<NecoUnitTag>() { };
     public override IEnumerable<NecoUnitAction> Actions => new List<NecoUnitAction>() { };
+
+    public override string BehaviorDescription
+        => "predator";
 }
