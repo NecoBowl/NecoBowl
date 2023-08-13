@@ -16,10 +16,10 @@ public class NecoPlay
 
     private readonly bool LogFieldAscii;
 
-    public uint StepCount => PlayStepper.StepCount;
+    public uint StepCount = 0;
     
     private readonly NecoField Field;
-    private readonly NecoPlayStepper PlayStepper;
+    private readonly NecoPlayStepperNew PlayStepper;
 
     public bool IsFinished => StepCount > 100;
 
@@ -28,7 +28,7 @@ public class NecoPlay
     internal NecoPlay(NecoField field, bool autoRun = false, bool logFieldAscii = true, bool preprocessUnits = false)
     {
         Field = field;
-        PlayStepper = new NecoPlayStepper(field);
+        PlayStepper = new(field);
         
         LogFieldAscii = logFieldAscii;
 
@@ -50,7 +50,7 @@ public class NecoPlay
             LogFieldToAscii();
         }
 
-        var step = PlayStepper.ApplyPlayStep();
+        var step = PlayStepper.Process();
 
         if (LogFieldAscii) {
             LogFieldToAscii();

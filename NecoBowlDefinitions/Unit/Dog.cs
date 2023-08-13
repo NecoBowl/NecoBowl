@@ -15,11 +15,17 @@ public class Dog : NecoUnitModel
     public override string Name => "Dog";
     public override int Health => 2;
     public override int Power => 1;
-    public override IEnumerable<NecoUnitTag> Tags => new NecoUnitTag[] { };
+    public override IEnumerable<NecoUnitTag> Tags => new NecoUnitTag[] { NecoUnitTag.Carrier };
 
     public override IEnumerable<NecoUnitAction> Actions
         => new NecoUnitAction[] { new NecoUnitAction.TranslateUnit(RelativeDirection.Up) };
 
     public override string BehaviorDescription
         => "Walks forward. Turns around upon picking up.";
+
+    private IEnumerable<NecoPlayfieldMutation.BaseMutation> OnPickedUpBall(IEnumerable<NecoPlayfieldMutation> source)
+    {
+        yield break;
+        // TODO Set up this reaction
+    }
 }

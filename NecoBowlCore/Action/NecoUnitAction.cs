@@ -7,9 +7,6 @@ using NLog.LayoutRenderers.Wrappers;
 
 namespace neco_soft.NecoBowlCore.Action;
 
-/// <summary>
-/// A mutation on the field that would be performed by a unit during a single step of a play.
-/// </summary>
 public abstract class NecoUnitAction
 {
     public NecoUnitActionResult Result(NecoUnitId uid, ReadOnlyNecoField field)
@@ -38,38 +35,15 @@ public abstract class NecoUnitAction
             var unit = field.GetUnit(pos);
             var movementDirection = unit.Facing.RotatedBy(Direction);
             var newPos = pos + movementDirection.ToVector2i();
-            if (IsPositionOutOfBounds(newPos, field)) {
-                return NecoUnitActionResult.Failure($"{unit} could not move {Direction} (out of bounds)");
+
+            var outcome = new NecoUnitActionOutcome.UnitTranslated(new(unit, newPos, pos));
+            
+            if (!field.IsInBounds(newPos)) {
+                return NecoUnitActionResult.Failure($"{unit} could not move {Direction} (out of bounds)", outcome);
             }
 
-            // PUSHER
-            if (unit.Tags.Contains(NecoUnitTag.Pusher)
-                && field.TryGetUnit(newPos, out var pushReceiver)) {
-                var pushReceiverNewPos = newPos + movementDirection.ToVector2i();
-                var pushReceiverMovement = new NecoUnitMovement(pushReceiver!, pushReceiverNewPos, newPos); 
-
-                if (IsPositionOutOfBounds(pushReceiverNewPos, field)) {
-                    return NecoUnitActionResult.Failure($"{pushReceiver} could not be pushed to {pushReceiverNewPos} (out of bounds)");
-                }
-
-                if (field.TryGetUnit(pushReceiverNewPos, out var pushBlocker)) {
-                    var pushBlockerMovement = new NecoUnitMovement(pushBlocker!, pushReceiverNewPos, pushReceiverNewPos);
-                    if (new UnitPair(pushReceiverMovement, pushBlockerMovement).UnitsAreEnemies()) {
-                        // Cannot push another unit into an enemy
-                        return NecoUnitActionResult.Failure($"cannot push ({pushReceiver} would collide with {pushBlocker})");
-                    }
-                }
-                
-                return NecoUnitActionResult.Success(new NecoUnitActionOutcome.UnitPushedOther(
-                        new(unit, newPos, pos),
-                        new(pushReceiver!, pushReceiverNewPos, newPos))); 
-            }
-
-            return NecoUnitActionResult.Success(new NecoUnitActionOutcome.UnitTranslated(new(unit, newPos, pos)));
+            return NecoUnitActionResult.Success(outcome);
         }
-        
-        private bool IsPositionOutOfBounds(Vector2i pos, ReadOnlyNecoField field)
-            => pos.X < 0 || pos.X >= field.GetBounds().X || pos.Y < 0 || pos.Y >= field.GetBounds().Y;
     }
 
     public class TranslateUnitCrabwalk : NecoUnitAction
@@ -138,24 +112,9 @@ public abstract class NecoUnitActionOutcome
         public Vector2i Difference => Movement.NewPos - Movement.OldPos;
 
         public override string Description
-            => $"{Movement.Unit} moved from {Movement.OldPos} to {Movement.NewPos}";
+            => $"{Movement.Unit} moves from {Movement.OldPos} to {Movement.NewPos}";
     }
 
-    public class UnitPushedOther : NecoUnitActionOutcome
-    {
-        internal readonly NecoUnitMovement Pusher;
-        internal readonly NecoUnitMovement Receiver;
-
-        public UnitPushedOther(NecoUnitMovement pusher, NecoUnitMovement receiver)
-        {
-            Pusher = pusher;
-            Receiver = receiver;
-        }
-
-        public override string Description
-            => $"{Pusher.Unit} pushed {Receiver}";
-    }
-    
     public class NothingHappened : NecoUnitActionOutcome
     {
         public readonly NecoUnitId UnitId;
@@ -166,7 +125,7 @@ public abstract class NecoUnitActionOutcome
         }
 
         public override string Description
-            => $"{UnitId} did nothing";
+            => $"{UnitId} does nothing";
     }
 }
 
@@ -174,8 +133,8 @@ public class NecoUnitActionResult
 {
     public static NecoUnitActionResult Success(NecoUnitActionOutcome change) 
         => new NecoUnitActionResult(change.Description, Kind.Success, stateChange: change);
-    public static NecoUnitActionResult Failure(string message) 
-        => new NecoUnitActionResult(message, Kind.Failure);
+    public static NecoUnitActionResult Failure(string message, NecoUnitActionOutcome attemptedChange) 
+        => new NecoUnitActionResult(message, Kind.Failure, stateChange: attemptedChange);
     public static NecoUnitActionResult Error(Exception exception) 
         => new NecoUnitActionResult(exception.Message, Kind.Error, exception: exception);
 

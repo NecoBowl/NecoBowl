@@ -68,7 +68,13 @@ internal class NecoField
         => SpacePositions.Single(tuple => tuple.Item2.Unit?.Id == uid).Item1;
 
     public NecoUnit GetUnit(NecoUnitId uid)
-        => FieldContentsByVec(GetUnitPosition(uid)).Unit ?? throw new NecoBowlFieldException($"no unit found with ID {uid}");
+        => GetUnit(uid, out _);
+
+    public NecoUnit GetUnit(NecoUnitId uid, out Vector2i pos)
+    {
+        pos = GetUnitPosition(uid);
+        return FieldContentsByVec(pos).Unit ?? throw new NecoBowlFieldException($"no unit found with ID {uid}");
+    }
 
     public NecoUnit GetUnit(Vector2i p)
             => FieldContentsByVec(p).Unit ?? throw new NecoBowlFieldException($"no unit found at {p}");
@@ -118,6 +124,9 @@ internal class NecoField
     } 
 
     public ReadOnlyNecoField AsReadOnly() => new ReadOnlyNecoField(this);
+    
+    public bool IsInBounds((int x, int y) pos)
+        => !(pos.x < 0 || pos.x >= GetBounds().x || pos.y < 0 || pos.y >= GetBounds().y);
 
     public string ToAscii(string linePrefix = "> ")
     {
@@ -201,6 +210,9 @@ public sealed class ReadOnlyNecoField
     public NecoUnit GetUnit(Vector2i p)
         => Field.GetUnit(p);
 
+    public NecoUnit GetUnit(NecoUnitId uid, out Vector2i pos)
+        => Field.GetUnit(uid, out pos);
+    
     public bool TryGetUnit(NecoUnitId uid, out NecoUnit? unit)
         => Field.TryGetUnit(uid, out unit);
 
@@ -211,7 +223,7 @@ public sealed class ReadOnlyNecoField
         => Field.GetBounds();
 
     public bool IsInBounds((int x, int y) pos)
-        => !(pos.x < 0 || pos.x >= GetBounds().X || pos.y < 0 || pos.y >= GetBounds().Y);
+        => Field.IsInBounds(pos);
 
     public NecoFieldParameters FieldParameters => Field.FieldParameters;
     
