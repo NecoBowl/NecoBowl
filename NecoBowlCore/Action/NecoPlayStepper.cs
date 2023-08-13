@@ -5,7 +5,7 @@ using neco_soft.NecoBowlCore.Tags;
 namespace neco_soft.NecoBowlCore.Action;
 
 /// <summary>
-///     Record container for a unit that is moving to another space.
+/// Record container for a unit that is moving to another space.
 /// </summary>
 public record NecoUnitMovement
 {
@@ -62,8 +62,8 @@ internal record UnitMovementPair
     }
 
     /// <summary>
-    ///     Finds the single unit that matches a condition. Throws an exception if both items in the pair match the
-    ///     condition.
+    /// Finds the single unit that matches a condition. Throws an exception if both items in the pair match the
+    /// condition.
     /// </summary>
     /// <param name="predicate">The condition to check for.</param>
     /// <param name="other">The unit of the pair that did not match the condition. Null if neither unit matches.</param>
@@ -76,7 +76,7 @@ internal record UnitMovementPair
     }
 
     /// <summary>
-    ///     Try to find the single unit that matches a condition.
+    /// Try to find the single unit that matches a condition.
     /// </summary>
     /// <returns>False if neither unit matches the condition or if both match the condition. Otherwise, true.</returns>
     /// <seealso cref="UnitWhereSingle" />
@@ -86,7 +86,8 @@ internal record UnitMovementPair
     {
         try {
             result = UnitWhereSingle(predicate, out other);
-        } catch (InvalidOperationException) {
+        }
+        catch (InvalidOperationException) {
             result = null;
             other = null;
         }

@@ -8,7 +8,8 @@ public abstract class NecoUnitAction
     {
         try {
             return CallResult(uid, field);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             return NecoUnitActionResult.Error(e);
         }
     }
@@ -83,8 +84,8 @@ public abstract class NecoUnitAction
 }
 
 /// <summary>
-///     The final result of a unit's action, after it has considered the board state.
-///     These are consumed by the <see cref="NecoPlayStepper" />.
+/// The final result of a unit's action, after it has considered the board state.
+/// These are consumed by the <see cref="NecoPlayStepper" />.
 /// </summary>
 public abstract class NecoUnitActionOutcome
 {

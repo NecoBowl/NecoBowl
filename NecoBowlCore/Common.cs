@@ -29,6 +29,7 @@ public enum RelativeDirection : uint
     UpLeft
 }
 
+#pragma warning disable format
 // ReSharper disable once InconsistentNaming
 public readonly record struct Vector2i(int X, int Y)
 {
@@ -39,62 +40,21 @@ public readonly record struct Vector2i(int X, int Y)
     public static readonly Vector2i Left = new(-1, 0);
     public int LengthSquared => X * X + Y * Y;
     public int Area => X * Y;
-
-    public static Vector2i operator +(Vector2i left, Vector2i right)
-    {
-        return new(left.X + right.X, left.Y + right.Y);
-    }
-
-    public static Vector2i operator +(Vector2i left, int right)
-    {
-        return new(left.X + right, left.Y + right);
-    }
-
-    public static Vector2i operator -(Vector2i left, Vector2i right)
-    {
-        return new(left.X - right.X, left.Y - right.Y);
-    }
-
-    public static Vector2i operator -(Vector2i left, int right)
-    {
-        return new(left.X - right, left.Y - right);
-    }
-
-    public static Vector2i operator *(Vector2i left, Vector2i right)
-    {
-        return new(left.X * right.X, left.Y * right.Y);
-    }
-
-    public static Vector2i operator *(Vector2i left, int right)
-    {
-        return new(left.X * right, left.Y * right);
-    }
-
-    public static Vector2i operator /(Vector2i left, Vector2i right)
-    {
-        return new(left.X / right.X, left.Y / right.Y);
-    }
-
-    public static Vector2i operator /(Vector2i left, int right)
-    {
-        return new(left.X / right, left.Y / right);
-    }
-
-    public static implicit operator (int, int)(Vector2i input)
-    {
-        return (input.X, input.Y);
-    }
-
-    public static implicit operator Vector2i((int, int) input)
-    {
-        return new(input.Item1, input.Item2);
-    }
-
-    public override string ToString()
-    {
-        return $"({X}, {Y})";
-    }
+    
+    public static Vector2i operator +(Vector2i left, Vector2i right) => new(left.X + right.X, left.Y + right.Y);
+    public static Vector2i operator +(Vector2i left, int right) => new(left.X + right, left.Y + right);
+    public static Vector2i operator -(Vector2i left, Vector2i right) => new(left.X - right.X, left.Y - right.Y);
+    public static Vector2i operator -(Vector2i left, int right) => new(left.X - right, left.Y - right);
+    public static Vector2i operator *(Vector2i left, Vector2i right) => new(left.X * right.X, left.Y * right.Y);
+    public static Vector2i operator *(Vector2i left, int right) => new(left.X * right, left.Y * right);
+    public static Vector2i operator /(Vector2i left, Vector2i right) => new(left.X / right.X, left.Y / right.Y);
+    public static Vector2i operator /(Vector2i left, int right) => new(left.X / right, left.Y / right);
+    public static implicit operator (int, int)(Vector2i input) => (input.X, input.Y);
+    public static implicit operator Vector2i((int, int) input) => new(input.Item1, input.Item2);
+    
+    public override string ToString() => $"({X}, {Y})";
 }
+#pragma warning restore format
 
 public static class AbsoluteDirectionExt
 {
@@ -129,6 +89,7 @@ public static class AbsoluteDirectionExt
         };
     }
 
+    // ReSharper disable once InconsistentNaming
     public static Vector2i ToVector2i(this RelativeDirection direction, AbsoluteDirection facing)
     {
         return facing.RotatedBy(direction).ToVector2i();
@@ -143,12 +104,11 @@ public static class AbsoluteDirectionExt
 public static class Ext
 {
     /// <summary>
-    ///     Gets an attribute on an enum field value
+    /// Gets an attribute on an enum field value
     /// </summary>
     /// <typeparam name="T">The type of the attribute you want to retrieve</typeparam>
     /// <param name="enumVal">The enum value</param>
     /// <returns>The attribute of type T that exists on the enum value</returns>
-    /// <example><![CDATA[string desc = myEnumVariable.GetAttributeOfType<DescriptionAttribute>().Description;]]></example>
     public static T? GetAttributeOfType<T>(this Enum enumVal) where T : Attribute
     {
         var type = enumVal.GetType();
@@ -159,7 +119,7 @@ public static class Ext
 }
 
 /// <summary>
-///     Generic error type for any NecoBowl-caused exception.
+/// Generic error type for any NecoBowl-caused exception.
 /// </summary>
 public class NecoBowlException : ApplicationException
 {

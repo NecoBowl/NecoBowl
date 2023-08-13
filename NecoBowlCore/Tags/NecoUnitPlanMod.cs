@@ -5,12 +5,12 @@ namespace neco_soft.NecoBowlCore.Tags;
 /// <summary>
 /// </summary>
 /// <remarks>
-///     Instances of these classes will be shared across a unit's mod list and a ModAdded EventHandler submission. For now
-///     I
-///     just try not to allow mutability in the class. I should probably mandate a copy constructor and just copy instances
-///     of
-///     these.
-///     I really wish these were structs...
+/// Instances of these classes will be shared across a unit's mod list and a ModAdded EventHandler submission. For now
+/// I
+/// just try not to allow mutability in the class. I should probably mandate a copy constructor and just copy instances
+/// of
+/// these.
+/// I really wish these were structs...
 /// </remarks>
 public abstract class NecoUnitMod
 {

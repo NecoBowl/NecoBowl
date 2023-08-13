@@ -3,7 +3,7 @@ namespace neco_soft.NecoBowlCore.Tactics;
 public readonly record struct NecoPlayerId()
 {
     public readonly Guid Value = Guid.NewGuid();
-    public bool IsNeutral => Value == default;
+public bool IsNeutral => Value == default;
 }
 
 public class NecoPlayer
@@ -30,34 +30,34 @@ public record class NecoPlayerPair(NecoPlayer Offense, NecoPlayer Defense)
 
     public NecoPlayer this[NecoPlayerRole role] => FromRole(role);
 
-    public IEnumerable<NecoPlayer> Enumerate()
-    {
-        return new[] { Offense, Defense };
-    }
+public IEnumerable<NecoPlayer> Enumerate()
+{
+    return new[] { Offense, Defense };
+}
 
-    public NecoPlayer? PlayerByIdOrNull(NecoPlayerId playerId)
-    {
-        return Enumerate().SingleOrDefault(p => p.Id == playerId);
-    }
+public NecoPlayer? PlayerByIdOrNull(NecoPlayerId playerId)
+{
+    return Enumerate().SingleOrDefault(p => p.Id == playerId);
+}
 
-    public NecoPlayerRole RoleOf(NecoPlayerId playerId)
-    {
-        return Enum.GetValues<NecoPlayerRole>()
-            .Single(v
-                => Enumerate()
-                    .Single(p
-                        => p.Id == playerId)
-                    .Id == FromRole(v).Id);
-    }
+public NecoPlayerRole RoleOf(NecoPlayerId playerId)
+{
+    return Enum.GetValues<NecoPlayerRole>()
+        .Single(v
+            => Enumerate()
+                .Single(p
+                    => p.Id == playerId)
+                .Id == FromRole(v).Id);
+}
 
-    public NecoPlayer FromRole(NecoPlayerRole role)
-    {
-        return role switch {
-            NecoPlayerRole.Offense => Offense,
-            NecoPlayerRole.Defense => Defense,
-            _ => throw new()
-        };
-    }
+public NecoPlayer FromRole(NecoPlayerRole role)
+{
+    return role switch {
+        NecoPlayerRole.Offense => Offense,
+        NecoPlayerRole.Defense => Defense,
+        _ => throw new()
+    };
+}
 }
 
 public enum NecoPlayerRole

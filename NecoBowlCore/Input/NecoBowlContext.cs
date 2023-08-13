@@ -6,8 +6,8 @@ using NLog;
 namespace neco_soft.NecoBowlCore.Input;
 
 /// <summary>
-///     Wrapper around a <see cref="NecoMatch" /> for user interaction purposes.
-///     You can call <see cref="SendInput" /> to interact with the match state.
+/// Wrapper around a <see cref="NecoMatch" /> for user interaction purposes.
+/// You can call <see cref="SendInput" /> to interact with the match state.
 /// </summary>
 public class NecoBowlContext
 {
@@ -28,11 +28,10 @@ public class NecoBowlContext
     public INecoPushInformation Push => Match.CurrentPush;
 
     /// <summary>
-    ///     Sends a user input to the game.
+    /// Sends a user input to the game.
     /// </summary>
     /// <exception cref="NecoInputException">
-    ///     The game is not able to receive inputs, or was unable to handle the given type of
-    ///     input.
+    /// The game is not able to receive inputs, or was unable to handle the given type of input.
     /// </exception>
     public NecoInputResponse SendInput(NecoInput input)
     {

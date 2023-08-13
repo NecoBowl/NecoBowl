@@ -1,3 +1,7 @@
+using neco_soft.NecoBowlCore;
+
+using NUnit.Framework;
+
 namespace neco_soft.NecoBowlTest;
 
 [TestFixture]

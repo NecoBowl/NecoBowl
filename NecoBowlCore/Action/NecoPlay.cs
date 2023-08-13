@@ -26,9 +26,13 @@ public class NecoPlay
 
         LogFieldAscii = logFieldAscii;
 
-        if (preprocessUnits) InitializeField();
+        if (preprocessUnits) {
+            InitializeField();
+        }
 
-        if (autoRun) StepToFinish();
+        if (autoRun) {
+            StepToFinish();
+        }
     }
 
     public bool IsFinished => StepCount > 100;
@@ -40,33 +44,44 @@ public class NecoPlay
 
     public IEnumerable<NecoPlayfieldMutation> Step()
     {
-        if (IsFinished)
+        if (IsFinished) {
             throw new InvalidOperationException("cannot step a play that has finished");
+        }
 
-        if (LogFieldAscii && StepCount == 0) LogFieldToAscii();
+        if (LogFieldAscii && StepCount == 0) {
+            LogFieldToAscii();
+        }
 
         var step = PlayStepper.Process();
 
-        if (LogFieldAscii) LogFieldToAscii();
+        if (LogFieldAscii) {
+            LogFieldToAscii();
+        }
 
         return step;
     }
 
     public void Step(uint count)
     {
-        for (var i = 0; i < count; i++) Step();
+        for (var i = 0; i < count; i++) {
+            Step();
+        }
     }
 
     public void StepToFinish()
     {
-        while (!IsFinished) Step();
+        while (!IsFinished) {
+            Step();
+        }
     }
 
     private void InitializeField()
     {
-        foreach (var (pos, unit) in Field.GetAllUnits())
-            if (Field.FieldParameters.GetPlayerAffiliation(pos) == NecoPlayerRole.Defense)
+        foreach (var (pos, unit) in Field.GetAllUnits()) {
+            if (Field.FieldParameters.GetPlayerAffiliation(pos) == NecoPlayerRole.Defense) {
                 unit.Mods.Add(new NecoUnitMod.Rotate(4));
+            }
+        }
 
         Field[Field.FieldParameters.BallSpawnPoint] = Field[Field.FieldParameters.BallSpawnPoint]
             with {
@@ -77,5 +92,8 @@ public class NecoPlay
     public void LogFieldToAscii(string prefix = "> ")
     {
         Logger.Debug($"Logging field state\n{prefix}STEP COUNT {StepCount}\n{Field.ToAscii(prefix)}");
+        Logger.Debug("");
+
+        if (true) { }
     }
 }

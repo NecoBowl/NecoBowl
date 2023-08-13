@@ -26,14 +26,13 @@ internal class NecoPlayStepperNew
         // Perform the actions of each unit to populate the lists
         foreach (var (pos, unit) in Field.GetAllUnits()) {
             var result = unit.PopAction().Result(unit.Id, Field.AsReadOnly());
-
             SetMovementFromAction(unit.Id, result);
         }
 
         // Begin the substep loop
         while (Movements.Any(m => m.Value.IsChange) || PendingMutations.Any()) {
-            // First, process mutations that might effect how movement happens.
             // TODO Order the mutations before processing them.
+            // First, process mutations that might effect how movement happens.
             ConsumeMutations();
 
             var movementsToIgnore = new List<NecoUnitMovement>();
@@ -47,8 +46,7 @@ internal class NecoPlayStepperNew
                 if (UpdatePendingMutationsBySpaceSwap(movement)) movementsToIgnore.Add(movement);
 
                 // Then figure out if this unit will get its movement canceled due to space conflicts.
-                UpdatePendingMutationsBySpaceConflict(movement, movementsToIgnore, out var shouldReset);
-                if (shouldReset) movementsToReset.Add(uid);
+                if (UpdatePendingMutationsBySpaceConflict(movement, movementsToIgnore)) movementsToReset.Add(uid);
             }
 
             // For any unit that couldn't make its move, reset its destination position to its current position.
@@ -58,7 +56,8 @@ internal class NecoPlayStepperNew
             foreach (var (uid, movement) in finalMovements)
                 if (movementsToReset.Contains(uid)) {
                     Movements[uid] = Movements[uid] with { NewPos = Movements[uid].OldPos };
-                } else {
+                }
+                else {
                     var unit = Field[movement.OldPos].Unit!;
                     unitBuffer[unit.Id] = Movements[unit.Id];
                     Field[movement.OldPos] = Field[movement.OldPos] with { Unit = null };
@@ -79,8 +78,10 @@ internal class NecoPlayStepperNew
                     //  actually do anything -- it just serves as a notification to the
                     //  client that the movement occurred.
                     MutationHistory.Add(
+
                         new NecoPlayfieldMutation.MovementMutation(uid, movement.OldPos, movement.NewPos));
-                } else if (movement.Source?.ResultKind == NecoUnitActionResult.Kind.Failure) {
+                }
+                else if (movement.Source?.ResultKind == NecoUnitActionResult.Kind.Failure) {
                     if (movement.Source.StateChange is NecoUnitActionOutcome.UnitTranslated attemptedTranslation)
                         // add bump event
                         MutationHistory.Add(new NecoPlayfieldMutation.UnitBumps(uid,
@@ -103,15 +104,15 @@ internal class NecoPlayStepperNew
     }
 
     /// <summary>
-    ///     Performs the effects of each mutation in <see cref="PendingMutations" />, removing the mutation in the process.
-    ///     Populates it with the mutations that result from running the current ones.
+    /// Performs the effects of each mutation in <see cref="PendingMutations" />, removing the mutation in the process.
+    /// Populates it with the mutations that result from running the current ones.
     /// </summary>
     private void ConsumeMutations()
     {
         var substepContext = new NecoSubstepContext(PendingMutations, Movements.Values.AsEnumerable());
         foreach (var func in NecoPlayfieldMutation.ExecutionOrder)
-        foreach (var mutation in PendingMutations)
-            func.Invoke(mutation, substepContext, Field);
+            foreach (var mutation in PendingMutations)
+                func.Invoke(mutation, substepContext, Field);
 
         foreach (var mutation in PendingMutations) MutationHistory.Add(mutation);
 
@@ -134,16 +135,14 @@ internal class NecoPlayStepperNew
             Movements[id] = movement with { NewPos = movement.OldPos };
     }
 
-    private void UpdatePendingMutationsBySpaceConflict(NecoUnitMovement movement,
-        IEnumerable<NecoUnitMovement> movementsToIgnore,
-        out bool shouldReset)
+    private bool UpdatePendingMutationsBySpaceConflict(NecoUnitMovement movement, IEnumerable<NecoUnitMovement> movementsToIgnore)
     {
         IEnumerable<NecoUnitMovement> OtherMovements()
         {
             return Movements.Values.Where(m => movement != m);
         }
 
-        shouldReset = false;
+        var shouldReset = false;
 
         // Find conflicts that would occur if each unit did its movement.
         var conflicts = OtherMovements()
@@ -159,7 +158,8 @@ internal class NecoPlayStepperNew
             if (unitPair.UnitsCanFight() && movement.IsChange) {
                 PendingMutations.Add(new NecoPlayfieldMutation.UnitAttacks(movement.UnitId, conflict.UnitId));
                 shouldReset = true;
-            } else {
+            }
+            else {
                 // Pickup 
                 if (unitPair.TryGetUnitsBy(
                         m => m.Unit.Tags.Contains(NecoUnitTag.Item),
@@ -172,11 +172,13 @@ internal class NecoPlayStepperNew
                             new NecoPlayfieldMutation.UnitPicksUpItem(carrierUnit!.UnitId, itemUnit!.UnitId));
 
                 // Friendly unit conflict 
-//                PendingMutations.Add(new NecoPlayfieldMutation.BumpUnit(movement.UnitId, ((NecoUnitActionOutcome.UnitTranslated)movement.Source!.StateChange!).Movement.AsDirection()));
+                //                PendingMutations.Add(new NecoPlayfieldMutation.BumpUnit(movement.UnitId, ((NecoUnitActionOutcome.UnitTranslated)movement.Source!.StateChange!).Movement.AsDirection()));
                 if (DecideCollisionWinner(unitPair) != movement)
                     shouldReset = true;
             }
         }
+
+        return shouldReset;
     }
 
     /// <returns>True if the unit is undergoing a space swap; false otherwise.</returns>
@@ -212,16 +214,16 @@ internal class NecoPlayStepperNew
             // Cases where we reset movement
             case { StateChange: NecoUnitActionOutcome.NothingHappened }:
             case { ResultKind: NecoUnitActionResult.Kind.Failure }: {
-                var unit = Field.GetUnit(uid, out var pos);
-                Movements[uid] = new(unit, pos, pos, result);
-                break;
-            }
+                    var unit = Field.GetUnit(uid, out var pos);
+                    Movements[uid] = new(unit, pos, pos, result);
+                    break;
+                }
 
             // Cases where things happen
             case { StateChange: NecoUnitActionOutcome.UnitTranslated translation }: {
-                Movements[uid] = translation.Movement;
-                break;
-            }
+                    Movements[uid] = translation.Movement;
+                    break;
+                }
         }
     }
 

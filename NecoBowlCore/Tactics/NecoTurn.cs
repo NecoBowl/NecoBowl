@@ -10,12 +10,12 @@ using CardPlayMap
 namespace neco_soft.NecoBowlCore.Tactics;
 
 /// <summary>
-///     Game state container that tracks cards placed by the players. This is consolidated into a <see cref="NecoPlan" />
-///     once
-///     the inputs are done being received. Note that in an online scenario, it is probable that inputs from the client's
-///     opponent would only be received after the player has submitted their own. Therefore, the <see cref="CardPlays" />
-///     dictionary likely only contains populated data for one player until <see cref="Finished" /> is true.
-///     Turns are applied to a <see cref="NecoPush" />.
+/// Game state container that tracks cards placed by the players. This is consolidated into a <see cref="NecoPlan" />
+/// once
+/// the inputs are done being received. Note that in an online scenario, it is probable that inputs from the client's
+/// opponent would only be received after the player has submitted their own. Therefore, the <see cref="CardPlays" />
+/// dictionary likely only contains populated data for one player until <see cref="Finished" /> is true.
+/// Turns are applied to a <see cref="NecoPush" />.
 /// </summary>
 internal class NecoTurn
 {
@@ -63,9 +63,9 @@ internal class NecoTurn
     }
 
     /// <summary>
-    ///     Gets the Turn object that would come after this one. Note that this does not check if this turn is Finished; that
-    ///     is up
-    ///     to the caller to check if this is being used to progress the game.
+    /// Gets the Turn object that would come after this one. Note that this does not check if this turn is Finished; that
+    /// is up
+    /// to the caller to check if this is being used to progress the game.
     /// </summary>
     public NecoTurn NextTurn()
     {
@@ -88,7 +88,8 @@ internal class NecoTurn
             Logger.Info(resp.ResponseKind);
 
             return resp;
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             Logger.Error(e.Message + "\n" + e.StackTrace);
             return NecoInputResponse.Error(e);
         }

@@ -1,8 +1,8 @@
 namespace neco_soft.NecoBowlCore.Tactics;
 
 /// <summary>
-///     The cards placed onto the field by a single player. Mutated over the course of the runtime of a
-///     <see cref="NecoPush" />.
+/// The cards placed onto the field by a single player. Mutated over the course of the runtime of a
+/// <see cref="NecoPush" />.
 /// </summary>
 public class NecoPlan
 {

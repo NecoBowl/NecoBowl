@@ -30,9 +30,9 @@ public class NecoCardModelCustom : NecoCardModel
     public override int Cost { get; }
 
     /// <summary>
-    ///     Create a new anonymous CardModel from a UnitModel.
-    ///     This should only be used for testing purposes. Please refer to the <c>Instance</c> property of
-    ///     actual CardModel implementations for game purposes.
+    /// Create a new anonymous CardModel from a UnitModel.
+    /// This should only be used for testing purposes. Please refer to the <c>Instance</c> property of
+    /// actual CardModel implementations for game purposes.
     /// </summary>
     public static NecoUnitCardModel FromUnitModel(NecoUnitModel model, int cost = 0)
     {

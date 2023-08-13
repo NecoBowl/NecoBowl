@@ -5,7 +5,7 @@ using neco_soft.NecoBowlCore.Tags;
 namespace neco_soft.NecoBowlDefinitions.Unit;
 
 /// <summary>
-///     General-purpose defensive threat.
+/// General-purpose defensive threat.
 /// </summary>
 public class Goose : NecoUnitModel
 {

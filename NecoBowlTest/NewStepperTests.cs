@@ -1,3 +1,5 @@
+using neco_soft.NecoBowlCore;
+using neco_soft.NecoBowlCore.Action;
 using neco_soft.NecoBowlCore.Tactics;
 
 namespace neco_soft.NecoBowlTest;
@@ -31,6 +33,6 @@ public class NewStepperTests
         Field[0, 1] = new(unitA2);
 
         var mutations = new Queue<NecoPlayfieldMutation>(Play.Step());
-        
+
     }
 }

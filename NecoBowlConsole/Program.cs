@@ -1,4 +1,4 @@
-﻿using neco_soft.NecoBowlCore.Input;
+using neco_soft.NecoBowlCore.Input;
 using neco_soft.NecoBowlCore.Tactics;
 using neco_soft.NecoBowlDefinitions.Card;
 

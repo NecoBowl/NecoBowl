@@ -12,7 +12,7 @@ public abstract class NecoUnitModel
     public abstract IEnumerable<NecoUnitAction> Actions { get; }
     public abstract string BehaviorDescription { get; }
 
-    public virtual IEnumerable<NecoUnitTag> Tags { get; }
+    public virtual IEnumerable<NecoUnitTag> Tags { get; } = Array.Empty<NecoUnitTag>();
 
     public virtual ReactionDict? Reactions { get; } = null;
 }

@@ -17,7 +17,7 @@ public record NecoUnitId
 }
 
 /// <summary>
-///     A unit as exists during a play.
+/// A unit as exists during a play.
 /// </summary>
 public sealed class NecoUnit : IEquatable<NecoUnit>
 {

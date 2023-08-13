@@ -1,5 +1,9 @@
+using neco_soft.NecoBowlCore;
+using neco_soft.NecoBowlCore.Action;
 using neco_soft.NecoBowlCore.Tactics;
+using neco_soft.NecoBowlCore.Tags;
 
+using NUnit.Framework;
 using NUnit.Framework.Constraints;
 
 // ReSharper disable AccessToStaticMemberViaDerivedType
@@ -29,9 +33,10 @@ internal abstract class FieldActionTests
     private class EnemyCollision : FieldActionTests
     {
         /// <summary>
-        ///     Opposing units swapping spaces should fight.
+        /// Opposing units swapping spaces should fight.
         /// </summary>
-        [Test] [Combinatorial]
+        [Test]
+        [Combinatorial]
         public void SpaceSwapCausesCombat([Values(1, 2)] int power1,
             [Values(1)] int power2)
         {
@@ -48,7 +53,8 @@ internal abstract class FieldActionTests
                 if (power1 == power2) {
                     Assert.That(unitA1, Is.Dead());
                     Assert.That(unitA2, Is.Dead());
-                } else if (power1 > power2) {
+                }
+                else if (power1 > power2) {
                     Assert.That(unitA1.CurrentHealth, Is.EqualTo(power1 - power2));
                     Assert.That(unitA2, Is.Dead());
                 }
@@ -56,7 +62,7 @@ internal abstract class FieldActionTests
         }
 
         /// <summary>
-        ///     Opposing units moving to the same space should fight.
+        /// Opposing units moving to the same space should fight.
         /// </summary>
         [Test]
         public void SpaceConflictCausesCombat()
@@ -86,7 +92,7 @@ internal abstract class FieldActionTests
         }
 
         /// <summary>
-        ///     After a space conflict in which both units die, another space conflict can occur on the same space.
+        /// After a space conflict in which both units die, another space conflict can occur on the same space.
         /// </summary>
         [Test]
         public void SpaceConflictCanOccurMultipleTimes()
@@ -113,7 +119,7 @@ internal abstract class FieldActionTests
         }
 
         /// <summary>
-        ///     After a space conflict in which one unit survives, the surviving unit can fight another unit.
+        /// After a space conflict in which one unit survives, the surviving unit can fight another unit.
         /// </summary>
         [Test]
         public void OneUnitCanFightMultipleOthers()
@@ -395,7 +401,8 @@ internal abstract class FieldActionTests
     [TestFixture]
     private class Mods : FieldActionTests
     {
-        [Test] [Combinatorial]
+        [Test]
+        [Combinatorial]
         public void ModsGetApplied([Values(1, 2, 3)] int mod1,
             [Values(1, 2, 3)] int mod2)
         {
@@ -441,9 +448,9 @@ internal abstract class FieldActionTests
         }
     }
 
-#region Helpers
+    #region Helpers
 
-#endregion
+    #endregion
 }
 
 #region Custom constraints

@@ -2,6 +2,8 @@ using neco_soft.NecoBowlDefinitions;
 
 using NLog;
 
+using NUnit.Framework;
+
 namespace neco_soft.NecoBowlTest;
 
 public class DefinitionsTests

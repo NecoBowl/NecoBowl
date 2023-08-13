@@ -1,5 +1,11 @@
+using neco_soft.NecoBowlCore;
+using neco_soft.NecoBowlCore.Action;
 using neco_soft.NecoBowlCore.Input;
+using neco_soft.NecoBowlCore.Model;
 using neco_soft.NecoBowlCore.Tactics;
+using neco_soft.NecoBowlCore.Tags;
+
+using NUnit.Framework;
 
 namespace neco_soft.NecoBowlTest;
 
@@ -22,8 +28,8 @@ public static class TestHelpers
 }
 
 /// <summary>
-///     Dummy implementation of a UnitModel for testing purposes.
-///     Deprecated.
+/// Dummy implementation of a UnitModel for testing purposes.
+/// Deprecated.
 /// </summary>
 // ReSharper disable once InconsistentNaming
 public class NecoUnitModelCustom_HealthEqualsPower : NecoUnitModel
@@ -72,7 +78,7 @@ public class NecoUnitModelCustom_HealthEqualsPower : NecoUnitModel
         return unit;
     }
 
-#region Old Methods (no health field)
+    #region Old Methods (no health field)
 
     public static NecoUnitModelCustom_HealthEqualsPower Mover(string name, int power, AbsoluteDirection direction)
     {
@@ -113,11 +119,11 @@ public class NecoUnitModelCustom_HealthEqualsPower : NecoUnitModel
             new NecoUnitAction[] { new NecoUnitAction.DoNothing() });
     }
 
-#endregion
+    #endregion
 }
 
 /// <summary>
-///     Dummy implementation of a UnitModel for testing purposes.
+/// Dummy implementation of a UnitModel for testing purposes.
 /// </summary>
 public class NecoUnitModelCustom : NecoUnitModel
 {
@@ -151,7 +157,7 @@ public class NecoUnitModelCustom : NecoUnitModel
         return new(this, owner.Id);
     }
 
-#region Initializers
+    #region Initializers
 
     public static NecoUnitModelCustom Mover(string? name = null,
         int health = 1,
@@ -177,5 +183,5 @@ public class NecoUnitModelCustom : NecoUnitModel
             new[] { new NecoUnitAction.DoNothing() });
     }
 
-#endregion
+    #endregion
 }

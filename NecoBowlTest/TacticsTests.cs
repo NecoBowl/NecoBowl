@@ -3,6 +3,8 @@ using neco_soft.NecoBowlCore.Tactics;
 
 using NLog;
 
+using NUnit.Framework;
+
 namespace neco_soft.NecoBowlTest.Tactics;
 
 internal abstract class TacticsTests
@@ -73,12 +75,18 @@ internal abstract class TacticsTests
         [Test]
         public void PreviewReflectsCurrentInputs()
         {
-            var card1 = TestHelpers.TestCard(2);
-            var card2 = TestHelpers.TestCard(2);
+            var card1 = TestHelpers.TestCard(1);
+            var card2 = TestHelpers.TestCard(1);
 
-            NecoInputResponse resp;
             Context.AssertSendInput(new NecoInput.PlaceCard(Players.Offense, card1, (0, 0)));
+            Assert.That(Context.GetPlayPreview().Field[0, 0].Unit, Is.Not.Null);
+
+            Context.AssertSendInput(new NecoInput.PlaceCard(Players.Offense, card2, (0, 1)));
             var preview = Context.GetPlayPreview();
+            Assert.Multiple(() => {
+                Assert.That(preview.Field[0, 0].Unit, Is.Not.Null);
+                Assert.That(preview.Field[0, 1].Unit, Is.Not.Null);
+            });
         }
     }
 
@@ -97,6 +105,7 @@ internal abstract class TacticsTests
         {
             Context.FinishTurn();
             Assert.That(() => Context.AdvancePush(), Throws.InvalidOperationException);
+            Context.BeginPlay();
         }
 
         [Test]
@@ -119,7 +128,7 @@ internal abstract class TacticsTests
         }
     }
 
-#region Helpers
+    #region Helpers
 
-#endregion
+    #endregion
 }
