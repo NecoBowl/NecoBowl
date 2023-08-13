@@ -7,8 +7,8 @@ public partial class NecoPlayfieldMutation
     public class UnitPushes : BaseMutation
     {
         public NecoUnitId Pusher;
-        
-        public UnitPushes(NecoUnitId subject, Vector2i sourceSpace, Vector2i destSpace, NecoUnitId pusher) 
+
+        public UnitPushes(NecoUnitId subject, Vector2i sourceSpace, Vector2i destSpace, NecoUnitId pusher)
         {
             Pusher = pusher;
         }
@@ -16,8 +16,8 @@ public partial class NecoPlayfieldMutation
 
     public class UnitBumps : BaseMutation
     {
-        public readonly NecoUnitId Subject;
         public readonly AbsoluteDirection Direction;
+        public readonly NecoUnitId Subject;
 
         public UnitBumps(NecoUnitId subject, AbsoluteDirection direction)
         {
@@ -42,9 +42,7 @@ public partial class NecoPlayfieldMutation
         }
 
         internal override void Pass3Mutate(NecoField field)
-        {
-            
-        }
+        { }
 
         internal override IEnumerable<BaseMutation> AddMutations(ReadOnlyNecoField field)
         {
@@ -57,12 +55,12 @@ public partial class NecoPlayfieldMutation
             return $"{nameof(UnitAttacks)} [{Attacker} attacks {Receiver}]";
         }
     }
-    
+
     public class UnitTakesDamage : BaseMutation
     {
-        public readonly NecoUnitId Subject;
         public readonly uint DamageAmount;
-        
+        public readonly NecoUnitId Subject;
+
         public UnitTakesDamage(NecoUnitId subject, uint damageAmount)
         {
             Subject = subject;
@@ -78,16 +76,14 @@ public partial class NecoPlayfieldMutation
         internal override IEnumerable<BaseMutation> AddMutations(ReadOnlyNecoField field)
         {
             var unit = field.GetUnit(Subject);
-            if (unit.CurrentHealth <= 0) {
-                yield return new UnitDies(Subject);
-            }
+            if (unit.CurrentHealth <= 0) yield return new UnitDies(Subject);
         }
     }
 
     public class UnitDies : BaseMutation
     {
         public readonly NecoUnitId Subject;
-        
+
         public UnitDies(NecoUnitId subject)
         {
             Subject = subject;
@@ -99,15 +95,14 @@ public partial class NecoPlayfieldMutation
         }
 
         internal override void Pass2Mutate(NecoField field)
-        {
-        }
+        { }
     }
-    
+
     public class UnitGetsMod : BaseMutation
     {
-        public readonly NecoUnitId Subject;
         public readonly NecoUnitMod Mod;
-        
+        public readonly NecoUnitId Subject;
+
         public UnitGetsMod(NecoUnitId subject, NecoUnitMod mod)
         {
             Subject = subject;
@@ -121,14 +116,13 @@ public partial class NecoPlayfieldMutation
         }
 
         internal override void Pass2Mutate(NecoField field)
-        {
-        }
+        { }
     }
 
     public class UnitPicksUpItem : BaseMutation
     {
-        public readonly NecoUnitId Subject;
         public readonly NecoUnitId Item;
+        public readonly NecoUnitId Subject;
 
         private NecoUnit? TempUnitItem;
 

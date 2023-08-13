@@ -1,5 +1,3 @@
-using System.Reflection.Metadata;
-
 using neco_soft.NecoBowlCore.Action;
 using neco_soft.NecoBowlCore.Tactics;
 
@@ -8,27 +6,34 @@ using NLog;
 namespace neco_soft.NecoBowlCore.Input;
 
 /// <summary>
-/// Wrapper around a <see cref="NecoMatch"/> for user interaction purposes.
-///
-/// You can call <see cref="SendInput"/> to interact with the match state.
+///     Wrapper around a <see cref="NecoMatch" /> for user interaction purposes.
+///     You can call <see cref="SendInput" /> to interact with the match state.
 /// </summary>
 public class NecoBowlContext
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-    
-    private NecoMatch Match;
-    public NecoPlayerPair Players { get; private set; }
-    
+
+    private readonly NecoMatch Match;
+
     public NecoBowlContext(NecoPlayerPair playerPair)
     {
         Players = playerPair;
-        Match = new NecoMatch(playerPair);
+        Match = new(playerPair);
     }
 
+    public NecoPlayerPair Players { get; }
+
+    public NecoFieldParameters FieldParameters => Match.CurrentPush.FieldParameters;
+
+    public INecoPushInformation Push => Match.CurrentPush;
+
     /// <summary>
-    /// Sends a user input to the game.
+    ///     Sends a user input to the game.
     /// </summary>
-    /// <exception cref="NecoInputException">The game is not able to receive inputs, or was unable to handle the given type of input.</exception>
+    /// <exception cref="NecoInputException">
+    ///     The game is not able to receive inputs, or was unable to handle the given type of
+    ///     input.
+    /// </exception>
     public NecoInputResponse SendInput(NecoInput input)
     {
         Logger.Info($"Input received: {input}");
@@ -36,10 +41,14 @@ public class NecoBowlContext
     }
 
     public NecoPlanInformation GetPlan(NecoPlayerRole role)
-        => new(Match.CurrentPush.Plans[role]);
+    {
+        return new(Match.CurrentPush.Plans[role]);
+    }
 
     public NecoTurnInformation GetTurn()
-        => new(Match.CurrentPush.CurrentTurn);
+    {
+        return new(Match.CurrentPush.CurrentTurn);
+    }
 
     public NecoPlayInformation BeginPlay()
     {
@@ -51,8 +60,6 @@ public class NecoBowlContext
         return new(Match.CurrentPush.CreatePlay(true));
     }
 
-    public NecoFieldParameters FieldParameters => Match.CurrentPush.FieldParameters;
-
     public void FinishTurn()
     {
         Match.CurrentPush.FinishTurn();
@@ -62,6 +69,4 @@ public class NecoBowlContext
     {
         Match.CurrentPush.AdvancePushStage();
     }
-
-    public INecoPushInformation Push => Match.CurrentPush;
 }

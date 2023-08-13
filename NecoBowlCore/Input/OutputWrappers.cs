@@ -1,9 +1,3 @@
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
-
 using neco_soft.NecoBowlCore.Action;
 using neco_soft.NecoBowlCore.Model;
 using neco_soft.NecoBowlCore.Tactics;
@@ -13,31 +7,34 @@ namespace neco_soft.NecoBowlCore.Input;
 
 public class NecoFieldInformation
 {
-    private ReadOnlyNecoField Field;
+    private readonly ReadOnlyNecoField Field;
 
     internal NecoFieldInformation(ReadOnlyNecoField field)
     {
         Field = field;
     }
 
-    public NecoSpaceInformation Contents((int, int) coords)
-    {
-        return new NecoSpaceInformation(Field[coords], coords, Field.FieldParameters.GetPlayerAffiliation(coords));
-    }
-
-    public (int x, int y) GetBounds()
-        => Field.GetBounds();
     public NecoSpaceInformation this[int x, int y] => this[(x, y)];
     public NecoSpaceInformation this[(int, int) coords] => Contents(coords);
 
     public NecoFieldParameters FieldParameters => Field.FieldParameters;
+
+    public NecoSpaceInformation Contents((int, int) coords)
+    {
+        return new(Field[coords], coords, Field.FieldParameters.GetPlayerAffiliation(coords));
+    }
+
+    public (int x, int y) GetBounds()
+    {
+        return Field.GetBounds();
+    }
 }
 
 public class NecoSpaceInformation
 {
     public readonly (int X, int Y) Coords;
     public readonly NecoPlayerRole? PlayerRole;
-    private NecoSpaceContents Contents;
+    private readonly NecoSpaceContents Contents;
 
     internal NecoSpaceInformation(NecoSpaceContents contents, (int X, int Y) coords, NecoPlayerRole? playerRole)
     {
@@ -51,7 +48,7 @@ public class NecoSpaceInformation
 
 public class NecoUnitInformation
 {
-    private NecoUnit Unit;
+    private readonly NecoUnit Unit;
 
     internal NecoUnitInformation(NecoUnit unit)
     {
@@ -64,10 +61,13 @@ public class NecoUnitInformation
     public int MaxHealth => Unit.MaxHealth;
     public int CurrentHealth => Unit.CurrentHealth;
     public string Name => Unit.FullName;
+
     public IReadOnlyList<NecoUnitActionInformation> Actions
         => Unit.ActionStack.Select(a => new NecoUnitActionInformation(a)).ToList();
-    public IReadOnlyList<NecoUnitInformation> Inventory 
+
+    public IReadOnlyList<NecoUnitInformation> Inventory
         => Unit.Inventory.Select(u => new NecoUnitInformation(u)).ToList();
+
     public IReadOnlyList<NecoUnitTag> Tags => Unit.Tags.AsReadOnly();
     public IReadOnlyList<NecoUnitMod> Mods => Unit.Mods.AsReadOnly();
 }
@@ -96,8 +96,16 @@ public class NecoPlayInformation
     public uint StepCount => Play.StepCount;
     public bool IsFinished => Play.IsFinished;
     public NecoFieldInformation Field => new(Play.GetField());
-    public IEnumerable<NecoPlayfieldMutation> Step() => Play.Step();
-    public void StepToFinish() => Play.StepToFinish();
+
+    public IEnumerable<NecoPlayfieldMutation> Step()
+    {
+        return Play.Step();
+    }
+
+    public void StepToFinish()
+    {
+        Play.StepToFinish();
+    }
 }
 
 public class NecoPlanInformation
@@ -116,7 +124,7 @@ public class NecoPlanInformation
 public class NecoTurnInformation
 {
     private readonly NecoTurn Turn;
-    
+
     internal NecoTurnInformation(NecoTurn turn)
     {
         Turn = turn;
@@ -126,11 +134,9 @@ public class NecoTurnInformation
     {
         foreach (var role in Enum.GetValues<NecoPlayerRole>()) {
             var cardPlay = Turn.CardPlaysByRole[role].SingleOrDefault(p => p.Position == coords);
-            if (cardPlay is not null) {
-                return cardPlay;
-            }
+            if (cardPlay is not null) return cardPlay;
         }
-        
+
         return null;
     }
 }

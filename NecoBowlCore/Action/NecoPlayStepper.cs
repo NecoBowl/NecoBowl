@@ -1,25 +1,19 @@
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 
-using neco_soft.NecoBowlCore.Input;
 using neco_soft.NecoBowlCore.Tags;
-
-using NLog;
 
 namespace neco_soft.NecoBowlCore.Action;
 
 /// <summary>
-/// Record container for a unit that is moving to another space.
+///     Record container for a unit that is moving to another space.
 /// </summary>
 public record NecoUnitMovement
 {
+    // Hack to let the end of step calculation see what initiated the movements (push vs manual move).
+    internal readonly NecoUnitActionResult? Source;
     internal readonly NecoUnit Unit;
     public Vector2i NewPos;
     public Vector2i OldPos;
-    
-    // Hack to let the end of step calculation see what initiated the movements (push vs manual move).
-    internal readonly NecoUnitActionResult? Source;
 
     public NecoUnitMovement(NecoUnit unit, Vector2i newPos, Vector2i oldPos, NecoUnitActionResult? source = null)
     {
@@ -36,25 +30,27 @@ public record NecoUnitMovement
     public Vector2i Difference => NewPos - OldPos;
 
     public AbsoluteDirection AsDirection()
-        => Enum.GetValues<AbsoluteDirection>().Single(d => d.ToVector2i() == Difference);
+    {
+        return Enum.GetValues<AbsoluteDirection>().Single(d => d.ToVector2i() == Difference);
+    }
 }
 
 internal record UnitMovementPair
 {
-    public readonly ReadOnlyCollection<NecoUnit> Movements;
     public readonly ReadOnlyCollection<NecoUnitMovement> Collection;
 
     public readonly NecoUnitMovement Movement1, Movement2;
+    public readonly ReadOnlyCollection<NecoUnit> Movements;
 
     public UnitMovementPair(NecoUnitMovement movement1, NecoUnitMovement movement2)
     {
         Movement1 = movement1;
         Movement2 = movement2;
 
-        Movements = new(new NecoUnit[] { Movement1.Unit, Movement2.Unit });
+        Movements = new(new[] { Movement1.Unit, Movement2.Unit });
         Collection = new(new[] { Movement1, Movement2 });
     }
-    
+
     /// <summary>Finds the unit in the pair with the specified tag.</summary>
     /// <param name="tag">The tag to search for.</param>
     /// <param name="other">The unit in the pair that does not have the tag. Null if both units have the tag.</param>
@@ -66,8 +62,8 @@ internal record UnitMovementPair
     }
 
     /// <summary>
-    /// Finds the single unit that matches a condition. Throws an exception if both items in the pair match the
-    /// condition.
+    ///     Finds the single unit that matches a condition. Throws an exception if both items in the pair match the
+    ///     condition.
     /// </summary>
     /// <param name="predicate">The condition to check for.</param>
     /// <param name="other">The unit of the pair that did not match the condition. Null if neither unit matches.</param>
@@ -80,10 +76,10 @@ internal record UnitMovementPair
     }
 
     /// <summary>
-    /// Try to find the single unit that matches a condition.
+    ///     Try to find the single unit that matches a condition.
     /// </summary>
     /// <returns>False if neither unit matches the condition or if both match the condition. Otherwise, true.</returns>
-    /// <seealso cref="UnitWhereSingle"/>
+    /// <seealso cref="UnitWhereSingle" />
     public bool TryUnitWhereSingle(Func<NecoUnitMovement, bool> predicate,
         out NecoUnitMovement? result,
         out NecoUnitMovement? other)
@@ -104,37 +100,41 @@ internal record UnitMovementPair
         out NecoUnitMovement? result2)
     {
         if (TryUnitWhereSingle(predicate1, out result1, out result2)) {
-            if (predicate2(result2!)) {
+            if (predicate2(result2!))
                 return true;
-            } else {
-                result2 = null;
-            }
+            result2 = null;
         }
 
         return false;
     }
 
     public bool UnitsAreEnemies()
-        => Movement1.Unit.OwnerId != default && Movement2.Unit.OwnerId != default && Movement1.Unit.OwnerId != Movement2.Unit.OwnerId;
+    {
+        return Movement1.Unit.OwnerId != default && Movement2.Unit.OwnerId != default
+                                                 && Movement1.Unit.OwnerId != Movement2.Unit.OwnerId;
+    }
 
     public bool IsSameUnitsAs(UnitMovementPair other)
-        => (Movement1 == other.Movement1 && Movement2 == other.Movement2) || (Movement2 == other.Movement1 && Movement1 == other.Movement2);
+    {
+        return (Movement1 == other.Movement1 && Movement2 == other.Movement2)
+               || (Movement2 == other.Movement1 && Movement1 == other.Movement2);
+    }
 
     public NecoUnitMovement OtherMovement(NecoUnitMovement movement)
     {
-        if (Movement1 == movement && Movement2 != movement) {
+        if (Movement1 == movement && Movement2 != movement)
             return Movement2;
-        } else if (Movement2 == movement && Movement1 != movement) {
+        if (Movement2 == movement && Movement1 != movement)
             return Movement1;
-        } else if (Movement1 != movement && Movement2 != movement) {
+        if (Movement1 != movement && Movement2 != movement)
             throw new NecoBowlException("movement is not in pair");
-        } else {
-            throw new NecoBowlException("both units are the same");
-        }
+        throw new NecoBowlException("both units are the same");
     }
 
     public bool UnitsCanFight()
-        => UnitsAreEnemies();
+    {
+        return UnitsAreEnemies();
+    }
 }
 
 internal static class PlayStepperExt
@@ -154,8 +154,7 @@ internal static class PlayStepperExt
             .Select(g => g.ToArray());
     }
 
-    public static IEnumerable<NecoUnitMovement[]> GroupByCollisions(
-        this IEnumerable<NecoUnitMovement> units)
+    public static IEnumerable<NecoUnitMovement[]> GroupByCollisions(this IEnumerable<NecoUnitMovement> units)
     {
         return units.GroupBy(u => u.NewPos)
             .Where(g => g.Count() > 1)
@@ -167,18 +166,16 @@ internal static class PlayStepperExt
         var movementsTemp = movements.ToList();
         var construct = new List<UnitMovementPair>();
         var usedUnits = new List<NecoUnitMovement>();
-        
+
         foreach (var move in movementsTemp) {
-            if (usedUnits.Contains(move)) {
-                continue;
-            }
-            
-            var swap = movementsTemp.FirstOrDefault(m 
-                => m.NewPos == move.OldPos 
+            if (usedUnits.Contains(move)) continue;
+
+            var swap = movementsTemp.FirstOrDefault(m
+                => m.NewPos == move.OldPos
                    && move.NewPos == m.OldPos
                    && move.Unit != m.Unit);
             if (swap is not null) {
-                construct.Add(new UnitMovementPair(move, swap)); 
+                construct.Add(new(move, swap));
                 usedUnits.Add(move);
                 usedUnits.Add(swap);
             }

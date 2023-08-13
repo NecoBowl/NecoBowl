@@ -1,23 +1,16 @@
 using System.Collections;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Net.Sockets;
-using System.Reflection.Metadata.Ecma335;
 
 using neco_soft.NecoBowlCore.Action;
 using neco_soft.NecoBowlCore.Model;
 using neco_soft.NecoBowlCore.Tags;
 
-using NLog.LayoutRenderers;
-
 namespace neco_soft.NecoBowlCore.Tactics;
 
 public class NecoCard
 {
-    public string Name => CardModel.Name;
     public readonly NecoCardModel CardModel;
-    public int Cost;
     public readonly NecoCardOptions Options;
+    public int Cost;
 
     public NecoCard(NecoCardModel cardModel)
     {
@@ -26,7 +19,12 @@ public class NecoCard
         Options = new(CardModel);
     }
 
-    public bool IsUnitCard() => CardModel is NecoUnitCardModel;
+    public string Name => CardModel.Name;
+
+    public bool IsUnitCard()
+    {
+        return CardModel is NecoUnitCardModel;
+    }
 
     public bool IsUnitCard(out NecoUnitCard? unitCard)
     {
@@ -42,18 +40,17 @@ public class NecoCard
 
 public class NecoUnitCard : NecoCard
 {
-    public NecoUnitModel UnitModel
-        => ((NecoUnitCardModel)CardModel).Model;
-    
     public NecoUnitCard(NecoUnitCardModel cardModel) : base(cardModel)
     { }
+
+    public NecoUnitModel UnitModel
+        => ((NecoUnitCardModel)CardModel).Model;
 
     public NecoUnit ToUnit(NecoPlayerId playerId)
     {
         var unit = new NecoUnit(UnitModel, playerId);
-        foreach (var planOption in CardModel.OptionPermissions) {
-            planOption.ApplyToUnit(unit, this.Options[planOption.Identifier]);
-        }
+        foreach (var planOption in CardModel.OptionPermissions)
+            planOption.ApplyToUnit(unit, Options[planOption.Identifier]);
 
         return unit;
     }
@@ -72,20 +69,6 @@ public class NecoCardOptions : IEnumerable<(string, object)>
 
     public object this[string id] => Values[id];
 
-    public void SetValue(string id, object value)
-    {
-        if (!Values.ContainsKey(id)) {
-            throw new CardOptionException($"invalid key {id}");
-        }
-
-        if (value.GetType() != Values[id].GetType()) {
-            throw new CardOptionException(
-                $"invalid type for option {id} (was {value.GetType()}, expected {Values[id].GetType()}");
-        }
-
-        Values[id] = value;
-    }
-
     public IEnumerator<(string, object)> GetEnumerator()
     {
         return Values.AsEnumerable().Select(kv => (kv.Key, kv.Value)).GetEnumerator();
@@ -94,5 +77,16 @@ public class NecoCardOptions : IEnumerable<(string, object)>
     IEnumerator IEnumerable.GetEnumerator()
     {
         return GetEnumerator();
+    }
+
+    public void SetValue(string id, object value)
+    {
+        if (!Values.ContainsKey(id)) throw new CardOptionException($"invalid key {id}");
+
+        if (value.GetType() != Values[id].GetType())
+            throw new CardOptionException(
+                $"invalid type for option {id} (was {value.GetType()}, expected {Values[id].GetType()}");
+
+        Values[id] = value;
     }
 }

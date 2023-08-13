@@ -16,10 +16,10 @@ public class Boar : NecoUnitModel
 
     public override IReadOnlyCollection<NecoUnitTag> Tags
         => new[] { NecoUnitTag.Pusher };
-    
+
     public override IEnumerable<NecoUnitAction> Actions
         => new[] { new NecoUnitAction.TranslateUnit(RelativeDirection.Up) };
 
     public override string BehaviorDescription
-        => "Walks forward. Can be rotated.";
+        => "Walks forward.";
 }

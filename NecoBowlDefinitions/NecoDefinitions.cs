@@ -1,5 +1,4 @@
 using System.Reflection;
-using System.Runtime.CompilerServices;
 
 using neco_soft.NecoBowlCore;
 using neco_soft.NecoBowlCore.Model;
@@ -10,13 +9,12 @@ namespace neco_soft.NecoBowlDefinitions;
 
 public static class NecoDefinitions
 {
-    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-
     private const string UnitModelNamespace = "neco_soft.NecoBowlDefinitions.Unit";
     private const string CardModelNamespace = "neco_soft.NecoBowlDefinitions.Card";
+    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-    public readonly static IReadOnlyList<NecoUnitModel> AllUnitModels;
-    public readonly static IReadOnlyList<NecoCardModel> AllCardModels;
+    public static readonly IReadOnlyList<NecoUnitModel> AllUnitModels;
+    public static readonly IReadOnlyList<NecoCardModel> AllCardModels;
 
     static NecoDefinitions()
     {
@@ -26,7 +24,7 @@ public static class NecoDefinitions
             .Select(t => (NecoUnitModel)t.GetField("Instance")!.GetValue(null)!)
             .Append(BuiltInDefinitions.Ball.Instance)
             .ToList();
-        
+
         AllCardModels = Assembly.GetExecutingAssembly()
             .GetTypes()
             .Where(t => t.Namespace == CardModelNamespace)

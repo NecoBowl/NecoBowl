@@ -11,8 +11,6 @@ public class DefinitionsTests
     [Test]
     public void AllUnitModels()
     {
-        foreach (var v in NecoDefinitions.AllUnitModels) {
-            Logger.Info(v);
-        }
+        foreach (var v in NecoDefinitions.AllUnitModels) Logger.Info(v);
     }
 }

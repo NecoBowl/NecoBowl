@@ -1,9 +1,4 @@
-using System;
-using System.Drawing;
-
 using neco_soft.NecoBowlCore.Tags;
-
-using NLog.LayoutRenderers.Wrappers;
 
 namespace neco_soft.NecoBowlCore.Action;
 
@@ -17,7 +12,7 @@ public abstract class NecoUnitAction
             return NecoUnitActionResult.Error(e);
         }
     }
-    
+
     protected abstract NecoUnitActionResult CallResult(NecoUnitId uid, ReadOnlyNecoField field);
 
     public class TranslateUnit : NecoUnitAction
@@ -30,17 +25,16 @@ public abstract class NecoUnitAction
         }
 
         protected override NecoUnitActionResult CallResult(NecoUnitId uid, ReadOnlyNecoField field)
-        { 
+        {
             var pos = field.GetUnitPosition(uid);
             var unit = field.GetUnit(pos);
             var movementDirection = unit.Facing.RotatedBy(Direction);
             var newPos = pos + movementDirection.ToVector2i();
 
             var outcome = new NecoUnitActionOutcome.UnitTranslated(new(unit, newPos, pos));
-            
-            if (!field.IsInBounds(newPos)) {
+
+            if (!field.IsInBounds(newPos))
                 return NecoUnitActionResult.Failure($"{unit} could not move {Direction} (out of bounds)", outcome);
-            }
 
             return NecoUnitActionResult.Success(outcome);
         }
@@ -53,10 +47,9 @@ public abstract class NecoUnitAction
             var pos = field.GetUnitPosition(uid);
             var unit = field.GetUnit(pos);
 
-            var (ballPos, ball) = field.GetAllUnits().SingleOrDefault(tup => tup.Item2.Tags.Contains(NecoUnitTag.TheBall));
-            if (ball is null) {
-                throw new NecoUnitActionException("no ball found on field");
-            }
+            var (ballPos, ball)
+                = field.GetAllUnits().SingleOrDefault(tup => tup.Item2.Tags.Contains(NecoUnitTag.TheBall));
+            if (ball is null) throw new NecoUnitActionException("no ball found on field");
 
             bool leftOn = false, rightOn = false;
             float leftDist = float.MaxValue, rightDist = float.MaxValue;
@@ -72,13 +65,11 @@ public abstract class NecoUnitAction
                 rightOn = true;
             }
 
-            if (rightOn && leftDist > rightDist) {
+            if (rightOn && leftDist > rightDist)
                 return new TranslateUnit(RelativeDirection.Right).CallResult(uid, field);
-            } else if (leftOn && rightDist > leftDist) {
+            if (leftOn && rightDist > leftDist)
                 return new TranslateUnit(RelativeDirection.Left).CallResult(uid, field);
-            } else {
-                return NecoUnitActionResult.Success(new NecoUnitActionOutcome.NothingHappened(uid));
-            }
+            return NecoUnitActionResult.Success(new NecoUnitActionOutcome.NothingHappened(uid));
         }
     }
 
@@ -92,9 +83,8 @@ public abstract class NecoUnitAction
 }
 
 /// <summary>
-/// The final result of a unit's action, after it has considered the board state.
-///
-/// These are consumed by the <see cref="NecoPlayStepper"/>.
+///     The final result of a unit's action, after it has considered the board state.
+///     These are consumed by the <see cref="NecoPlayStepper" />.
 /// </summary>
 public abstract class NecoUnitActionOutcome
 {
@@ -131,19 +121,23 @@ public abstract class NecoUnitActionOutcome
 
 public class NecoUnitActionResult
 {
-    public static NecoUnitActionResult Success(NecoUnitActionOutcome change) 
-        => new NecoUnitActionResult(change.Description, Kind.Success, stateChange: change);
-    public static NecoUnitActionResult Failure(string message, NecoUnitActionOutcome attemptedChange) 
-        => new NecoUnitActionResult(message, Kind.Failure, stateChange: attemptedChange);
-    public static NecoUnitActionResult Error(Exception exception) 
-        => new NecoUnitActionResult(exception.Message, Kind.Error, exception: exception);
+    public enum Kind
+    {
+        Success,
+        Failure,
+        Error
+    }
+
+    public readonly Exception? Exception;
 
     public readonly string Message;
     public readonly Kind ResultKind;
     public readonly NecoUnitActionOutcome? StateChange;
-    public readonly Exception? Exception;
 
-    public NecoUnitActionResult(string message, Kind resultKind, NecoUnitActionOutcome? stateChange = null, Exception? exception = null)
+    public NecoUnitActionResult(string message,
+        Kind resultKind,
+        NecoUnitActionOutcome? stateChange = null,
+        Exception? exception = null)
     {
         Message = message;
         ResultKind = resultKind;
@@ -151,10 +145,18 @@ public class NecoUnitActionResult
         Exception = exception;
     }
 
-    public enum Kind
+    public static NecoUnitActionResult Success(NecoUnitActionOutcome change)
     {
-        Success,
-        Failure,
-        Error
+        return new(change.Description, Kind.Success, change);
+    }
+
+    public static NecoUnitActionResult Failure(string message, NecoUnitActionOutcome attemptedChange)
+    {
+        return new(message, Kind.Failure, attemptedChange);
+    }
+
+    public static NecoUnitActionResult Error(Exception exception)
+    {
+        return new(exception.Message, Kind.Error, exception: exception);
     }
 }

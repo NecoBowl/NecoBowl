@@ -9,13 +9,13 @@ public abstract class NecoUnitModel
     public abstract string Name { get; }
     public abstract int Health { get; }
     public abstract int Power { get; }
-    public abstract IEnumerable<NecoUnitTag> Tags { get; }
     public abstract IEnumerable<NecoUnitAction> Actions { get; }
-    public virtual string BehaviorDescription => string.Empty;
+    public abstract string BehaviorDescription { get; }
+
+    public virtual IEnumerable<NecoUnitTag> Tags { get; }
 
     public virtual ReactionDict? Reactions { get; } = null;
 }
 
 public class ReactionDict : Dictionary<Type, Func<NecoUnitId, IEnumerable<NecoPlayfieldMutation>>>
-{
-}
+{ }

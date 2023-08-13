@@ -1,4 +1,3 @@
-using neco_soft.NecoBowlCore;
 using neco_soft.NecoBowlCore.Action;
 using neco_soft.NecoBowlCore.Model;
 using neco_soft.NecoBowlCore.Tags;
@@ -15,7 +14,7 @@ public class Crab : NecoUnitModel
     public override int Power => 2;
 
     public override IReadOnlyCollection<NecoUnitTag> Tags
-        => new NecoUnitTag[] { NecoUnitTag.Defender };
+        => new[] { NecoUnitTag.Defender };
 
     public override IEnumerable<NecoUnitAction> Actions
         => new[] { new NecoUnitAction.TranslateUnitCrabwalk() };

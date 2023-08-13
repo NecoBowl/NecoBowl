@@ -6,13 +6,13 @@ namespace neco_soft.NecoBowlTest;
 [TestFixture]
 public abstract class IoTest
 {
-    private NecoBowlContext Context = null!;
-
     [SetUp]
     public void Setup()
     {
-        Context = new NecoBowlContext(new NecoPlayerPair());
+        Context = new(new());
     }
+
+    private NecoBowlContext Context = null!;
 
     [TestFixture]
     public class OutputWrapperTests : IoTest
@@ -26,11 +26,9 @@ public abstract class IoTest
             Assert.That(turnInfo.CardPlayAt((0, 0)), Is.Not.Null);
         }
     }
-    
-    #region Helpers
-    
+
     private NecoUnitCard TestCard(int cost = 0)
-        => new NecoUnitCard(NecoCardModelCustom.FromUnitModel(NecoUnitModelCustom_HealthEqualsPower.DoNothing(), cost));
-    
-    #endregion
+    {
+        return new(NecoCardModelCustom.FromUnitModel(NecoUnitModelCustom_HealthEqualsPower.DoNothing(), cost));
+    }
 }

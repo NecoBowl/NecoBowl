@@ -11,8 +11,8 @@ internal class NecoMatch
     {
         players ??= new(new(), new());
         fieldParams ??= new((7, 10), (3, 4));
-        
+
         Players = players;
-        CurrentPush = new NecoPush(Players, fieldParams);
+        CurrentPush = new(Players, fieldParams);
     }
 }

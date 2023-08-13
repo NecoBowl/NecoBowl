@@ -1,15 +1,7 @@
-using System.Net.Mime;
-using System.Text.RegularExpressions;
-
 using neco_soft.NecoBowlCore.Input;
 using neco_soft.NecoBowlCore.Tactics;
 
 using NLog;
-
-using NUnit.Framework.Constraints;
-using NUnit.Framework.Internal;
-
-using Logger = NLog.Logger;
 
 namespace neco_soft.NecoBowlTest.Tactics;
 
@@ -23,10 +15,10 @@ internal abstract class TacticsTests
     [SetUp]
     public void Setup()
     {
-        Players = new NecoPlayerPair(new(), new());
-        Context = new NecoBowlContext(Players);
+        Players = new(new(), new());
+        Context = new(Players);
     }
-    
+
     [TestFixture]
     private class Plan : TacticsTests
     {
@@ -34,7 +26,7 @@ internal abstract class TacticsTests
         public void CardPlaysAppearInPlay()
         {
             var card = TestHelpers.TestCard();
-            
+
             var resp = Context.SendInput(new NecoInput.PlaceCard(Players.Offense, card, (0, 0)));
             Assert.That(resp.ResponseKind, Is.EqualTo(NecoInputResponse.Kind.Success));
 
@@ -52,30 +44,29 @@ internal abstract class TacticsTests
         public void CardsCostMoney()
         {
             var card = TestHelpers.TestCard(1);
-            
+
             var startingMoney = Context.Push.RemainingMoney(NecoPlayerRole.Offense);
             Context.AssertSendInput(new NecoInput.PlaceCard(Players.Offense, card, (0, 0)));
-            
+
             Assert.That(Context.Push.RemainingMoney(NecoPlayerRole.Offense), Is.EqualTo(startingMoney - 1));
         }
-        
+
         [Test]
         public void CannotOverspendOnTurn()
         {
             var card1 = TestHelpers.TestCard(2);
             var card2 = TestHelpers.TestCard(2);
-            
-            while (Context.Push.CurrentBaseMoney < 3) {
-                Context.AdvancePush();
-            }
+
+            while (Context.Push.CurrentBaseMoney < 3) Context.AdvancePush();
 
             NecoInputResponse resp;
 
             Context.AssertSendInput(new NecoInput.PlaceCard(Players.Offense, card1, (0, 0)));
-            Context.AssertSendInput(new NecoInput.PlaceCard(Players.Offense, card2, (0, 1)), NecoInputResponse.Kind.Illegal);
-            
+            Context.AssertSendInput(new NecoInput.PlaceCard(Players.Offense, card2, (0, 1)),
+                NecoInputResponse.Kind.Illegal);
+
             Context.FinishTurn();
-            
+
             Assert.That(Context.BeginPlay().Field[0, 1].Unit, Is.Null);
         }
 
@@ -84,7 +75,7 @@ internal abstract class TacticsTests
         {
             var card1 = TestHelpers.TestCard(2);
             var card2 = TestHelpers.TestCard(2);
-            
+
             NecoInputResponse resp;
             Context.AssertSendInput(new NecoInput.PlaceCard(Players.Offense, card1, (0, 0)));
             var preview = Context.GetPlayPreview();
@@ -105,7 +96,7 @@ internal abstract class TacticsTests
         public void PlayMustBeRunToAdvanceTurn()
         {
             Context.FinishTurn();
-            Assert.That(() => Context.AdvancePush(), Throws.InvalidOperationException); 
+            Assert.That(() => Context.AdvancePush(), Throws.InvalidOperationException);
         }
 
         [Test]
@@ -129,6 +120,6 @@ internal abstract class TacticsTests
     }
 
 #region Helpers
-    
+
 #endregion
 }

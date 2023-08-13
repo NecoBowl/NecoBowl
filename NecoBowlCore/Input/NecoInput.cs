@@ -1,7 +1,4 @@
-using System;
-
 using neco_soft.NecoBowlCore.Tactics;
-using neco_soft.NecoBowlCore.Tags;
 
 namespace neco_soft.NecoBowlCore.Input;
 
@@ -13,7 +10,7 @@ public abstract class NecoInput
     {
         PlayerId = player.Id;
     }
-    
+
     public sealed class PlaceCard : NecoInput
     {
         public readonly NecoCard Card;
@@ -26,7 +23,7 @@ public abstract class NecoInput
             Position = position;
         }
     }
-    
+
     public sealed class SetPlanMod : NecoInput
     {
         public readonly NecoCard Card;
@@ -45,14 +42,18 @@ public abstract class NecoInput
 
 public class NecoInputResponse
 {
-    public static NecoInputResponse Success() => new NecoInputResponse(Kind.Success);
-    public static NecoInputResponse Illegal(string message) => new NecoInputResponse(Kind.Illegal, message: message);
-    public static NecoInputResponse Error(Exception exception) => new NecoInputResponse(Kind.Error, exception: exception);
+    public enum Kind
+    {
+        Success,
+        Illegal,
+        Error
+    }
+
+    public readonly Exception? Exception;
+    public readonly string? Message;
 
     public readonly Kind ResponseKind;
-    public readonly string? Message;
-    public readonly Exception? Exception;
-    
+
     public NecoInputResponse(Kind responseKind, string? message = null, Exception? exception = null)
     {
         ResponseKind = responseKind;
@@ -60,17 +61,30 @@ public class NecoInputResponse
         Exception = exception;
     }
 
-    public enum Kind
+    public static NecoInputResponse Success()
     {
-        Success,
-        Illegal,
-        Error
+        return new(Kind.Success);
+    }
+
+    public static NecoInputResponse Illegal(string message)
+    {
+        return new(Kind.Illegal, message);
+    }
+
+    public static NecoInputResponse Error(Exception exception)
+    {
+        return new(Kind.Error, exception: exception);
     }
 }
 
 public class NecoInputException : NecoBowlException
 {
-    public NecoInputException() { }
-    public NecoInputException(string message) : base(message) { }
-    public NecoInputException(string message, Exception inner) : base(message, inner) { }
+    public NecoInputException()
+    { }
+
+    public NecoInputException(string message) : base(message)
+    { }
+
+    public NecoInputException(string message, Exception inner) : base(message, inner)
+    { }
 }

@@ -5,12 +5,12 @@ using neco_soft.NecoBowlCore.Tags;
 namespace neco_soft.NecoBowlDefinitions.Unit;
 
 /// <summary>
-/// High-commitment, high-coverage control unit.
+///     High-commitment, high-coverage control unit.
 /// </summary>
 public class Skunk : NecoUnitModel
 {
-    public static readonly Skunk Instance = new Skunk();
-    
+    public static readonly Skunk Instance = new();
+
     public override string InternalName => "Skunk";
     public override string Name => "Skunk";
     public override int Health => 10;
