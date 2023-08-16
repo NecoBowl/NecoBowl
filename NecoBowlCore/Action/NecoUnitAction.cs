@@ -34,8 +34,9 @@ public abstract class NecoUnitAction
 
             var outcome = new NecoUnitActionOutcome.UnitTranslated(new(unit, newPos, pos));
 
-            if (!field.IsInBounds(newPos))
+            if (!field.IsInBounds(newPos)) {
                 return NecoUnitActionResult.Failure($"{unit} could not move {Direction} (out of bounds)", outcome);
+            }
 
             return NecoUnitActionResult.Success(outcome);
         }
@@ -50,26 +51,32 @@ public abstract class NecoUnitAction
 
             var (ballPos, ball)
                 = field.GetAllUnits().SingleOrDefault(tup => tup.Item2.Tags.Contains(NecoUnitTag.TheBall));
-            if (ball is null) throw new NecoUnitActionException("no ball found on field");
+            if (ball is null) {
+                throw new NecoUnitActionException("no ball found on field");
+            }
 
             bool leftOn = false, rightOn = false;
             float leftDist = float.MaxValue, rightDist = float.MaxValue;
             var checkDir = pos + RelativeDirection.Left.ToVector2i(unit.Facing);
             if (field.IsInBounds(checkDir)) {
-                leftDist = (pos - checkDir).LengthSquared;
+                leftDist = (checkDir - ballPos).LengthSquared;
                 leftOn = true;
             }
 
             checkDir = pos + RelativeDirection.Right.ToVector2i(unit.Facing);
             if (field.IsInBounds(checkDir)) {
-                rightDist = (pos - checkDir).LengthSquared;
+                rightDist = (checkDir - ballPos).LengthSquared;
                 rightOn = true;
             }
 
-            if (rightOn && leftDist > rightDist)
+            if (rightOn && leftDist > rightDist) {
                 return new TranslateUnit(RelativeDirection.Right).CallResult(uid, field);
-            if (leftOn && rightDist > leftDist)
+            }
+
+            if (leftOn && rightDist > leftDist) {
                 return new TranslateUnit(RelativeDirection.Left).CallResult(uid, field);
+            }
+
             return NecoUnitActionResult.Success(new NecoUnitActionOutcome.NothingHappened(uid));
         }
     }
@@ -84,8 +91,8 @@ public abstract class NecoUnitAction
 }
 
 /// <summary>
-/// The final result of a unit's action, after it has considered the board state.
-/// These are consumed by the <see cref="NecoPlayStepper" />.
+///     The final result of a unit's action, after it has considered the board state.
+///     These are consumed by the <see cref="NecoPlayStepper" />.
 /// </summary>
 public abstract class NecoUnitActionOutcome
 {
@@ -136,9 +143,9 @@ public class NecoUnitActionResult
     public readonly NecoUnitActionOutcome? StateChange;
 
     public NecoUnitActionResult(string message,
-        Kind resultKind,
-        NecoUnitActionOutcome? stateChange = null,
-        Exception? exception = null)
+                                Kind resultKind,
+                                NecoUnitActionOutcome? stateChange = null,
+                                Exception? exception = null)
     {
         Message = message;
         ResultKind = resultKind;

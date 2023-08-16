@@ -160,6 +160,7 @@ public static class Ext
     }
 
     public static IEnumerable<(TKey, TValue)> Entries<TKey, TValue>(this Dictionary<TKey, TValue> source)
+        where TKey : notnull
     {
         return source.Select(kv => (kv.Key, kv.Value));
     }

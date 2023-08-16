@@ -112,10 +112,8 @@ internal class NecoTurn
         switch (input) {
             case NecoInput.PlaceCard placeCard:
                 return ProcessInput(placeCard);
-                break;
             case NecoInput.SetPlanMod planMod:
                 return ProcessInput(planMod);
-                break;
             default:
                 throw new NecoInputException($"received input of unhandled type {input.GetType()}");
         }
