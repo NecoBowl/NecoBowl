@@ -48,54 +48,11 @@ internal class NecoPlayStepperNew
 
             ResolvePendingMovementCollisions();
 
-            // Split the movements into two groups; one that has no movement, and the other that has attempted/successful movements.
-            var finalMovements = PendingMovements.Values.GroupBy(m => m.Movement.IsChangeInSource).ToList();
-
-            var unitBuffer = new Dictionary<NecoUnitId, NecoUnitMovement>();
-            foreach (var moveMut in finalMovements.Single(g => g.Key == true)) {
-                // For any unit that is going to move, place them in the movement buffer.
-                var unit = Field[moveMut.OldPos].Unit!;
-                var movementMutation = PendingMovements[moveMut.Subject];
-                var movement = movementMutation.Movement;
-                unitBuffer[unit.Id] = movement;
-                Field[movement.OldPos] = Field[movement.OldPos] with {
-                    Unit = null
-                };
-                PendingMovements.Remove(movementMutation.Subject);
+            if (PendingMovements.Any()) {
+                ConsumeMovements(out var resultantMutations);
+                stepMutations.AddRange(resultantMutations);
+                PendingMovements.Clear();
             }
-
-            // Perform each movement.
-            foreach (var (uid, movement) in unitBuffer.Select(kv => (kv.Key, kv.Value))) {
-                // Sanity check for collisions that didn't get handled
-                var collisionError = unitBuffer.Values.Where(m => m.NewPos == movement.NewPos && m != movement);
-                if (collisionError.Any()) {
-                    throw new NecoPlayfieldMutationException("collision in the unit buffer");
-                }
-
-                // Update the unit position
-                Field[movement.NewPos] = Field[movement.NewPos] with {
-                    Unit = movement.Unit
-                };
-
-                if (movement.IsChange) {
-                    // Add the movement mutation. At the moment, this is mutation doesn't
-                    //  actually do anything -- it just serves as a notification to the
-                    //  client that the movement occurred.
-                    stepMutations.Add(new NecoPlayfieldMutation.MovementMutation(movement));
-                }
-                else if (movement.Source?.ResultKind == NecoUnitActionResult.Kind.Failure || !movement.IsChange) {
-                    if (movement.Source!.StateChange is NecoUnitActionOutcome.UnitTranslated attemptedTranslation) {
-                        // Add bump event
-                        stepMutations.Add(new NecoPlayfieldMutation.UnitBumps(uid,
-                            attemptedTranslation.Movement.AsDirection()));
-                    }
-                    else {
-                        Logger.Warn($"unknown failure for movement: {movement.Source.StateChange}");
-                    }
-                }
-            }
-
-            PendingMovements.Clear();
 
             // Add the post-processing now so the next substep can see it
             PendingMutationsPostProcessing.ForEach(PendingMutations.Add);
@@ -109,6 +66,58 @@ internal class NecoPlayStepperNew
         MutationHistory.AddRange(stepMutations);
 
         return stepMutations;
+    }
+
+    private void ConsumeMovements(out IEnumerable<NecoPlayfieldMutation> resultantMutations)
+    {
+        var _resultantMutations = new List<NecoPlayfieldMutation>();
+
+        // Split the movements into two groups; one that has no movement, and the other that has attempted/successful movements.
+        var finalMovements = PendingMovements.Values.GroupBy(m => m.Movement.IsChangeInSource).ToList();
+        var unitBuffer = new Dictionary<NecoUnitId, NecoUnitMovement>();
+        foreach (var moveMut in finalMovements.Single(g => g.Key)) {
+            // For any unit that is going to move, place them in the movement buffer.
+            var unit = Field[moveMut.OldPos].Unit!;
+            var movementMutation = PendingMovements[moveMut.Subject];
+            var movement = movementMutation.Movement;
+            unitBuffer[unit.Id] = movement;
+            Field[movement.OldPos] = Field[movement.OldPos] with {
+                Unit = null
+            };
+            PendingMovements.Remove(movementMutation.Subject);
+        }
+
+        // Perform each movement.
+        foreach (var (uid, movement) in unitBuffer.Select(kv => (kv.Key, kv.Value))) {
+            // Sanity check for collisions that didn't get handled
+            var collisionError = unitBuffer.Values.Where(m => m.NewPos == movement.NewPos && m != movement);
+            if (collisionError.Any()) {
+                throw new NecoPlayfieldMutationException("collision in the unit buffer");
+            }
+
+            // Update the unit position
+            Field[movement.NewPos] = Field[movement.NewPos] with {
+                Unit = movement.Unit
+            };
+
+            if (movement.IsChange) {
+                _resultantMutations.Add(new NecoPlayfieldMutation.MovementMutation(movement));
+            }
+            else if (movement.Source?.ResultKind == NecoUnitActionResult.Kind.Failure || !movement.IsChange) {
+                if (movement.Source!.StateChange is NecoUnitActionOutcome.UnitTranslated attemptedTranslation) {
+                    // Add bump event
+                    if (!PendingMutations.Any(m => m.Subject == uid)) {
+                        _resultantMutations.Add(new NecoPlayfieldMutation.UnitBumps(uid,
+                            attemptedTranslation.Movement.AsDirection()));
+                    }
+                }
+                else {
+                    Logger.Warn($"unknown failure for movement: {movement.Source.StateChange}");
+                }
+            }
+        }
+
+        resultantMutations = _resultantMutations;
     }
 
     private void ResolvePendingMovementCollisions()

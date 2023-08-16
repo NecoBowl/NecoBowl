@@ -6,11 +6,12 @@ public partial class NecoPlayfieldMutation
 {
     public class UnitPushes : BaseMutation
     {
-        public AbsoluteDirection Direction;
-        public NecoUnitId Pusher;
-        public NecoUnitId Receiver;
+        public readonly AbsoluteDirection Direction;
+        public readonly NecoUnitId Pusher;
+        public readonly NecoUnitId Receiver;
 
         public UnitPushes(NecoUnitId pusher, NecoUnitId receiver, AbsoluteDirection direction)
+            : base(pusher)
         {
             Pusher = pusher;
             Receiver = receiver;
@@ -24,11 +25,10 @@ public partial class NecoPlayfieldMutation
     public class UnitBumps : BaseMutation
     {
         public readonly AbsoluteDirection Direction;
-        public readonly NecoUnitId Subject;
 
         public UnitBumps(NecoUnitId subject, AbsoluteDirection direction)
+            : base(subject)
         {
-            Subject = subject;
             Direction = direction;
         }
 
@@ -42,6 +42,7 @@ public partial class NecoPlayfieldMutation
         public readonly int Damage;
 
         public UnitAttacks(ReadOnlyNecoField field, NecoUnitId attacker, NecoUnitId receiver)
+            : base(attacker)
         {
             Attacker = attacker;
             Receiver = receiver;
@@ -61,11 +62,10 @@ public partial class NecoPlayfieldMutation
     public class UnitTakesDamage : BaseMutation
     {
         public readonly uint DamageAmount;
-        public readonly NecoUnitId Subject;
 
         public UnitTakesDamage(NecoUnitId subject, uint damageAmount)
+            : base(subject)
         {
-            Subject = subject;
             DamageAmount = damageAmount;
         }
 
@@ -88,12 +88,9 @@ public partial class NecoPlayfieldMutation
 
     public class UnitDies : BaseMutation
     {
-        public readonly NecoUnitId Subject;
-
         public UnitDies(NecoUnitId subject)
-        {
-            Subject = subject;
-        }
+            : base(subject)
+        { }
 
         public override string Description => $"{Subject} is destroyed";
 
@@ -109,11 +106,10 @@ public partial class NecoPlayfieldMutation
     public class UnitGetsMod : BaseMutation
     {
         public readonly NecoUnitMod Mod;
-        public readonly NecoUnitId Subject;
 
         public UnitGetsMod(NecoUnitId subject, NecoUnitMod mod)
+            : base(subject)
         {
-            Subject = subject;
             Mod = mod;
         }
 
@@ -133,13 +129,12 @@ public partial class NecoPlayfieldMutation
     {
         public readonly NecoUnitId Item;
         public readonly NecoUnitMovement Source;
-        public readonly NecoUnitId Subject;
 
         private NecoUnit? TempUnitItem;
 
         public UnitPicksUpItem(NecoUnitId subject, NecoUnitId item, NecoUnitMovement source)
+            : base(subject)
         {
-            Subject = subject;
             Item = item;
             Source = source;
         }

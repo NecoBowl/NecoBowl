@@ -81,6 +81,25 @@ public abstract class NecoUnitAction
         }
     }
 
+    public class ChaseBall : NecoUnitAction
+    {
+        private readonly RelativeDirection[] AllowedDirections;
+
+        public ChaseBall(RelativeDirection[] allowedDirections)
+        {
+            AllowedDirections = allowedDirections;
+        }
+
+        protected override NecoUnitActionResult CallResult(NecoUnitId uid, ReadOnlyNecoField field)
+        {
+            var unit = field.GetUnit(uid, out var pos);
+            var (ballPos, ball)
+                = field.GetAllUnits().SingleOrDefault(tup => tup.Item2.Tags.Contains(NecoUnitTag.TheBall));
+            var result = AllowedDirections.MinBy(dir => (pos + dir.ToVector2i(unit.Facing) - ballPos).LengthSquared);
+            return new TranslateUnit(result).CallResult(uid, field);
+        }
+    }
+
     public class DoNothing : NecoUnitAction
     {
         protected override NecoUnitActionResult CallResult(NecoUnitId uid, ReadOnlyNecoField field)

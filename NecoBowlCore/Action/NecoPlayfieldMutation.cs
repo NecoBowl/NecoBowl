@@ -38,6 +38,13 @@ public abstract partial class NecoPlayfieldMutation
 
     public abstract class BaseMutation : NecoPlayfieldMutation
     {
+        public readonly NecoUnitId Subject;
+
+        protected BaseMutation(NecoUnitId subject)
+        {
+            Subject = subject;
+        }
+
         internal virtual void Pass1Mutate(NecoField field)
         { }
 
