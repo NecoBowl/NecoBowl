@@ -6,12 +6,19 @@ public partial class NecoPlayfieldMutation
 {
     public class UnitPushes : BaseMutation
     {
+        public AbsoluteDirection Direction;
         public NecoUnitId Pusher;
+        public NecoUnitId Receiver;
 
-        public UnitPushes(NecoUnitId subject, Vector2i sourceSpace, Vector2i destSpace, NecoUnitId pusher)
+        public UnitPushes(NecoUnitId pusher, NecoUnitId receiver, AbsoluteDirection direction)
         {
             Pusher = pusher;
+            Receiver = receiver;
+            Direction = direction;
         }
+
+        public override string Description
+            => $"{Pusher} pushes {Receiver} to the {Direction}";
     }
 
     public class UnitBumps : BaseMutation
@@ -25,34 +32,29 @@ public partial class NecoPlayfieldMutation
             Direction = direction;
         }
 
-        public override string ToString()
-        {
-            return $"{nameof(UnitBumps)} [{Subject} bumps into the {Direction} }}";
-        }
+        public override string Description => $"{Subject} bumps to the {Direction}";
     }
 
     public class UnitAttacks : BaseMutation
     {
         public readonly NecoUnitId Attacker, Receiver;
 
-        public UnitAttacks(NecoUnitId attacker, NecoUnitId receiver)
+        public readonly int Damage;
+
+        public UnitAttacks(ReadOnlyNecoField field, NecoUnitId attacker, NecoUnitId receiver)
         {
             Attacker = attacker;
             Receiver = receiver;
-        }
 
-        internal override void Pass3Mutate(NecoField field)
-        { }
-
-        internal override IEnumerable<BaseMutation> AddMutations(ReadOnlyNecoField field)
-        {
             var unit = field.GetUnit(Attacker);
-            yield return new UnitTakesDamage(Receiver, (uint)unit.Power);
+            Damage = unit.Power;
         }
 
-        public override string ToString()
+        public override string Description => $"{Attacker} attacks {Receiver} for {Damage} damage";
+
+        internal override IEnumerable<BaseMutation> GetResultantMutations(ReadOnlyNecoField field)
         {
-            return $"{nameof(UnitAttacks)} [{Attacker} attacks {Receiver}]";
+            yield return new UnitTakesDamage(Receiver, (uint)Damage);
         }
     }
 
@@ -67,16 +69,20 @@ public partial class NecoPlayfieldMutation
             DamageAmount = damageAmount;
         }
 
+        public override string Description => $"{Subject} takes {DamageAmount} damage";
+
         internal override void Pass1Mutate(NecoField field)
         {
             var unit = field.GetUnit(Subject);
             unit.DamageTaken += (int)DamageAmount;
         }
 
-        internal override IEnumerable<BaseMutation> AddMutations(ReadOnlyNecoField field)
+        internal override IEnumerable<BaseMutation> GetResultantMutations(ReadOnlyNecoField field)
         {
             var unit = field.GetUnit(Subject);
-            if (unit.CurrentHealth <= 0) yield return new UnitDies(Subject);
+            if (unit.CurrentHealth <= 0) {
+                yield return new UnitDies(Subject);
+            }
         }
     }
 
@@ -88,6 +94,8 @@ public partial class NecoPlayfieldMutation
         {
             Subject = subject;
         }
+
+        public override string Description => $"{Subject} is destroyed";
 
         internal override void Pass1Mutate(NecoField field)
         {
@@ -109,6 +117,8 @@ public partial class NecoPlayfieldMutation
             Mod = mod;
         }
 
+        public override string Description => $"{Subject} gets {Mod}";
+
         internal override void Pass1Mutate(NecoField field)
         {
             var unit = field.GetUnit(Subject);
@@ -122,15 +132,19 @@ public partial class NecoPlayfieldMutation
     public class UnitPicksUpItem : BaseMutation
     {
         public readonly NecoUnitId Item;
+        public readonly NecoUnitMovement Source;
         public readonly NecoUnitId Subject;
 
         private NecoUnit? TempUnitItem;
 
-        public UnitPicksUpItem(NecoUnitId subject, NecoUnitId item)
+        public UnitPicksUpItem(NecoUnitId subject, NecoUnitId item, NecoUnitMovement source)
         {
             Subject = subject;
             Item = item;
+            Source = source;
         }
+
+        public override string Description => $"{Subject} picks up {Item}";
 
         internal override void Pass1Mutate(NecoField field)
         {
@@ -142,6 +156,13 @@ public partial class NecoPlayfieldMutation
         {
             var subject = field.GetUnit(Subject);
             subject.Inventory.Add(TempUnitItem!);
+        }
+
+        internal override IEnumerable<NecoPlayfieldMutation> GetResultantMutations(ReadOnlyNecoField field)
+        {
+            if (Source.IsChange) {
+                yield return new MovementMutation(Source);
+            }
         }
     }
 }

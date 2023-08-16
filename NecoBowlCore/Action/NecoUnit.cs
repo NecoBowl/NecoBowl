@@ -17,7 +17,7 @@ public record NecoUnitId
 }
 
 /// <summary>
-/// A unit as exists during a play.
+///     A unit as exists during a play.
 /// </summary>
 public sealed class NecoUnit : IEquatable<NecoUnit>
 {
@@ -30,6 +30,7 @@ public sealed class NecoUnit : IEquatable<NecoUnit>
     public readonly List<NecoUnitMod> Mods = new();
 
     public readonly NecoPlayerId OwnerId;
+    public readonly ReactionDict Reactions = new();
     public readonly List<NecoUnitTag> Tags = new();
     public readonly NecoUnitModel UnitModel;
     public int DamageTaken;
@@ -42,6 +43,7 @@ public sealed class NecoUnit : IEquatable<NecoUnit>
         Discriminator = discriminator;
         OwnerId = ownerId;
         Tags.AddRange(UnitModel.Tags);
+        Reactions.AddRange(unitModel.Reactions);
 
         ActionStack = new(unitModel.Actions);
     }
@@ -70,14 +72,18 @@ public sealed class NecoUnit : IEquatable<NecoUnit>
 
     internal NecoUnitAction PopAction()
     {
-        if (!ActionStack.Any()) throw new NecoBowlFieldException($"unit {this} has no actions");
+        if (!ActionStack.Any()) {
+            throw new NecoBowlFieldException($"unit {this} has no actions");
+        }
 
         var value = ActionStack.Pop();
 
         // Refill actions if exhausted.
-        if (!ActionStack.Any())
-            foreach (var a in UnitModel.Actions)
+        if (!ActionStack.Any()) {
+            foreach (var a in UnitModel.Actions) {
                 ActionStack.Push(a);
+            }
+        }
 
         return value;
     }

@@ -9,20 +9,31 @@ public abstract partial class NecoPlayfieldMutation
         (m, s, f) => m.Pass3Mutate(f)
     };
 
+    public abstract string Description { get; }
+
+    public override string ToString()
+    {
+        return $"[{Description}]";
+    }
+
     internal virtual void Prepare(NecoSubstepContext context, ReadOnlyNecoField field)
     { }
 
     public sealed class MovementMutation : NecoPlayfieldMutation
     {
-        public readonly Vector2i OldPos, NewPos;
-        public readonly NecoUnitId Subject;
+        public NecoUnitMovement Movement;
 
-        public MovementMutation(NecoUnitId subject, Vector2i oldPos, Vector2i newPos)
+        public MovementMutation(NecoUnitMovement movement)
         {
-            Subject = subject;
-            OldPos = oldPos;
-            NewPos = newPos;
+            Movement = movement;
         }
+
+        public Vector2i OldPos => Movement.OldPos;
+        public Vector2i NewPos => Movement.NewPos;
+        public NecoUnitId Subject => Movement.UnitId;
+
+        public override string Description
+            => $"{Subject} moves from {OldPos} to {NewPos}";
     }
 
     public abstract class BaseMutation : NecoPlayfieldMutation
@@ -36,7 +47,7 @@ public abstract partial class NecoPlayfieldMutation
         internal virtual void Pass3Mutate(NecoField field)
         { }
 
-        internal virtual IEnumerable<BaseMutation> AddMutations(ReadOnlyNecoField field)
+        internal virtual IEnumerable<NecoPlayfieldMutation> GetResultantMutations(ReadOnlyNecoField field)
         {
             yield break;
         }
@@ -44,32 +55,7 @@ public abstract partial class NecoPlayfieldMutation
 }
 
 internal class NecoSubstepContext
-{
-    public readonly IEnumerable<NecoUnitMovement> Movements;
-    private readonly List<NecoPlayfieldMutation.BaseMutation> Mutations;
-
-    public NecoSubstepContext(List<NecoPlayfieldMutation.BaseMutation> mutations,
-        IEnumerable<NecoUnitMovement> movements)
-    {
-        Mutations = mutations;
-        Movements = movements;
-    }
-
-    public IReadOnlyList<NecoPlayfieldMutation> GetMutations()
-    {
-        return Mutations;
-    }
-
-    public IEnumerable<NecoUnitMovement> GetMovements()
-    {
-        return Movements;
-    }
-
-    public void AddMutation(NecoPlayfieldMutation.BaseMutation mutation)
-    {
-        Mutations.Add(mutation);
-    }
-}
+{ }
 
 public class NecoPlayfieldMutationException : ApplicationException
 {

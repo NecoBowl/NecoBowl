@@ -10,23 +10,23 @@ using CardPlayMap
 namespace neco_soft.NecoBowlCore.Tactics;
 
 /// <summary>
-/// Game state container that tracks cards placed by the players. This is consolidated into a <see cref="NecoPlan" />
-/// once
-/// the inputs are done being received. Note that in an online scenario, it is probable that inputs from the client's
-/// opponent would only be received after the player has submitted their own. Therefore, the <see cref="CardPlays" />
-/// dictionary likely only contains populated data for one player until <see cref="Finished" /> is true.
-/// Turns are applied to a <see cref="NecoPush" />.
+///     Game state container that tracks cards placed by the players. This is consolidated into a <see cref="NecoPlan" />
+///     once
+///     the inputs are done being received. Note that in an online scenario, it is probable that inputs from the client's
+///     opponent would only be received after the player has submitted their own. Therefore, the <see cref="CardPlays" />
+///     dictionary likely only contains populated data for one player until <see cref="Finished" /> is true.
+///     Turns are applied to a <see cref="NecoPush" />.
 /// </summary>
 internal class NecoTurn
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
+    private readonly List<NecoInput> AcceptedInputs = new();
+
     private readonly CardPlayMap CardPlays = new();
     public readonly NecoPlayerPair PlayerPair;
 
     public readonly uint TurnIndex;
-
-    private readonly List<NecoInput> AcceptedInputs = new();
 
     public NecoTurn(uint turnIndex, NecoPlayerPair playerPair)
     {
@@ -34,7 +34,9 @@ internal class NecoTurn
         PlayerPair = playerPair;
 
         // Prepare Plays dict
-        foreach (var player in playerPair.Enumerate()) CardPlays[player.Id] = new();
+        foreach (var player in playerPair.Enumerate()) {
+            CardPlays[player.Id] = new();
+        }
     }
 
     private NecoTurn(uint turnIndex, NecoPlayerPair playerPair, CardPlayMap plays)
@@ -44,7 +46,7 @@ internal class NecoTurn
     }
 
     public bool Finished { get; private set; }
-    public uint BaseMoney => 3;
+    public uint BaseMoney => 10;
 
     public IEnumerable<NecoPlan.CardPlay> AllCardPlays
         => CardPlays.Values.Aggregate((orig, next) => orig.Concat(next).ToList());
@@ -63,9 +65,9 @@ internal class NecoTurn
     }
 
     /// <summary>
-    /// Gets the Turn object that would come after this one. Note that this does not check if this turn is Finished; that
-    /// is up
-    /// to the caller to check if this is being used to progress the game.
+    ///     Gets the Turn object that would come after this one. Note that this does not check if this turn is Finished; that
+    ///     is up
+    ///     to the caller to check if this is being used to progress the game.
     /// </summary>
     public NecoTurn NextTurn()
     {
@@ -83,7 +85,9 @@ internal class NecoTurn
 
         try {
             var resp = ProcessInput(input);
-            if (resp.ResponseKind == NecoInputResponse.Kind.Success) AcceptedInputs.Add(input);
+            if (resp.ResponseKind == NecoInputResponse.Kind.Success) {
+                AcceptedInputs.Add(input);
+            }
 
             Logger.Info(resp.ResponseKind);
 
@@ -97,10 +101,13 @@ internal class NecoTurn
 
     private NecoInputResponse ProcessInput(NecoInput input)
     {
-        if (Finished)
+        if (Finished) {
             throw new NecoInputException("received input while turn is finished");
-        if (PlayerPair.PlayerByIdOrNull(input.PlayerId) is null)
+        }
+
+        if (PlayerPair.PlayerByIdOrNull(input.PlayerId) is null) {
             throw new NecoInputException($"input had invalid player {input.PlayerId}");
+        }
 
         switch (input) {
             case NecoInput.PlaceCard placeCard:
@@ -116,12 +123,14 @@ internal class NecoTurn
 
     private NecoInputResponse ProcessInput(NecoInput.PlaceCard input)
     {
-        if (input.Card.Cost > RemainingMoney(PlayerPair.RoleOf(input.PlayerId)))
+        if (input.Card.Cost > RemainingMoney(PlayerPair.RoleOf(input.PlayerId))) {
             return NecoInputResponse.Illegal(
                 $"Not enough money (cost {input.Card.Cost}, have {RemainingMoney(PlayerPair.RoleOf(input.PlayerId))})");
+        }
 
-        if (AllCardPlays.Any(p => p.Position == input.Position))
+        if (AllCardPlays.Any(p => p.Position == input.Position)) {
             return NecoInputResponse.Illegal($"The space {input.Position} is already occupied.");
+        }
 
         // TAG:SMELLY
         if (input.Card.IsUnitCard(out var unitCard) && unitCard!.UnitModel.Tags.Contains(NecoUnitTag.Smelly)) { }
@@ -132,8 +141,9 @@ internal class NecoTurn
 
     private NecoInputResponse ProcessInput(NecoInput.SetPlanMod input)
     {
-        if (!CardPlays.Values.Any(list => list.Any(cp => cp.Card == input.Card)))
+        if (!CardPlays.Values.Any(list => list.Any(cp => cp.Card == input.Card))) {
             throw new NecoInputException($"card {input.Card} not found in this turn");
+        }
 
         input.Card.Options.SetValue(input.OptionIdentifier, input.OptionValue);
         return NecoInputResponse.Success();

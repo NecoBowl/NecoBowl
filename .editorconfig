@@ -8,9 +8,17 @@ indent_style = space
 max_line_length = 120
 
 # ReSharper properties
+resharper_align_multiline_binary_expressions_chain = false
+resharper_allow_far_alignment = false
 resharper_braces_for_for = required_for_multiline
 resharper_braces_for_ifelse = not_required_for_both
 resharper_braces_redundant = true
+resharper_csharp_align_multiline_calls_chain = false
+resharper_indent_anonymous_method_block = true
+resharper_keep_existing_invocation_parens_arrangement = false
+resharper_outdent_dots = false
+resharper_place_simple_initializer_on_single_line = false
+resharper_wrap_array_initializer_style = chop_always
 resharper_wrap_for_stmt_header_style = wrap_if_long
 
 # XML project files

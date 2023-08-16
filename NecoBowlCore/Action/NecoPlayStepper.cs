@@ -5,15 +5,16 @@ using neco_soft.NecoBowlCore.Tags;
 namespace neco_soft.NecoBowlCore.Action;
 
 /// <summary>
-/// Record container for a unit that is moving to another space.
+///     Record container for a unit that is moving to another space.
 /// </summary>
 public record NecoUnitMovement
 {
+    public readonly Vector2i NewPos;
+    public readonly Vector2i OldPos;
+
     // Hack to let the end of step calculation see what initiated the movements (push vs manual move).
     internal readonly NecoUnitActionResult? Source;
     internal readonly NecoUnit Unit;
-    public Vector2i NewPos;
-    public Vector2i OldPos;
 
     public NecoUnitMovement(NecoUnit unit, Vector2i newPos, Vector2i oldPos, NecoUnitActionResult? source = null)
     {
@@ -23,9 +24,23 @@ public record NecoUnitMovement
         Source = source;
     }
 
+    public NecoUnitMovement(NecoUnitMovement other,
+                            Vector2i? newPos = null,
+                            Vector2i? oldPos = null,
+                            NecoUnitActionResult? source = null)
+    {
+        NewPos = newPos ?? other.NewPos;
+        OldPos = oldPos ?? other.OldPos;
+        Source = source ?? other.Source;
+        Unit = other.Unit;
+    }
+
     public NecoUnitId UnitId => Unit.Id;
 
     public bool IsChange => NewPos != OldPos;
+
+    public bool IsChangeInSource
+        => Source?.StateChange is NecoUnitActionOutcome.UnitTranslated translation && translation.Movement.IsChange;
 
     public Vector2i Difference => NewPos - OldPos;
 
@@ -47,8 +62,14 @@ internal record UnitMovementPair
         Movement1 = movement1;
         Movement2 = movement2;
 
-        Movements = new(new[] { Movement1.Unit, Movement2.Unit });
-        Collection = new(new[] { Movement1, Movement2 });
+        Movements = new(new[] {
+            Movement1.Unit,
+            Movement2.Unit
+        });
+        Collection = new(new[] {
+            Movement1,
+            Movement2
+        });
     }
 
     /// <summary>Finds the unit in the pair with the specified tag.</summary>
@@ -62,8 +83,8 @@ internal record UnitMovementPair
     }
 
     /// <summary>
-    /// Finds the single unit that matches a condition. Throws an exception if both items in the pair match the
-    /// condition.
+    ///     Finds the single unit that matches a condition. Throws an exception if both items in the pair match the
+    ///     condition.
     /// </summary>
     /// <param name="predicate">The condition to check for.</param>
     /// <param name="other">The unit of the pair that did not match the condition. Null if neither unit matches.</param>
@@ -76,13 +97,13 @@ internal record UnitMovementPair
     }
 
     /// <summary>
-    /// Try to find the single unit that matches a condition.
+    ///     Try to find the single unit that matches a condition.
     /// </summary>
     /// <returns>False if neither unit matches the condition or if both match the condition. Otherwise, true.</returns>
     /// <seealso cref="UnitWhereSingle" />
     public bool TryUnitWhereSingle(Func<NecoUnitMovement, bool> predicate,
-        out NecoUnitMovement? result,
-        out NecoUnitMovement? other)
+                                   out NecoUnitMovement? result,
+                                   out NecoUnitMovement? other)
     {
         try {
             result = UnitWhereSingle(predicate, out other);
@@ -96,13 +117,15 @@ internal record UnitMovementPair
     }
 
     public bool TryGetUnitsBy(Func<NecoUnitMovement, bool> predicate1,
-        Func<NecoUnitMovement, bool> predicate2,
-        out NecoUnitMovement? result1,
-        out NecoUnitMovement? result2)
+                              Func<NecoUnitMovement, bool> predicate2,
+                              out NecoUnitMovement? result1,
+                              out NecoUnitMovement? result2)
     {
         if (TryUnitWhereSingle(predicate1, out result1, out result2)) {
-            if (predicate2(result2!))
+            if (predicate2(result2!)) {
                 return true;
+            }
+
             result2 = null;
         }
 
@@ -112,23 +135,29 @@ internal record UnitMovementPair
     public bool UnitsAreEnemies()
     {
         return Movement1.Unit.OwnerId != default && Movement2.Unit.OwnerId != default
-                                                 && Movement1.Unit.OwnerId != Movement2.Unit.OwnerId;
+         && Movement1.Unit.OwnerId != Movement2.Unit.OwnerId;
     }
 
     public bool IsSameUnitsAs(UnitMovementPair other)
     {
         return (Movement1 == other.Movement1 && Movement2 == other.Movement2)
-               || (Movement2 == other.Movement1 && Movement1 == other.Movement2);
+         || (Movement2 == other.Movement1 && Movement1 == other.Movement2);
     }
 
     public NecoUnitMovement OtherMovement(NecoUnitMovement movement)
     {
-        if (Movement1 == movement && Movement2 != movement)
+        if (Movement1 == movement && Movement2 != movement) {
             return Movement2;
-        if (Movement2 == movement && Movement1 != movement)
+        }
+
+        if (Movement2 == movement && Movement1 != movement) {
             return Movement1;
-        if (Movement1 != movement && Movement2 != movement)
+        }
+
+        if (Movement1 != movement && Movement2 != movement) {
             throw new NecoBowlException("movement is not in pair");
+        }
+
         throw new NecoBowlException("both units are the same");
     }
 
@@ -169,12 +198,14 @@ internal static class PlayStepperExt
         var usedUnits = new List<NecoUnitMovement>();
 
         foreach (var move in movementsTemp) {
-            if (usedUnits.Contains(move)) continue;
+            if (usedUnits.Contains(move)) {
+                continue;
+            }
 
             var swap = movementsTemp.FirstOrDefault(m
-                => m.NewPos == move.OldPos
-                   && move.NewPos == m.OldPos
-                   && move.Unit != m.Unit);
+                                                        => m.NewPos == move.OldPos
+                                                     && move.NewPos == m.OldPos
+                                                     && move.Unit != m.Unit);
             if (swap is not null) {
                 construct.Add(new(move, swap));
                 usedUnits.Add(move);

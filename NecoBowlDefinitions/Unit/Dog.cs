@@ -22,9 +22,12 @@ public class Dog : NecoUnitModel
 
     public override IEnumerable<NecoUnitTag> Tags => new[] { NecoUnitTag.Carrier };
 
-    private IEnumerable<NecoPlayfieldMutation.BaseMutation> OnPickedUpBall(IEnumerable<NecoPlayfieldMutation> source)
+    public override ReactionDict Reactions { get; } = new() {
+        new(typeof(NecoPlayfieldMutation.UnitPicksUpItem), (subject, field, mut) => OnPicksUp(subject))
+    };
+
+    private static IEnumerable<NecoPlayfieldMutation.BaseMutation> OnPicksUp(NecoUnit subject)
     {
-        yield break;
-        // TODO Set up this reaction
+        yield return new NecoPlayfieldMutation.UnitGetsMod(subject.Id, new NecoUnitMod.Rotate(4));
     }
 }

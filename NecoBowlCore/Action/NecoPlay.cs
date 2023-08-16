@@ -92,8 +92,5 @@ public class NecoPlay
     public void LogFieldToAscii(string prefix = "> ")
     {
         Logger.Debug($"Logging field state\n{prefix}STEP COUNT {StepCount}\n{Field.ToAscii(prefix)}");
-        Logger.Debug("");
-
-        if (true) { }
     }
 }

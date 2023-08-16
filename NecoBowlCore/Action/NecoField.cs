@@ -7,15 +7,16 @@ namespace neco_soft.NecoBowlCore.Action;
 public readonly record struct NecoSpaceContents(NecoUnit? Unit, bool Fooabr = false);
 
 /// <summary>
-/// A two-dimensional grid of <see cref="NecoSpaceContents" />.
+///     A two-dimensional grid of <see cref="NecoSpaceContents" />.
 /// </summary>
 /// <remarks>
-/// The <see cref="NecoUnit" /> in a <see cref="NecoSpaceContents" /> is a reference to a mutable unit. Therefore, attempting to copy a
-/// <c>NecoField</c> will result in that field having references to the units in the original field. If that original
-/// field is then
-/// mutated in some way, properties like the unit's health will change on BOTH the original and copy of the field. The
-/// contents of the
-/// copy are effectively garbage at that point. Basically, do not try to copy a field without careful consideration!
+///     The <see cref="NecoUnit" /> in a <see cref="NecoSpaceContents" /> is a reference to a mutable unit. Therefore,
+///     attempting to copy a
+///     <c>NecoField</c> will result in that field having references to the units in the original field. If that original
+///     field is then
+///     mutated in some way, properties like the unit's health will change on BOTH the original and copy of the field. The
+///     contents of the
+///     copy are effectively garbage at that point. Basically, do not try to copy a field without careful consideration!
 /// </remarks>
 internal class NecoField
 {
@@ -45,8 +46,9 @@ internal class NecoField
         get {
             var spaces = Enumerable.Empty<(Vector2i, NecoSpaceContents)>();
             for (var y = 0; y < FieldContents.GetLength(1); y++)
-                for (var x = 0; x < FieldContents.GetLength(0); x++)
-                    spaces = spaces.Append((new(x, y), FieldContents[x, y]));
+            for (var x = 0; x < FieldContents.GetLength(0); x++) {
+                spaces = spaces.Append((new(x, y), FieldContents[x, y]));
+            }
 
             return spaces;
         }
@@ -65,7 +67,7 @@ internal class NecoField
     public IEnumerable<(Vector2i, NecoUnit)> GetAllUnits()
     {
         return SpacePositions.Where(tuple => tuple.Item2.Unit is not null)
-            .Select(tuple => (tuple.Item1, tuple.Item2.Unit!));
+                             .Select(tuple => (tuple.Item1, tuple.Item2.Unit!));
     }
 
     public Vector2i GetUnitPosition(NecoUnitId uid)
@@ -156,7 +158,9 @@ internal class NecoField
         void AddBorderH()
         {
             sb.Append("+");
-            for (var i = 0; i < GetBounds().x; i++) sb.Append("-");
+            for (var i = 0; i < GetBounds().x; i++) {
+                sb.Append("-");
+            }
 
             sb.AppendLine("+");
         }
@@ -168,7 +172,9 @@ internal class NecoField
             sb.Append("|");
             for (var x = 0; x < GetBounds().x; x++) {
                 var space = this[x, y];
-                if (space.Unit is not null) unitIcons[space.Unit] = (char)('A' + unitIcons.Count);
+                if (space.Unit is not null) {
+                    unitIcons[space.Unit] = (char)('A' + unitIcons.Count);
+                }
 
                 sb.Append(space.Unit is null ? " " : unitIcons[space.Unit]);
             }
@@ -178,7 +184,9 @@ internal class NecoField
 
         AddBorderH();
 
-        foreach (var (unit, icon) in unitIcons) sb.AppendLine($"{icon}: {unit} ({unit.CurrentHealth} HP)");
+        foreach (var (unit, icon) in unitIcons) {
+            sb.AppendLine($"{icon}: {unit} ({unit.CurrentHealth} HP)");
+        }
 
         sb.Insert(0, linePrefix);
         sb.Replace("\n", $"\n{linePrefix}");
@@ -190,19 +198,19 @@ internal class NecoField
 public record class NecoFieldParameters((int X, int Y) Bounds, (int X, int Y) BallSpawnPoint, int TeamSideSize = 4)
 {
     public NecoPlayerRole? GetPlayerAffiliation((int x, int y) pos)
-{
-    return pos.y >= 0 && pos.y < TeamSideSize ? NecoPlayerRole.Offense
-        : pos.y >= Bounds.Y - TeamSideSize && pos.y < Bounds.Y ? NecoPlayerRole.Defense
-        : null;
-}
+    {
+        return pos.y >= 0 && pos.y < TeamSideSize ? NecoPlayerRole.Offense
+            : pos.y >= Bounds.Y - TeamSideSize && pos.y < Bounds.Y ? NecoPlayerRole.Defense
+            : null;
+    }
 }
 
 /// <summary>
-/// Wrapper around a <see cref="NecoField" /> that prevents modifications to the field.
+///     Wrapper around a <see cref="NecoField" /> that prevents modifications to the field.
 /// </summary>
 /// <remarks>
-/// Note that this field is not immutable; changes made to the field from which the read-only field is derived will
-/// still appear when reading from the read-only field.
+///     Note that this field is not immutable; changes made to the field from which the read-only field is derived will
+///     still appear when reading from the read-only field.
 /// </remarks>
 public sealed class ReadOnlyNecoField
 {
@@ -213,13 +221,13 @@ public sealed class ReadOnlyNecoField
         Field = field;
     }
 
-
-    #region Wrapped methods - Field
+#region Wrapped methods - Field
 
     public NecoSpaceContents this[int x, int y] => Field[x, y];
     public NecoSpaceContents this[Vector2i pos] => Field[pos];
 
     public NecoFieldParameters FieldParameters => Field.FieldParameters;
+
     public IEnumerable<(Vector2i, NecoUnit)> GetAllUnits()
     {
         return Field.GetAllUnits();
@@ -270,7 +278,7 @@ public sealed class ReadOnlyNecoField
         return Field.ToAscii(prefix);
     }
 
-    #endregion
+#endregion
 }
 
 public class NecoBowlFieldException : Exception
