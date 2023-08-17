@@ -54,6 +54,9 @@ public abstract partial class NecoPlayfieldMutation
         internal virtual void Pass3Mutate(NecoField field)
         { }
 
+        internal virtual void PreMovementMutate(NecoField field, NecoSubstepContext substepContext)
+        { }
+
         internal virtual IEnumerable<NecoPlayfieldMutation> GetResultantMutations(ReadOnlyNecoField field)
         {
             yield break;
@@ -62,7 +65,19 @@ public abstract partial class NecoPlayfieldMutation
 }
 
 internal class NecoSubstepContext
-{ }
+{
+    private readonly Dictionary<NecoUnitId, NecoPlayfieldMutation.MovementMutation> Dict;
+
+    public NecoSubstepContext(Dictionary<NecoUnitId, NecoPlayfieldMutation.MovementMutation> dict)
+    {
+        Dict = dict;
+    }
+
+    public void AddEntry(NecoUnitId unit, NecoUnitMovement movement)
+    {
+        Dict[unit] = new(movement);
+    }
+}
 
 public class NecoPlayfieldMutationException : ApplicationException
 {

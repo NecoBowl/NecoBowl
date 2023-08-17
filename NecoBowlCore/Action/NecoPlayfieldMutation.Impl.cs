@@ -2,7 +2,7 @@ using neco_soft.NecoBowlCore.Tags;
 
 namespace neco_soft.NecoBowlCore.Action;
 
-public partial class NecoPlayfieldMutation
+public abstract partial class NecoPlayfieldMutation
 {
     public class UnitPushes : BaseMutation
     {
@@ -20,6 +20,15 @@ public partial class NecoPlayfieldMutation
 
         public override string Description
             => $"{Pusher} pushes {Receiver} to the {Direction}";
+
+        internal override void PreMovementMutate(NecoField field, NecoSubstepContext substepContext)
+        {
+            var pusher = field.GetUnit(Pusher);
+            var receiver = field.GetUnit(Receiver, out var receiverPos);
+            if (field.IsInBounds(receiverPos + Direction.ToVector2i())) {
+                substepContext.AddEntry(receiver.Id, new(receiver, receiverPos + Direction.ToVector2i(), receiverPos));
+            }
+        }
     }
 
     public class UnitBumps : BaseMutation
