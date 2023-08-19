@@ -45,6 +45,8 @@ public abstract partial class NecoPlayfieldMutation
             Subject = subject;
         }
 
+        public bool IsCancelled { get; private set; }
+
         internal virtual void Pass1Mutate(NecoField field)
         { }
 
@@ -54,15 +56,48 @@ public abstract partial class NecoPlayfieldMutation
         internal virtual void Pass3Mutate(NecoField field)
         { }
 
+        internal virtual void PreMovementMutate(NecoField field, NecoSubstepContext substepContext)
+        { }
+
         internal virtual IEnumerable<NecoPlayfieldMutation> GetResultantMutations(ReadOnlyNecoField field)
         {
             yield break;
+        }
+
+        protected void Cancel()
+        {
+            if (IsCancelled) {
+                throw new NecoPlayfieldMutationException("cannot cancel a mutation twice");
+            }
+
+            IsCancelled = true;
         }
     }
 }
 
 internal class NecoSubstepContext
-{ }
+{
+    private readonly Dictionary<NecoUnitId, NecoPlayfieldMutation.MovementMutation> Dict;
+    private readonly List<NecoPlayfieldMutation.BaseMutation> Mutations;
+
+    public NecoSubstepContext(Dictionary<NecoUnitId, NecoPlayfieldMutation.MovementMutation> dict,
+                              List<NecoPlayfieldMutation.BaseMutation> mutations)
+    {
+        Dict = dict;
+        Mutations = mutations;
+    }
+
+    public void AddEntry(NecoUnitId unit, NecoUnitMovement movement)
+    {
+        Dict[unit] = new(movement);
+    }
+
+    public bool HasEntryOfType(NecoUnitId uid, Type type)
+    {
+        var mut = Mutations.SingleOrDefault(m => m.Subject == uid && m.GetType() == type);
+        return mut is not null;
+    }
+}
 
 public class NecoPlayfieldMutationException : ApplicationException
 {

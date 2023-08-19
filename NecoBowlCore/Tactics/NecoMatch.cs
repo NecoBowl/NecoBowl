@@ -10,7 +10,7 @@ internal class NecoMatch
     internal NecoMatch(NecoPlayerPair? players = null, NecoFieldParameters? fieldParams = null)
     {
         players ??= new(new(), new());
-        fieldParams ??= new((7, 10), (3, 4));
+        fieldParams ??= new((7, 11), (3, 4));
 
         Players = players;
         CurrentPush = new(Players, fieldParams);

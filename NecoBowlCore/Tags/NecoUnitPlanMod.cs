@@ -5,12 +5,12 @@ namespace neco_soft.NecoBowlCore.Tags;
 /// <summary>
 /// </summary>
 /// <remarks>
-/// Instances of these classes will be shared across a unit's mod list and a ModAdded EventHandler submission. For now
-/// I
-/// just try not to allow mutability in the class. I should probably mandate a copy constructor and just copy instances
-/// of
-/// these.
-/// I really wish these were structs...
+///     Instances of these classes will be shared across a unit's mod list and a ModAdded EventHandler submission. For now
+///     I
+///     just try not to allow mutability in the class. I should probably mandate a copy constructor and just copy instances
+///     of
+///     these.
+///     I really wish these were structs...
 /// </remarks>
 public abstract class NecoUnitMod
 {
@@ -30,7 +30,10 @@ public abstract class NecoUnitMod
 
         public override NecoUnitMod Apply<T>(T original)
         {
-            if (original is not Rotate rotate) throw new InvalidModException();
+            if (original is not Rotate rotate) {
+                throw new InvalidModException();
+            }
+
             return new Rotate(Rotation + rotate.Rotation);
         }
     }
@@ -50,7 +53,10 @@ public abstract class NecoUnitMod
 
         public override NecoUnitMod Apply<T>(T original)
         {
-            if (original is not Flip flip) throw new InvalidModException();
+            if (original is not Flip flip) {
+                throw new InvalidModException();
+            }
+
             return new Flip(EnableX ^ flip.EnableX, EnableY ^ flip.EnableY);
         }
     }
@@ -67,6 +73,7 @@ public abstract class NecoCardOptionPermission
 
     public sealed class Rotate : NecoCardOptionPermission<int>
     {
+        public static readonly string StaticIdentifier = nameof(Rotate);
         public readonly int[] RotationsAllowed;
 
         public Rotate(int[] rotationsAllowed, int @default, string identifier = nameof(Rotate))
@@ -98,7 +105,11 @@ public abstract class NecoCardOptionPermission
 
         public override string Identifier { get; }
 
-        public override object[] AllowedValues { get; } = new[] { false, true }.Cast<object>().ToArray();
+        public override object[] AllowedValues { get; } = new[] {
+                false,
+                true
+            }.Cast<object>()
+            .ToArray();
 
         protected override void ApplyToUnit(NecoUnit unit, bool value)
         {
@@ -115,7 +126,12 @@ public abstract class NecoCardOptionPermission
         }
 
         public override string Identifier { get; }
-        public override object[] AllowedValues { get; } = new[] { false, true }.Cast<object>().ToArray();
+
+        public override object[] AllowedValues { get; } = new[] {
+                false,
+                true
+            }.Cast<object>()
+            .ToArray();
 
         protected override void ApplyToUnit(NecoUnit unit, bool value)
         {

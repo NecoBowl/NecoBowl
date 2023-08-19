@@ -15,6 +15,7 @@ namespace neco_soft.NecoBowlCore.Tactics;
 ///     the inputs are done being received. Note that in an online scenario, it is probable that inputs from the client's
 ///     opponent would only be received after the player has submitted their own. Therefore, the <see cref="CardPlays" />
 ///     dictionary likely only contains populated data for one player until <see cref="Finished" /> is true.
+///     <p />
 ///     Turns are applied to a <see cref="NecoPush" />.
 /// </summary>
 internal class NecoTurn
@@ -33,7 +34,7 @@ internal class NecoTurn
         TurnIndex = turnIndex;
         PlayerPair = playerPair;
 
-        // Prepare Plays dict
+        // Prepare dicts
         foreach (var player in playerPair.Enumerate()) {
             CardPlays[player.Id] = new();
         }

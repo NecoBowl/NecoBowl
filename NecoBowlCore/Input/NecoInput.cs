@@ -2,41 +2,13 @@ using neco_soft.NecoBowlCore.Tactics;
 
 namespace neco_soft.NecoBowlCore.Input;
 
-public abstract class NecoInput
+public abstract partial class NecoInput
 {
     public NecoPlayerId PlayerId;
 
     public NecoInput(NecoPlayer player)
     {
         PlayerId = player.Id;
-    }
-
-    public sealed class PlaceCard : NecoInput
-    {
-        public readonly NecoCard Card;
-        public readonly Vector2i Position;
-
-        public PlaceCard(NecoPlayer player, NecoCard card, Vector2i position)
-            : base(player)
-        {
-            Card = card;
-            Position = position;
-        }
-    }
-
-    public sealed class SetPlanMod : NecoInput
-    {
-        public readonly NecoCard Card;
-        public readonly string OptionIdentifier;
-        public readonly object OptionValue;
-
-        public SetPlanMod(NecoPlayer player, NecoCard card, string optionIdentifier, object optionValue)
-            : base(player)
-        {
-            Card = card;
-            OptionIdentifier = optionIdentifier;
-            OptionValue = optionValue;
-        }
     }
 }
 

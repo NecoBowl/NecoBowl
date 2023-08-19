@@ -17,6 +17,8 @@ public class NecoPlay
     private readonly bool LogFieldAscii;
     private readonly NecoPlayStepperNew PlayStepper;
 
+    public bool IsFinished = false;
+
     public uint StepCount;
 
     internal NecoPlay(NecoField field, bool autoRun = false, bool logFieldAscii = true, bool preprocessUnits = false)
@@ -34,8 +36,6 @@ public class NecoPlay
             StepToFinish();
         }
     }
-
-    public bool IsFinished => StepCount > 100;
 
     public ReadOnlyNecoField GetField()
     {

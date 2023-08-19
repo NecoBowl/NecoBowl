@@ -16,7 +16,10 @@ public class Goose : NecoUnitModel
     public override string Name => "Goose";
     public override int Health => 10;
     public override int Power => 5;
-    public override IEnumerable<NecoUnitTag> Tags => new List<NecoUnitTag>();
+
+    public override IEnumerable<NecoUnitTag> Tags => new[] {
+        NecoUnitTag.Carrier
+    };
 
     public override IEnumerable<NecoUnitAction> Actions => new[] {
         new NecoUnitAction.ChaseBall(new[] {

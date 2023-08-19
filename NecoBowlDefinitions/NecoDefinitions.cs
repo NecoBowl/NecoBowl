@@ -19,17 +19,21 @@ public static class NecoDefinitions
     static NecoDefinitions()
     {
         AllUnitModels = Assembly.GetExecutingAssembly()
-                                .GetTypes()
-                                .Where(t => (t.Namespace == UnitModelNamespace) & !t.FullName!.Contains("+"))
-                                .Select(t => (NecoUnitModel)t.GetField("Instance")!.GetValue(null)!)
-                                .Append(BuiltInDefinitions.Ball.Instance)
-                                .ToList();
+            .GetTypes()
+            .Where(t => (t.Namespace == UnitModelNamespace) & !t.FullName!.Contains("+"))
+            .Select(t => {
+                        Logger.Info(t);
+                        return t;
+                    })
+            .Select(t => (NecoUnitModel)t.GetField("Instance")!.GetValue(null)!)
+            .Append(BuiltInDefinitions.Ball.Instance)
+            .ToList();
 
 
         AllCardModels = Assembly.GetExecutingAssembly()
-                                .GetTypes()
-                                .Where(t => t.Namespace == CardModelNamespace)
-                                .Select(t => (NecoCardModel)t.GetField("Instance")!.GetValue(null)!)
-                                .ToList();
+            .GetTypes()
+            .Where(t => t.Namespace == CardModelNamespace)
+            .Select(t => (NecoCardModel)t.GetField("Instance")!.GetValue(null)!)
+            .ToList();
     }
 }

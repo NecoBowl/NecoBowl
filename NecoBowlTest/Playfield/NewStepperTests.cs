@@ -38,6 +38,23 @@ public class NewStepperTests
         Assert.That(mutations,
             Has.MutationWhere<NecoPlayfieldMutation.UnitAttacks>(mut => mut.Attacker == unitA1.Id));
     }
+
+    [Test]
+    public void TestPush()
+    {
+        var unitA1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverS", 5, 2, RelativeDirection.Down), Player1.Id);
+        var unitA2 = new NecoUnit(NecoUnitModelCustom.Mover("MoverN",
+                5,
+                2,
+                tags: new[] {
+                    NecoUnitTag.Pusher
+                }),
+            Player1.Id);
+        Field[0, 1] = new(unitA1);
+        Field[0, 0] = new(unitA2);
+
+        var mutations = new Queue<NecoPlayfieldMutation>(Play.Step());
+    }
 }
 
 #region Helpers

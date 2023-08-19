@@ -40,7 +40,9 @@ public record NecoUnitMovement
     public bool IsChange => NewPos != OldPos;
 
     public bool IsChangeInSource
-        => Source?.StateChange is NecoUnitActionOutcome.UnitTranslated translation && translation.Movement.IsChange;
+        => Source?.StateChange is NecoUnitActionOutcome.UnitTranslated translation
+            ? translation.Movement.IsChange
+            : IsChange;
 
     public Vector2i Difference => NewPos - OldPos;
 

@@ -45,7 +45,7 @@ public sealed class NecoUnit : IEquatable<NecoUnit>
         Tags.AddRange(UnitModel.Tags);
         Reactions.AddRange(unitModel.Reactions);
 
-        ActionStack = new(unitModel.Actions);
+        ActionStack = new(unitModel.Actions.Reverse());
     }
 
     public NecoUnit(NecoUnitModel unitModel, NecoPlayerId playerId)
@@ -80,7 +80,7 @@ public sealed class NecoUnit : IEquatable<NecoUnit>
 
         // Refill actions if exhausted.
         if (!ActionStack.Any()) {
-            foreach (var a in UnitModel.Actions) {
+            foreach (var a in UnitModel.Actions.Reverse()) {
                 ActionStack.Push(a);
             }
         }
