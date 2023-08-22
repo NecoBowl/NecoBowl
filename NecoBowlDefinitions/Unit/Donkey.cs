@@ -16,9 +16,9 @@ public class Donkey : NecoUnitModel
 
     public override IEnumerable<NecoUnitAction> Actions => new[] {
         new NecoUnitAction.TranslateUnit(RelativeDirection.Up).Chain(
-            new NecoUnitAction.ApplyMod(new NecoUnitMod.Rotate(-2))),
+            new NecoUnitAction.ApplyMod(new NecoUnitMod.Rotate(2))),
         new NecoUnitAction.TranslateUnit(RelativeDirection.Up).Chain(
-            new NecoUnitAction.ApplyMod(new NecoUnitMod.Rotate(2)))
+            new NecoUnitAction.ApplyMod(new NecoUnitMod.Rotate(-2)))
     };
 
     public override string BehaviorDescription => "Moves forward and then to the right.";

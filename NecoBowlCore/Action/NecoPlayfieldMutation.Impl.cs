@@ -104,12 +104,17 @@ public abstract partial class NecoPlayfieldMutation
 
         public override string Description => $"{Subject} is destroyed";
 
-        internal override void PreMovementMutate(NecoField field, NecoSubstepContext substepContext)
+        internal override bool Prepare(NecoSubstepContext context, ReadOnlyNecoField field)
         {
-            if (substepContext.HasEntryOfType(Subject, typeof(UnitDies))) {
-                Cancel();
+            if (context.HasEntryOfType(Subject, typeof(UnitDies), this)) {
+                return true;
             }
+
+            return false;
         }
+
+        internal override void PreMovementMutate(NecoField field, NecoSubstepContext substepContext)
+        { }
 
         internal override void Pass1Mutate(NecoField field)
         {
@@ -158,6 +163,15 @@ public abstract partial class NecoPlayfieldMutation
 
         public override string Description => $"{Subject} picks up {Item}";
 
+        internal override bool Prepare(NecoSubstepContext context, ReadOnlyNecoField field)
+        {
+            if (field.GetUnit(Subject).Carrier is not null) {
+                throw new NecoBowlException("a unit with an inventory cannot be picked up");
+            }
+
+            return false;
+        }
+
         internal override void Pass1Mutate(NecoField field)
         {
             var itemUnit = field.GetAndRemoveUnit(Item);
@@ -167,6 +181,7 @@ public abstract partial class NecoPlayfieldMutation
         internal override void Pass3Mutate(NecoField field)
         {
             var subject = field.GetUnit(Subject);
+            TempUnitItem!.Carrier = subject;
             subject.Inventory.Add(TempUnitItem!);
         }
 
@@ -175,6 +190,36 @@ public abstract partial class NecoPlayfieldMutation
             if (Source.IsChange) {
                 yield return new MovementMutation(Source);
             }
+        }
+    }
+
+    public class UnitHandsOffItem : BaseMutation
+    {
+        private readonly NecoUnitId Item;
+        private readonly NecoUnitId Receiver;
+        private NecoUnit? TempUnitItem;
+
+        public UnitHandsOffItem(NecoUnitId subject, NecoUnitId receiver, NecoUnitId item) : base(subject)
+        {
+            Receiver = receiver;
+            Item = item;
+        }
+
+        public override string Description => $"{Subject} hands off {Item} to {Receiver}";
+
+        internal override void Pass1Mutate(NecoField field)
+        {
+            var passer = field.GetUnit(Subject);
+            var itemUnit = passer.Inventory.Single(u => u.Id == Item);
+            passer.Inventory.Remove(itemUnit);
+            TempUnitItem = itemUnit;
+            TempUnitItem.Carrier = null;
+        }
+
+        internal override void Pass3Mutate(NecoField field)
+        {
+            var receiver = field.GetUnit(Receiver);
+            
         }
     }
 }

@@ -37,8 +37,8 @@ public abstract partial class NecoUnitAction
             var pos = field.GetUnitPosition(uid);
             var unit = field.GetUnit(pos);
 
-            var (ballPos, ball)
-                = field.GetAllUnits().SingleOrDefault(tup => tup.Item2.Tags.Contains(NecoUnitTag.TheBall));
+            var (ballPos, ball, _)
+                = field.GetAllUnitsWithInventory().SingleOrDefault(tup => tup.Item2.Tags.Contains(NecoUnitTag.TheBall));
             if (ball is null) {
                 throw new NecoUnitActionException("no ball found on field");
             }

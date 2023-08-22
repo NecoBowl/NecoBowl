@@ -16,8 +16,14 @@ public abstract partial class NecoPlayfieldMutation
         return $"[{Description}]";
     }
 
-    internal virtual void Prepare(NecoSubstepContext context, ReadOnlyNecoField field)
-    { }
+    /// <summary>
+    ///     Perform any pre-pass checks.
+    /// </summary>
+    /// <returns>Whether this mutation should be removed from the processing queue.</returns>
+    internal virtual bool Prepare(NecoSubstepContext context, ReadOnlyNecoField field)
+    {
+        return false;
+    }
 
     public sealed class MovementMutation : NecoPlayfieldMutation
     {
@@ -45,8 +51,6 @@ public abstract partial class NecoPlayfieldMutation
             Subject = subject;
         }
 
-        public bool IsCancelled { get; private set; }
-
         internal virtual void Pass1Mutate(NecoField field)
         { }
 
@@ -62,15 +66,6 @@ public abstract partial class NecoPlayfieldMutation
         internal virtual IEnumerable<NecoPlayfieldMutation> GetResultantMutations(ReadOnlyNecoField field)
         {
             yield break;
-        }
-
-        protected void Cancel()
-        {
-            if (IsCancelled) {
-                throw new NecoPlayfieldMutationException("cannot cancel a mutation twice");
-            }
-
-            IsCancelled = true;
         }
     }
 }
@@ -92,9 +87,9 @@ internal class NecoSubstepContext
         Dict[unit] = new(movement);
     }
 
-    public bool HasEntryOfType(NecoUnitId uid, Type type)
+    public bool HasEntryOfType(NecoUnitId uid, Type type, object? exclusion = null)
     {
-        var mut = Mutations.SingleOrDefault(m => m.Subject == uid && m.GetType() == type);
+        var mut = Mutations.SingleOrDefault(m => m.Subject == uid && m.GetType() == type && m != exclusion);
         return mut is not null;
     }
 }

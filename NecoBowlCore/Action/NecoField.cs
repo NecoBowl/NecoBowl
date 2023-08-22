@@ -67,12 +67,30 @@ internal class NecoField
     public IEnumerable<(Vector2i, NecoUnit)> GetAllUnits()
     {
         return SpacePositions.Where(tuple => tuple.Item2.Unit is not null)
-                             .Select(tuple => (tuple.Item1, tuple.Item2.Unit!));
+            .Select(tuple => (tuple.Item1, tuple.Item2.Unit!));
     }
 
-    public Vector2i GetUnitPosition(NecoUnitId uid)
+    public IEnumerable<(Vector2i pos, NecoUnit unit, NecoUnit? carrier)> GetAllUnitsWithInventory()
     {
-        return SpacePositions.Single(tuple => tuple.Item2.Unit?.Id == uid).Item1;
+        var allUnits = SpacePositions.Where(tuple => tuple.Item2.Unit is not null)
+            .Select(tuple => (tuple.Item1, tuple.Item2.Unit!, default(NecoUnit)));
+        var list = allUnits.ToList();
+        foreach (var (pos, parent, _) in allUnits) {
+            list.AddRange(
+                parent.Inventory.Select<NecoUnit, (Vector2i pos, NecoUnit unit, NecoUnit? carrier)>(
+                    u => (pos, u, parent)));
+        }
+
+        return list;
+    }
+
+
+    public Vector2i GetUnitPosition(NecoUnitId uid, bool searchInventory = false)
+    {
+        return SpacePositions.Single(tuple => tuple.Item2.Unit?.Id == uid
+                                      || (searchInventory && (tuple.Item2.Unit?.Inventory.Any(
+                                             inventoryUnit => inventoryUnit.Id == uid) ?? false)))
+            .Item1;
     }
 
     public NecoUnit GetUnit(NecoUnitId uid)
@@ -126,7 +144,9 @@ internal class NecoField
     public NecoUnit GetAndRemoveUnit(Vector2i p)
     {
         var unit = GetUnit(p);
-        this[p] = this[p] with { Unit = null };
+        this[p] = this[p] with {
+            Unit = null
+        };
         return unit;
     }
 
@@ -271,6 +291,11 @@ public sealed class ReadOnlyNecoField
     public bool IsInBounds((int x, int y) pos)
     {
         return Field.IsInBounds(pos);
+    }
+
+    public IEnumerable<(Vector2i pos, NecoUnit unit, NecoUnit? carrier)> GetAllUnitsWithInventory()
+    {
+        return Field.GetAllUnitsWithInventory();
     }
 
     public string ToAscii(string prefix = "> ")

@@ -15,7 +15,6 @@ internal class NecoPlayStepperNew
 
     private readonly Dictionary<NecoUnitId, NecoPlayfieldMutation.MovementMutation> PendingMovements = new();
     private readonly List<NecoPlayfieldMutation.BaseMutation> PendingMutations = new();
-    private readonly List<NecoPlayfieldMutation.BaseMutation> PendingMutationsPostProcessing = new();
 
     public NecoPlayStepperNew(NecoField field)
     {
@@ -61,11 +60,6 @@ internal class NecoPlayStepperNew
                 PendingMovements.Clear();
             }
 
-
-            // Add the post-processing now so the next substep can see it
-            PendingMutationsPostProcessing.ForEach(PendingMutations.Add);
-            PendingMutationsPostProcessing.Clear();
-
             // Add movements/mutations from multi-actions
             foreach (var (id, action) in ChainedActions.Where(kv => kv.Value is not null)) {
                 SetMutationFromAction(id, action!.Result(id, Field.AsReadOnly()));
@@ -102,9 +96,7 @@ internal class NecoPlayStepperNew
             var movementMutation = PendingMovements[moveMut.Subject];
             var movement = movementMutation.Movement;
             unitBuffer[unit.Id] = movement;
-            Field[movement.OldPos] = Field[movement.OldPos] with {
-                Unit = null
-            };
+            Field[movement.OldPos] = Field[movement.OldPos] with { Unit = null };
             PendingMovements.Remove(movementMutation.Subject);
         }
 
@@ -117,9 +109,7 @@ internal class NecoPlayStepperNew
             }
 
             // Update the unit position
-            Field[movement.NewPos] = Field[movement.NewPos] with {
-                Unit = movement.Unit
-            };
+            Field[movement.NewPos] = Field[movement.NewPos] with { Unit = movement.Unit };
 
             if (movement.IsChange) {
                 _resultantMutations.Add(new NecoPlayfieldMutation.MovementMutation(movement));
@@ -144,6 +134,7 @@ internal class NecoPlayStepperNew
     private void AddPreMovementMutations()
     {
         // Case: Unit with Pusher
+        // TAGIMPL:Pusher
         foreach (var (pos, unit) in Field.GetAllUnits().Where(unit => unit.Item2.Tags.Contains(NecoUnitTag.Pusher))) {
             var movement = PendingMovements[unit.Id].Movement;
             if (movement.IsChange) {
@@ -199,6 +190,18 @@ internal class NecoPlayStepperNew
         var baseMutations = PendingMutations.ToList();
 
         var substepContext = new NecoSubstepContext(PendingMovements, baseMutations);
+
+        // RUN MUTATION FUNCTIONS
+
+        // First run the Prepare() and remove the mutation if it wants to cancel
+        for (var i = baseMutations.Count - 1; i >= 0; i--) {
+            // i can't believe i have to use this stupid loop
+            if (baseMutations[i].Prepare(substepContext, Field.AsReadOnly())) {
+                baseMutations.RemoveAt(i);
+            }
+        }
+
+        // Then run the mutate passes
         foreach (var func in NecoPlayfieldMutation.ExecutionOrder) {
             foreach (var mutation in baseMutations) {
                 func.Invoke(mutation, substepContext, Field);
@@ -278,13 +281,19 @@ internal class NecoPlayStepperNew
 
             // Prioritize combat first.
             if (unitPair.UnitsCanFight() && movement.IsChange) {
-                PendingMutations.Add(new NecoPlayfieldMutation.UnitAttacks(Field.AsReadOnly(),
-                    movement.UnitId,
-                    conflict.UnitId));
-                shouldReset = true;
+                // TAGIMPL:Defender
+                if (unitPair.UnitWithTag(NecoUnitTag.Defender, out _) == movement) {
+                    shouldReset = true;
+                }
+                else {
+                    PendingMutations.Add(new NecoPlayfieldMutation.UnitAttacks(Field.AsReadOnly(),
+                        movement.UnitId,
+                        conflict.UnitId));
+                    shouldReset = true;
+                }
             }
             else {
-                // Pickup 
+                // TAGIMPL:Carrier
                 if (unitPair.TryGetUnitsBy(m => m.Unit.Tags.Contains(NecoUnitTag.Item),
                         m => m.Unit.Tags.Contains(NecoUnitTag.Carrier),
                         out var itemUnit,
@@ -300,7 +309,20 @@ internal class NecoPlayStepperNew
                 }
 
                 // Friendly unit conflict 
-                if (DecideCollisionWinner(unitPair) != movement) {
+                var collisionWinner = DecideCollisionWinner(unitPair, out var collisionLoser);
+                if (collisionWinner == movement) {
+                    // this unit is the collision winner
+                    // TAGIMPL:Carrier
+                    if (collisionLoser!.Unit.Inventory.Any(i => i.Tags.Contains(NecoUnitTag.TheBall))
+                     && collisionWinner.Unit.Tags.Contains(NecoUnitTag.Carrier)) {
+                        // force handoff 
+                        var ballItem = collisionLoser.Unit.Inventory.Single(i => i.Tags.Contains(NecoUnitTag.TheBall));
+                        PendingMutations.Add(new NecoPlayfieldMutation.UnitHandsOffItem(collisionLoser.UnitId,
+                            collisionWinner.UnitId,
+                            ballItem.Id));
+                    }
+                }
+                else {
                     shouldReset = true;
                 }
             }
@@ -328,8 +350,12 @@ internal class NecoPlayStepperNew
 
         var unitPair = new UnitMovementPair(movement, swap);
         if (unitPair.UnitsAreEnemies()) {
-            PendingMutations.Add(
-                new NecoPlayfieldMutation.UnitAttacks(Field.AsReadOnly(), movement.UnitId, swap.UnitId));
+            // TAGIMPL:Defender
+            if (unitPair.UnitWithTag(NecoUnitTag.Defender, out _) != movement) {
+                PendingMutations.Add(new NecoPlayfieldMutation.UnitAttacks(Field.AsReadOnly(),
+                    movement.UnitId,
+                    swap.UnitId));
+            }
         }
         else {
             // Friendly space swappers will just bump off each other.
@@ -347,6 +373,14 @@ internal class NecoPlayStepperNew
         }
 
         switch (result) {
+            // Cases where an error ocurred 
+            case { ResultKind: NecoUnitActionResult.Kind.Error }: {
+                var unit = Field.GetUnit(uid);
+                Logger.Error($"Error ocurred while processing action for {unit}:");
+                Logger.Error($"{result.Exception}\n{result.Exception!.StackTrace}");
+                break;
+            }
+
             // Cases where we reset movement
             case {
                 ResultKind: NecoUnitActionResult.Kind.Failure,
@@ -376,7 +410,7 @@ internal class NecoPlayStepperNew
         }
     }
 
-    private static NecoUnitMovement? DecideCollisionWinner(UnitMovementPair unitPair)
+    private static NecoUnitMovement? DecideCollisionWinner(UnitMovementPair unitPair, out NecoUnitMovement? other)
     {
         if (unitPair.Collection.DistinctBy(u => u.NewPos).Count() > 1) {
             throw new NecoBowlException("units are not colliding");
@@ -384,21 +418,47 @@ internal class NecoPlayStepperNew
 
         /*
          * - Unit that is stationary
-         * - Unit that is not holding ball (when other is holding ball)
-         * - Unit with highest power
+         * - Unit with Bossy
+         * - Unit with Carrier (when other is holding ball)
+         * - Unit that is holding ball
          * - Unit travelling vertically
          * - Unit traveling diagonally
+         * - Unit with highest power
          * - Bounce
          */
 
+        // Stationary unit
         if (unitPair.TryUnitWhereSingle(u => !u.IsChange, out var stationaryUnit, out var movingUnit)) {
+            other = movingUnit!;
             return stationaryUnit!;
         }
 
-        // Holding ball
+        // Unit with Bossy
+        if (unitPair.TryUnitWhereSingle(u => u.Unit.Tags.Contains(NecoUnitTag.Bossy),
+                out var bossyUnit,
+                out var otherUnit)) {
+            other = otherUnit!;
+            return bossyUnit!;
+        }
+
+        // Forced handoff interaction
+        if (unitPair.TryUnitWhereSingle(m => m.Unit.Inventory.Any(u => u.Tags.Contains(NecoUnitTag.TheBall)),
+                out var ballHolder,
+                out var nonBallHolder)) {
+            // TAGIMPL:Carrier
+            // TAGIMPL:Butterfingers
+            if (nonBallHolder!.Unit.Tags.Contains(NecoUnitTag.Carrier)
+             && !nonBallHolder.Unit.Tags.Contains(NecoUnitTag.Butterfingers)) {
+                other = ballHolder!;
+                return nonBallHolder!;
+            }
+        }
+
+        // Unit holding ball
         if (unitPair.TryUnitWhereSingle(u => u.Unit.Tags.Contains(NecoUnitTag.TheBall),
                 out var ballUnit,
                 out var nonBallUnit)) {
+            other = nonBallUnit!;
             return ballUnit!;
         }
 
@@ -406,15 +466,19 @@ internal class NecoPlayStepperNew
             // Max power
             var groups = unitPair.Collection.GroupBy(m => m.Unit.Power).ToList();
             if (groups.Count > 1) {
-                return groups.MaxBy(g => g.First().Unit.Power)!.First();
+                var sorted = groups.Select(g => g.First()).OrderByDescending(m => m.Unit.Power).ToList();
+                other = sorted.Last();
+                return sorted.First();
             }
         }
 
         {
             // Vertical
-            var groups = unitPair.Collection.GroupBy(m => Math.Abs(m.Difference.Y)).ToList();
+            var groups = unitPair.Collection.GroupBy(m => Math.Abs(m.Difference.X)).ToList();
             if (groups.Count > 1) {
-                return groups.MaxBy(g => g.First().Difference.Y)!.First();
+                var sorted = groups.Select(g => g.First()).OrderBy(m => Math.Abs(m.Difference.X));
+                other = sorted.Last();
+                return sorted.First(); // lowest X-difference would be vertical
             }
         }
 
@@ -422,11 +486,13 @@ internal class NecoPlayStepperNew
             // Diagonal
             if (unitPair.TryUnitWhereSingle(m => Math.Abs(m.Difference.X) + Math.Abs(m.Difference.Y) > 1,
                     out var diagonalMover,
-                    out _)) {
+                    out var nonDiagonalMover)) {
+                other = nonDiagonalMover!;
                 return diagonalMover!;
             }
         }
 
+        other = null;
         return null;
     }
 }

@@ -69,6 +69,10 @@ public abstract class NecoCardOptionPermission
     public abstract object Default { get; }
 
     public abstract object[] AllowedValues { get; }
+
+    public abstract Type ArgumentType { get; }
+    public abstract string AllowedValueVisual(object o);
+
     public abstract void ApplyToUnit(NecoUnit unit, object val);
 
     public sealed class Rotate : NecoCardOptionPermission<int>
@@ -89,6 +93,11 @@ public abstract class NecoCardOptionPermission
             unit.Mods.Add(new NecoUnitMod.Rotate(value));
         }
 
+        protected override string AllowedValueVisual(int t)
+        {
+            return ((RelativeDirection)((int)RelativeDirection.Up + t)).ToArrowGlyph().ToString();
+        }
+
         public override bool ValidateValueChange(int newValue)
         {
             return RotationsAllowed.Contains(newValue);
@@ -97,7 +106,7 @@ public abstract class NecoCardOptionPermission
 
     public sealed class FlipX : NecoCardOptionPermission<bool>
     {
-        public FlipX(bool value, string identifier = nameof(FlipX))
+        public FlipX(string identifier = nameof(FlipX))
             : base(default, identifier)
         {
             Identifier = identifier;
@@ -140,11 +149,11 @@ public abstract class NecoCardOptionPermission
     }
 }
 
-public abstract class NecoCardOptionPermission<TDefaultValueType> : NecoCardOptionPermission
+public abstract class NecoCardOptionPermission<T> : NecoCardOptionPermission
 {
-    public readonly TDefaultValueType DefaultValue;
+    public readonly T DefaultValue;
 
-    protected NecoCardOptionPermission(TDefaultValueType defaultValue, string identifier)
+    protected NecoCardOptionPermission(T defaultValue, string identifier)
     {
         Identifier = identifier;
         DefaultValue = defaultValue;
@@ -153,17 +162,29 @@ public abstract class NecoCardOptionPermission<TDefaultValueType> : NecoCardOpti
     public override string Identifier { get; }
     public override object Default => DefaultValue!;
 
-    public virtual bool ValidateValueChange(TDefaultValueType newValue)
+    public override Type ArgumentType => typeof(T);
+
+    public override string AllowedValueVisual(object o)
+    {
+        return AllowedValueVisual((T)o);
+    }
+
+    protected virtual string AllowedValueVisual(T t)
+    {
+        return t.ToString();
+    }
+
+    public virtual bool ValidateValueChange(T newValue)
     {
         return true;
     }
 
     public sealed override void ApplyToUnit(NecoUnit unit, object val)
     {
-        ApplyToUnit(unit, (TDefaultValueType)val);
+        ApplyToUnit(unit, (T)val);
     }
 
-    protected abstract void ApplyToUnit(NecoUnit unit, TDefaultValueType value);
+    protected abstract void ApplyToUnit(NecoUnit unit, T value);
 }
 
 public class InvalidModException : Exception

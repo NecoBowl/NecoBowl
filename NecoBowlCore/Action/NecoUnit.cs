@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 using neco_soft.NecoBowlCore.Model;
 using neco_soft.NecoBowlCore.Tactics;
 using neco_soft.NecoBowlCore.Tags;
@@ -8,11 +10,21 @@ namespace neco_soft.NecoBowlCore.Action;
 
 public record NecoUnitId
 {
+    public const int StringLength = 6;
+
+    public static readonly Regex StringIdRegex
+        = new($"@U:(?<id>[0-9a-z]){StringLength}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
     public readonly Guid Value = Guid.NewGuid();
+
+    public string ToSimpleString()
+    {
+        return Value.ToString().Substring(0, StringLength);
+    }
 
     public override string ToString()
     {
-        return Value.ToString().Substring(0, 6);
+        return $"@U:{Value.ToString().Substring(0, StringLength)}";
     }
 }
 
@@ -33,6 +45,7 @@ public sealed class NecoUnit : IEquatable<NecoUnit>
     public readonly ReactionDict Reactions = new();
     public readonly List<NecoUnitTag> Tags = new();
     public readonly NecoUnitModel UnitModel;
+    public NecoUnit? Carrier;
     public int DamageTaken;
 
     public NecoUnit(NecoUnitModel unitModel, string discriminator, NecoPlayerId ownerId)
@@ -60,7 +73,16 @@ public sealed class NecoUnit : IEquatable<NecoUnit>
     public int MaxHealth => UnitModel.Health;
     public int CurrentHealth => MaxHealth - DamageTaken;
 
-    public int Rotation => GetMod<NecoUnitMod.Rotate>().Rotation;
+    public int Rotation {
+        get {
+            var rotation = (AbsoluteDirection)GetMod<NecoUnitMod.Rotate>().Rotation;
+            var newRot = GetMod<NecoUnitMod.Flip>().EnableX
+                ? rotation.Mirror(true, false)
+                : rotation;
+            return (int)newRot;
+        }
+    }
+
     public AbsoluteDirection Facing => (AbsoluteDirection)Rotation;
 
     public string FullName => $"{UnitModel.Name}{(Discriminator != string.Empty ? $" {Discriminator}" : "")}";
@@ -90,11 +112,11 @@ public sealed class NecoUnit : IEquatable<NecoUnit>
 
     public T GetMod<T>() where T : NecoUnitMod, new()
     {
-        return Mods.Any() ? Mods.OfType<T>().Aggregate((orig, next) => (T)next.Apply(orig)) : new();
+        return Mods.OfType<T>().Any() ? Mods.OfType<T>().Aggregate((orig, next) => (T)next.Apply(orig)) : new();
     }
 
     public override string ToString()
     {
-        return $"{UnitModel.Name}@{nameof(NecoUnit)}:{Id}";
+        return $"{UnitModel.Name}@{nameof(NecoUnit)}:{Id.ToSimpleString()}";
     }
 }

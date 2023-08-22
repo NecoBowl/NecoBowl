@@ -7,14 +7,14 @@ namespace neco_soft.NecoBowlCore;
 
 public enum AbsoluteDirection : uint
 {
-    South = 4,
-    SouthWest = 5,
-    West = 6,
-    NorthWest = 7,
     North = 0,
     NorthEast = 1,
     East = 2,
-    SouthEast = 3
+    SouthEast = 3,
+    South = 4,
+    SouthWest = 5,
+    West = 6,
+    NorthWest = 7
 }
 
 public enum RelativeDirection : uint
@@ -135,6 +135,39 @@ public static class AbsoluteDirectionExt
     public static Vector2i ToVector2i(this RelativeDirection direction, AbsoluteDirection facing)
     {
         return facing.RotatedBy(direction).ToVector2i();
+    }
+
+    public static AbsoluteDirection Mirror(this AbsoluteDirection direction, bool mirrorX, bool mirrorY)
+    {
+        var vec = direction.ToVector2i();
+        var newVec = new Vector2i(mirrorX ? -vec.X : vec.X, mirrorY ? -vec.Y : vec.Y);
+        try {
+            return Enum.GetValues<AbsoluteDirection>().Single(d => d.ToVector2i() == newVec);
+        }
+        catch (InvalidOperationException e) {
+            throw new NecoBowlException("Failed to find mirrored vector", e);
+        }
+    }
+}
+
+public static class RelativeDirectionExt
+{
+    private const char ArrowGlyphOffset = '\u2B60';
+
+    public static readonly char[] RelativeDirectionToArrowGlyph = {
+        (char)(ArrowGlyphOffset + 1), // Up
+        (char)(ArrowGlyphOffset + 7), // UpRight
+        (char)(ArrowGlyphOffset + 2), // Right
+        (char)(ArrowGlyphOffset + 8), // DownRight
+        (char)(ArrowGlyphOffset + 3), // Down
+        (char)(ArrowGlyphOffset + 9), // DownLeft
+        (char)(ArrowGlyphOffset + 0), // Left
+        (char)(ArrowGlyphOffset + 6) // UpLeft
+    };
+
+    public static char ToArrowGlyph(this RelativeDirection direction)
+    {
+        return RelativeDirectionToArrowGlyph[(int)direction];
     }
 
     public static RelativeDirection RotatedBy(this RelativeDirection direction, int rotation)

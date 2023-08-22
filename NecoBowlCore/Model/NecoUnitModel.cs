@@ -32,9 +32,9 @@ public class ReactionDict : List<ReactionDict.Entry>
     }
 }
 
-public delegate IEnumerable<NecoPlayfieldMutation.BaseMutation> MutationReaction<in T>(NecoUnit subject,
-                                                                                       ReadOnlyNecoField field,
-                                                                                       T mutation);
+public delegate IEnumerable<NecoPlayfieldMutation.BaseMutation> MutationReaction<in T>(NecoUnit unit,
+    ReadOnlyNecoField field,
+    T mutation);
 
 public class UnitReactionContext
 { }

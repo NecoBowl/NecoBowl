@@ -1,5 +1,4 @@
 using neco_soft.NecoBowlCore.Input;
-using neco_soft.NecoBowlCore.Tags;
 
 using NLog;
 
@@ -130,9 +129,6 @@ internal class NecoTurn
         if (AllCardPlays.Any(p => p.Position == input.Position)) {
             return NecoInputResponse.Illegal($"The space {input.Position} is already occupied.");
         }
-
-        // TAG:SMELLY
-        if (input.Card.IsUnitCard(out var unitCard) && unitCard!.UnitModel.Tags.Contains(NecoUnitTag.Smelly)) { }
 
         CardPlays[input.PlayerId].Add(new(input.PlayerId, input.Card, input.Position));
         return NecoInputResponse.Success();
