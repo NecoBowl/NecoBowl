@@ -144,9 +144,7 @@ internal class NecoField
     public NecoUnit GetAndRemoveUnit(Vector2i p)
     {
         var unit = GetUnit(p);
-        this[p] = this[p] with {
-            Unit = null
-        };
+        this[p] = this[p] with { Unit = null };
         return unit;
     }
 
@@ -205,7 +203,7 @@ internal class NecoField
         AddBorderH();
 
         foreach (var (unit, icon) in unitIcons) {
-            sb.AppendLine($"{icon}: {unit} ({unit.CurrentHealth} HP)");
+            sb.AppendLine($"{icon}: {unit} ({unit.CurrentHealth} HP) ({unit.Inventory.Count} items)");
         }
 
         sb.Insert(0, linePrefix);

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 
 using neco_soft.NecoBowlCore.Tags;
 
@@ -104,8 +105,8 @@ internal record UnitMovementPair
     /// <returns>False if neither unit matches the condition or if both match the condition. Otherwise, true.</returns>
     /// <seealso cref="UnitWhereSingle" />
     public bool TryUnitWhereSingle(Func<NecoUnitMovement, bool> predicate,
-                                   out NecoUnitMovement? result,
-                                   out NecoUnitMovement? other)
+                                   [NotNullWhen(true)] out NecoUnitMovement? result,
+                                   [NotNullWhen(true)] out NecoUnitMovement? other)
     {
         try {
             result = UnitWhereSingle(predicate, out other);
@@ -120,8 +121,8 @@ internal record UnitMovementPair
 
     public bool TryGetUnitsBy(Func<NecoUnitMovement, bool> predicate1,
                               Func<NecoUnitMovement, bool> predicate2,
-                              out NecoUnitMovement? result1,
-                              out NecoUnitMovement? result2)
+                              [NotNullWhen(true)] out NecoUnitMovement? result1,
+                              [NotNullWhen(true)] out NecoUnitMovement? result2)
     {
         if (TryUnitWhereSingle(predicate1, out result1, out result2)) {
             if (predicate2(result2!)) {

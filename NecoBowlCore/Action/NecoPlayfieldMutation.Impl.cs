@@ -195,8 +195,8 @@ public abstract partial class NecoPlayfieldMutation
 
     public class UnitHandsOffItem : BaseMutation
     {
-        private readonly NecoUnitId Item;
-        private readonly NecoUnitId Receiver;
+        public readonly NecoUnitId Item;
+        public readonly NecoUnitId Receiver;
         private NecoUnit? TempUnitItem;
 
         public UnitHandsOffItem(NecoUnitId subject, NecoUnitId receiver, NecoUnitId item) : base(subject)
@@ -219,7 +219,8 @@ public abstract partial class NecoPlayfieldMutation
         internal override void Pass3Mutate(NecoField field)
         {
             var receiver = field.GetUnit(Receiver);
-            
+            receiver.Inventory.Add(TempUnitItem!);
+            TempUnitItem!.Carrier = receiver;
         }
     }
 }

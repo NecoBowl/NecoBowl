@@ -35,7 +35,7 @@ internal class NecoPlayStepperNew
         foreach (var (pos, unit) in Field.GetAllUnits()) {
             var action = unit.PopAction();
             var result = action.Result(unit.Id, Field.AsReadOnly());
-            SetMutationFromAction(unit.Id, result);
+            EnqueueMutationFromAction(unit.Id, result);
 
             ChainedActions[unit.Id] = action.Next;
         }
@@ -62,7 +62,7 @@ internal class NecoPlayStepperNew
 
             // Add movements/mutations from multi-actions
             foreach (var (id, action) in ChainedActions.Where(kv => kv.Value is not null)) {
-                SetMutationFromAction(id, action!.Result(id, Field.AsReadOnly()));
+                EnqueueMutationFromAction(id, action!.Result(id, Field.AsReadOnly()));
                 ChainedActions[id] = action.Next;
             }
         }
@@ -88,9 +88,9 @@ internal class NecoPlayStepperNew
         var _resultantMutations = new List<NecoPlayfieldMutation>();
 
         // Split the movements into two groups; one that has no movement, and the other that has attempted/successful movements.
-        var finalMovements = PendingMovements.Values.GroupBy(m => m.Movement.IsChangeInSource).ToList();
+        var finalMovements = PendingMovements.Values.Where(m => m.Movement.IsChangeInSource).ToList();
         var unitBuffer = new Dictionary<NecoUnitId, NecoUnitMovement>();
-        foreach (var moveMut in finalMovements.Single(g => g.Key)) {
+        foreach (var moveMut in finalMovements) {
             // For any unit that is going to move, place them in the movement buffer.
             var unit = Field[moveMut.OldPos].Unit!;
             var movementMutation = PendingMovements[moveMut.Subject];
@@ -365,7 +365,7 @@ internal class NecoPlayStepperNew
         return true;
     }
 
-    private void SetMutationFromAction(NecoUnitId uid, NecoUnitActionResult result)
+    private void EnqueueMutationFromAction(NecoUnitId uid, NecoUnitActionResult result)
     {
         NecoPlayfieldMutation.MovementMutation Default(NecoUnit unit, Vector2i pos)
         {
