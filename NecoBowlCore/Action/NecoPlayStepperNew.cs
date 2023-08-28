@@ -15,6 +15,7 @@ internal class NecoPlayStepperNew
 
     private readonly Dictionary<NecoUnitId, NecoPlayfieldMutation.MovementMutation> PendingMovements = new();
     private readonly List<NecoPlayfieldMutation.BaseMutation> PendingMutations = new();
+    private List<NecoPlayfieldMutation.MovementMutation> DeferredMovements = new();
 
     public NecoPlayStepperNew(NecoField field)
     {
@@ -53,7 +54,7 @@ internal class NecoPlayStepperNew
 
             FixFailedActionResultMovements();
             ResolvePendingMovementCollisions();
-
+            
             if (PendingMovements.Any()) {
                 ConsumeMovements(out var resultantMutations);
                 stepMutations.AddRange(resultantMutations);
@@ -83,16 +84,17 @@ internal class NecoPlayStepperNew
         }
     }
 
-    private void ConsumeMovements(out IEnumerable<NecoPlayfieldMutation> resultantMutations)
+    private void ConsumeMovements(out List<NecoPlayfieldMutation> resultantMutations)
     {
-        var _resultantMutations = new List<NecoPlayfieldMutation>();
+        resultantMutations = new();
+        var deferredMovements = new List<NecoPlayfieldMutation.MovementMutation>();
 
         // Split the movements into two groups; one that has no movement, and the other that has attempted/successful movements.
         var finalMovements = PendingMovements.Values.Where(m => m.Movement.IsChangeInSource).ToList();
         var unitBuffer = new Dictionary<NecoUnitId, NecoUnitMovement>();
         foreach (var moveMut in finalMovements) {
             // For any unit that is going to move, place them in the movement buffer.
-            var unit = Field[moveMut.OldPos].Unit!;
+            var unit = moveMut.Movement.Unit;
             var movementMutation = PendingMovements[moveMut.Subject];
             var movement = movementMutation.Movement;
             unitBuffer[unit.Id] = movement;
@@ -112,23 +114,29 @@ internal class NecoPlayStepperNew
             Field[movement.NewPos] = Field[movement.NewPos] with { Unit = movement.Unit };
 
             if (movement.IsChange) {
-                _resultantMutations.Add(new NecoPlayfieldMutation.MovementMutation(movement));
+                resultantMutations.Add(new NecoPlayfieldMutation.MovementMutation(movement));
             }
-            else if (movement.Source?.ResultKind == NecoUnitActionResult.Kind.Failure || !movement.IsChange) {
-                if (movement.Source!.StateChange is NecoUnitActionOutcome.UnitTranslated attemptedTranslation) {
+            else if (movement.Source!.StateChange is NecoUnitActionOutcome.UnitTranslated source) {
+                if (movement.Source?.ResultKind == NecoUnitActionResult.Kind.Failure) {
                     // Add bump event
                     if (!PendingMutations.Any(m => m.Subject == uid)) {
-                        _resultantMutations.Add(new NecoPlayfieldMutation.UnitBumps(uid,
-                            attemptedTranslation.Movement.AsDirection()));
+                        resultantMutations.Add(new NecoPlayfieldMutation.UnitBumps(uid,
+                            source.Movement.AsDirection()));
                     }
+                } else if (!movement.IsChange) {
+                    // The unit had a legal move but was blocked
+                    deferredMovements.Add(new NecoPlayfieldMutation.MovementMutation(source.Movement));
                 }
                 else {
-                    Logger.Warn($"unknown failure for movement: {movement.Source.StateChange}");
+                    Logger.Warn($"unknown failure for movement: {movement.Source?.StateChange}");
                 }
             }
         }
 
-        resultantMutations = _resultantMutations;
+        DeferredMovements.Clear();
+        DeferredMovements.AddRange(deferredMovements);
+        PendingMovements.Clear();
+        foreach (var m in DeferredMovements) PendingMovements[m.Subject] = m;
     }
 
     private void AddPreMovementMutations()
@@ -288,7 +296,8 @@ internal class NecoPlayStepperNew
                 else {
                     PendingMutations.Add(new NecoPlayfieldMutation.UnitAttacks(Field.AsReadOnly(),
                         movement.UnitId,
-                        conflict.UnitId));
+                        conflict.UnitId,
+                        NecoPlayfieldMutation.UnitAttacks.Kind.SpaceConflict));
                     shouldReset = true;
                 }
             }
@@ -354,7 +363,8 @@ internal class NecoPlayStepperNew
             if (unitPair.UnitWithTag(NecoUnitTag.Defender, out _) != movement) {
                 PendingMutations.Add(new NecoPlayfieldMutation.UnitAttacks(Field.AsReadOnly(),
                     movement.UnitId,
-                    swap.UnitId));
+                    swap.UnitId,
+                    NecoPlayfieldMutation.UnitAttacks.Kind.SpaceSwap));
             }
         }
         else {
