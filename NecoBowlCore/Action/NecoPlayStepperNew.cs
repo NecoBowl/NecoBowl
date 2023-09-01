@@ -288,7 +288,7 @@ internal class NecoPlayStepperNew
             var unitPair = new UnitMovementPair(movement, conflict);
 
             // Prioritize combat first.
-            if (unitPair.UnitsCanFight() && movement.IsChange) {
+            if (unitPair.UnitsCanFight() && movement.IsChange && !spaceSwapMutations.Any(mut => mut.Subject == movement.UnitId)) {
                 // TAGIMPL:Defender
                 if (unitPair.UnitWithTag(NecoUnitTag.Defender, out _) == movement) {
                     shouldReset = true;
@@ -297,7 +297,8 @@ internal class NecoPlayStepperNew
                     PendingMutations.Add(new NecoPlayfieldMutation.UnitAttacks(Field.AsReadOnly(),
                         movement.UnitId,
                         conflict.UnitId,
-                        NecoPlayfieldMutation.UnitAttacks.Kind.SpaceConflict));
+                        NecoPlayfieldMutation.UnitAttacks.Kind.SpaceConflict,
+                        movement.NewPos));
                     shouldReset = true;
                 }
             }

@@ -48,15 +48,17 @@ public abstract partial class NecoPlayfieldMutation
     {
         public readonly NecoUnitId Attacker, Receiver;
         public readonly Kind AttackKind;
+        public readonly Vector2i? ConflictPosition;
 
         public readonly int Damage;
 
-        public UnitAttacks(ReadOnlyNecoField field, NecoUnitId attacker, NecoUnitId receiver, Kind attackKind)
+        public UnitAttacks(ReadOnlyNecoField field, NecoUnitId attacker, NecoUnitId receiver, Kind attackKind, Vector2i? conflictPosition = null)
             : base(attacker)
         {
             Attacker = attacker;
             Receiver = receiver;
             AttackKind = attackKind;
+            ConflictPosition = conflictPosition;
 
             var unit = field.GetUnit(Attacker);
             Damage = unit.Power;
