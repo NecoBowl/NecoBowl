@@ -182,7 +182,7 @@ public abstract partial class NecoPlayfieldMutation
 
         internal override void Pass1Mutate(NecoField field)
         {
-            var itemUnit = field.GetAndRemoveUnit(Item);
+            var itemUnit = field.GetAndRemoveUnit(Item, true);
             TempUnitItem = itemUnit;
         }
 
@@ -191,13 +191,6 @@ public abstract partial class NecoPlayfieldMutation
             var subject = field.GetUnit(Subject);
             TempUnitItem!.Carrier = subject;
             subject.Inventory.Add(TempUnitItem!);
-        }
-
-        internal override IEnumerable<NecoPlayfieldMutation> GetResultantMutations(ReadOnlyNecoField field)
-        {
-            if (Source.IsChange) {
-                yield return new MovementMutation(Source);
-            }
         }
     }
 

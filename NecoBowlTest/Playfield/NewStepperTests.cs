@@ -109,6 +109,25 @@ public class NewStepperTests
         Assert.That(mutations, Has.MutationWhere<NecoPlayfieldMutation.UnitAttacks>(m => m.Attacker == other.Id));
         Assert.That(mutations, Has.No.MutationWhere<NecoPlayfieldMutation.UnitAttacks>(m => m.Attacker == defender.Id));
     }
+
+    [Test]
+    public void Tag_Carrier_Pickup()
+    {
+        var pickupper = new NecoUnit(NecoUnitModelCustom.Mover("CarrierN",
+                5,
+                2,
+                RelativeDirection.Up,
+                new[] {
+                    NecoUnitTag.Carrier
+                }),
+            Player1.Id);
+        var item = new NecoUnit(NecoUnitModelCustom.Item(), NecoPlayer.NeutralPlayer.Id);
+        Field[0, 0] = new(pickupper);
+        Field[0, 1] = new(item);
+
+        var mutations = Play.Step().ToList();
+        Play.Step();
+    }
 }
 
 #region Helpers

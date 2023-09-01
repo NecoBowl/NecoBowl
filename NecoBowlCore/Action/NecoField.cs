@@ -22,6 +22,8 @@ internal class NecoField
 {
     private readonly NecoSpaceContents[,] FieldContents;
     public readonly NecoFieldParameters FieldParameters;
+    
+    public readonly List<NecoUnit> TempUnitZone = new();
 
     public NecoField(NecoFieldParameters param)
     {
@@ -148,8 +150,14 @@ internal class NecoField
         return unit;
     }
 
-    public NecoUnit GetAndRemoveUnit(NecoUnitId uid)
+    public NecoUnit GetAndRemoveUnit(NecoUnitId uid, bool includeTempZone = true)
     {
+        var unit = TempUnitZone.FirstOrDefault(u => u.Id == uid);
+        if (unit is not null) {
+            TempUnitZone.Remove(unit);
+            return unit;     
+        }
+        
         return GetAndRemoveUnit(GetUnitPosition(uid));
     }
 

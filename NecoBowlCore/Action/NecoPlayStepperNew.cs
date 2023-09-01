@@ -1,5 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 
+using Microsoft.CSharp.RuntimeBinder;
+
 using neco_soft.NecoBowlCore.Tags;
 
 using NLog;
@@ -105,15 +107,24 @@ internal class NecoPlayStepperNew
         // Perform each movement.
         foreach (var (uid, movement) in unitBuffer.Select(kv => (kv.Key, kv.Value))) {
             // Sanity check for collisions that didn't get handled
-            var collisionError = unitBuffer.Values.Where(m => m.NewPos == movement.NewPos && m != movement);
+            var collisionError = unitBuffer.Values.Where(m => m.NewPos == movement.NewPos && m != movement && movement.IsChange);
             if (collisionError.Any() || Field[movement.NewPos].Unit is not null) {
-                throw new NecoPlayfieldMutationException("collision in the unit buffer");
+                if (Field[movement.NewPos].Unit is { } newPosUnit && newPosUnit != movement.Unit) {
+                    if (movement.Unit.Tags.Contains(NecoUnitTag.Carrier)
+                     && newPosUnit.Tags.Contains(NecoUnitTag.Item)) {
+                        Field.TempUnitZone.Add(newPosUnit);
+                        PendingMutations.Add(new NecoPlayfieldMutation.UnitPicksUpItem(movement.UnitId, newPosUnit.Id, movement));
+                    }
+                    else {
+                        throw new NecoPlayfieldMutationException("collision in the unit buffer");
+                    }
+                }
             }
 
             // Update the unit position
             Field[movement.NewPos] = Field[movement.NewPos] with { Unit = movement.Unit };
 
-            if (movement.IsChange) {
+            if (movement.IsChange) { 
                 resultantMutations.Add(new NecoPlayfieldMutation.MovementMutation(movement));
             }
             else if (movement.Source!.StateChange is NecoUnitActionOutcome.UnitTranslated source) {
@@ -158,6 +169,7 @@ internal class NecoPlayStepperNew
     {
         var movementsToReset = new List<NecoPlayfieldMutation.MovementMutation>();
         var spaceSwapMovements = new List<NecoPlayfieldMutation.MovementMutation>();
+        var collisionOverrides = new List<NecoUnitMovement>();
 
         do {
             // Then resolve movements, which may create more mutations.
@@ -171,7 +183,7 @@ internal class NecoPlayStepperNew
 
             foreach (var (uid, mut) in PendingMovements) {
                 // Then figure out if this unit will get its movement canceled due to space conflicts.
-                if (UpdatePendingMutationsBySpaceConflict(mut.Movement, spaceSwapMovements)) {
+                if (UpdatePendingMutationsBySpaceConflict(mut.Movement, spaceSwapMovements, collisionOverrides)) {
                     movementsToReset.Add(mut);
                 }
             }
@@ -179,12 +191,14 @@ internal class NecoPlayStepperNew
             foreach (var moveMut in movementsToReset) {
                 PendingMovements[moveMut.Subject] = new(new(moveMut.Movement, moveMut.OldPos));
             }
-        } while (GetConflicts().Any());
+        } while (GetConflicts(collisionOverrides).Any());
     }
 
-    private IEnumerable<List<NecoPlayfieldMutation.MovementMutation>> GetConflicts()
+    private IEnumerable<List<NecoPlayfieldMutation.MovementMutation>> GetConflicts(IEnumerable<NecoUnitMovement> forceCollisions)
     {
-        return PendingMovements.GroupBy(kv => kv.Value.Movement.NewPos)
+        return PendingMovements
+            .ExceptBy(forceCollisions, kv => kv.Value.Movement)
+            .GroupBy(kv => kv.Value.Movement.NewPos)
             .Where(g => g.Count() > 1)
             .Select(g => g.Select(i => i.Value).ToList());
     }
@@ -267,7 +281,8 @@ internal class NecoPlayStepperNew
 
     private bool UpdatePendingMutationsBySpaceConflict(NecoUnitMovement movement,
                                                        IEnumerable<NecoPlayfieldMutation.MovementMutation>
-                                                           spaceSwapMutations)
+                                                           spaceSwapMutations,
+                                                       List<NecoUnitMovement> collisionOverrides)
     {
         IEnumerable<NecoUnitMovement> OtherMovements()
         {
@@ -310,10 +325,8 @@ internal class NecoPlayStepperNew
                         out var carrierUnit)) {
                     if (carrierUnit == movement) {
                         // Pickup occurs
-                        PendingMutations.Add(new NecoPlayfieldMutation.UnitPicksUpItem(carrierUnit!.UnitId,
-                            itemUnit!.UnitId,
-                            movement));
-                        shouldReset = true;
+                        collisionOverrides.Add(movement);
+//                        shouldReset = true;
                         goto DoneCheckingUnitPair;
                     }
                 }
