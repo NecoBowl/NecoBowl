@@ -13,6 +13,7 @@ namespace neco_soft.NecoBowlCore.Tactics;
 /// </summary>
 internal class NecoPush : INecoPushInformation
 {
+    private readonly Dictionary<NecoPlayerId, bool> EndPlayRequested = new();
     public readonly NecoFieldParameters FieldParameters;
 
     /// <summary>
@@ -23,7 +24,6 @@ internal class NecoPush : INecoPushInformation
     private bool _isPlayFinished;
 
     public NecoTurn CurrentTurn;
-    private readonly Dictionary<NecoPlayerId, bool> EndPlayRequested = new();
     private NecoPlay? TempPlay;
 
     public NecoPush(NecoPlayerPair players, NecoFieldParameters fieldParameters)

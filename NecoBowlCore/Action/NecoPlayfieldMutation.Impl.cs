@@ -46,13 +46,22 @@ public abstract partial class NecoPlayfieldMutation
 
     public class UnitAttacks : BaseMutation
     {
+        public enum Kind
+        {
+            SpaceSwap, SpaceConflict
+        }
+
         public readonly NecoUnitId Attacker, Receiver;
         public readonly Kind AttackKind;
         public readonly Vector2i? ConflictPosition;
 
         public readonly int Damage;
 
-        public UnitAttacks(ReadOnlyNecoField field, NecoUnitId attacker, NecoUnitId receiver, Kind attackKind, Vector2i? conflictPosition = null)
+        public UnitAttacks(ReadOnlyNecoField field,
+                           NecoUnitId attacker,
+                           NecoUnitId receiver,
+                           Kind attackKind,
+                           Vector2i? conflictPosition = null)
             : base(attacker)
         {
             Attacker = attacker;
@@ -69,11 +78,6 @@ public abstract partial class NecoPlayfieldMutation
         internal override IEnumerable<BaseMutation> GetResultantMutations(ReadOnlyNecoField field)
         {
             yield return new UnitTakesDamage(Receiver, (uint)Damage);
-        }
-
-        public enum Kind
-        {
-            SpaceSwap, SpaceConflict
         }
     }
 
@@ -182,7 +186,7 @@ public abstract partial class NecoPlayfieldMutation
 
         internal override void Pass1Mutate(NecoField field)
         {
-            var itemUnit = field.GetAndRemoveUnit(Item, true);
+            var itemUnit = field.GetAndRemoveUnit(Item);
             TempUnitItem = itemUnit;
         }
 

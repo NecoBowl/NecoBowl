@@ -21,10 +21,11 @@ public static class NecoDefinitions
         AllUnitModels = Assembly.GetExecutingAssembly()
             .GetTypes()
             .Where(t => (t.Namespace == UnitModelNamespace) & !t.FullName!.Contains("+"))
-            .Select(t => {
-                        Logger.Info(t);
-                        return t;
-                    })
+            .Select(
+                t => {
+                    Logger.Info(t);
+                    return t;
+                })
             .Select(t => (NecoUnitModel)t.GetField("Instance")!.GetValue(null)!)
             .Append(BuiltInDefinitions.Ball.Instance)
             .ToList();

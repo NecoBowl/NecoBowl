@@ -22,7 +22,7 @@ internal class NecoField
 {
     private readonly NecoSpaceContents[,] FieldContents;
     public readonly NecoFieldParameters FieldParameters;
-    
+
     public readonly List<NecoUnit> TempUnitZone = new();
 
     public NecoField(NecoFieldParameters param)
@@ -89,9 +89,10 @@ internal class NecoField
 
     public Vector2i GetUnitPosition(NecoUnitId uid, bool searchInventory = false)
     {
-        return SpacePositions.Single(tuple => tuple.Item2.Unit?.Id == uid
-                                      || (searchInventory && (tuple.Item2.Unit?.Inventory.Any(
-                                             inventoryUnit => inventoryUnit.Id == uid) ?? false)))
+        return SpacePositions.Single(
+                tuple => tuple.Item2.Unit?.Id == uid
+                 || (searchInventory
+                     && (tuple.Item2.Unit?.Inventory.Any(inventoryUnit => inventoryUnit.Id == uid) ?? false)))
             .Item1;
     }
 
@@ -155,9 +156,9 @@ internal class NecoField
         var unit = TempUnitZone.FirstOrDefault(u => u.Id == uid);
         if (unit is not null) {
             TempUnitZone.Remove(unit);
-            return unit;     
+            return unit;
         }
-        
+
         return GetAndRemoveUnit(GetUnitPosition(uid));
     }
 

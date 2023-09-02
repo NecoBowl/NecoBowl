@@ -11,5 +11,14 @@ public class Boar : NecoUnitCardModel
     public override NecoUnitModel Model => Unit.Boar.Instance;
 
     public override IEnumerable<NecoCardOptionPermission> OptionPermissions { get; }
-        = new[] { new NecoCardOptionPermission.Rotate(new[] { 0, 2, 4, 6 }, 0) };
+        = new[] {
+            new NecoCardOptionPermission.Rotate(
+                new[] {
+                    0,
+                    2,
+                    4,
+                    6
+                },
+                0)
+        };
 }

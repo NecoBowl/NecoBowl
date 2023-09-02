@@ -65,14 +65,16 @@ internal record UnitMovementPair
         Movement1 = movement1;
         Movement2 = movement2;
 
-        Movements = new(new[] {
-            Movement1.Unit,
-            Movement2.Unit
-        });
-        Collection = new(new[] {
-            Movement1,
-            Movement2
-        });
+        Movements = new(
+            new[] {
+                Movement1.Unit,
+                Movement2.Unit
+            });
+        Collection = new(
+            new[] {
+                Movement1,
+                Movement2
+            });
     }
 
     /// <summary>Finds the unit in the pair with the specified tag.</summary>
@@ -205,10 +207,11 @@ internal static class PlayStepperExt
                 continue;
             }
 
-            var swap = movementsTemp.FirstOrDefault(m
-                                                        => m.NewPos == move.OldPos
-                                                     && move.NewPos == m.OldPos
-                                                     && move.Unit != m.Unit);
+            var swap = movementsTemp.FirstOrDefault(
+                m
+                    => m.NewPos == move.OldPos
+                 && move.NewPos == m.OldPos
+                 && move.Unit != m.Unit);
             if (swap is not null) {
                 construct.Add(new(move, swap));
                 usedUnits.Add(move);

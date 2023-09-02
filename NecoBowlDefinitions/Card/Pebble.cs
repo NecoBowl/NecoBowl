@@ -12,7 +12,8 @@ public class Pebble : NecoUnitCardModel
 
     public override IEnumerable<NecoCardOptionPermission> OptionPermissions { get; }
         = new[] {
-            new NecoCardOptionPermission.Rotate(new[] {
+            new NecoCardOptionPermission.Rotate(
+                new[] {
                     1,
                     3,
                     5,

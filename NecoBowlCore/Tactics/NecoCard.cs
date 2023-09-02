@@ -49,8 +49,9 @@ public class NecoUnitCard : NecoCard
     public NecoUnit ToUnit(NecoPlayerId playerId)
     {
         var unit = new NecoUnit(UnitModel, playerId);
-        foreach (var planOption in CardModel.OptionPermissions)
+        foreach (var planOption in CardModel.OptionPermissions) {
             planOption.ApplyToUnit(unit, Options[planOption.Identifier]);
+        }
 
         return unit;
     }
@@ -81,11 +82,14 @@ public class NecoCardOptions : IEnumerable<(string, object)>
 
     public void SetValue(string id, object value)
     {
-        if (!Values.ContainsKey(id)) throw new CardOptionException($"invalid key {id}");
+        if (!Values.ContainsKey(id)) {
+            throw new CardOptionException($"invalid key {id}");
+        }
 
-        if (value.GetType() != Values[id].GetType())
+        if (value.GetType() != Values[id].GetType()) {
             throw new CardOptionException(
                 $"invalid type for option {id} (was {value.GetType()}, expected {Values[id].GetType()}");
+        }
 
         Values[id] = value;
     }

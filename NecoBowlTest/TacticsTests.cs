@@ -75,7 +75,8 @@ internal abstract class TacticsTests
                 }
             }
 
-            Context.AssertSendInput(new NecoInput.PlaceCard(Players.Offense, card2, (x, y)),
+            Context.AssertSendInput(
+                new NecoInput.PlaceCard(Players.Offense, card2, (x, y)),
                 NecoInputResponse.Kind.Illegal);
 
             Context.FinishTurn();
@@ -94,10 +95,11 @@ internal abstract class TacticsTests
 
             Context.AssertSendInput(new NecoInput.PlaceCard(Players.Offense, card2, (0, 1)));
             var preview = Context.GetPlayPreview();
-            Assert.Multiple(() => {
-                                Assert.That(preview.Field[0, 0].Unit, Is.Not.Null);
-                                Assert.That(preview.Field[0, 1].Unit, Is.Not.Null);
-                            });
+            Assert.Multiple(
+                () => {
+                    Assert.That(preview.Field[0, 0].Unit, Is.Not.Null);
+                    Assert.That(preview.Field[0, 1].Unit, Is.Not.Null);
+                });
         }
     }
 

@@ -22,11 +22,12 @@ public class Goose : NecoUnitModel
     };
 
     public override IEnumerable<NecoUnitAction> Actions => new[] {
-        new NecoUnitAction.ChaseBall(new[] {
-            RelativeDirection.Up,
-            RelativeDirection.UpLeft,
-            RelativeDirection.UpRight
-        })
+        new NecoUnitAction.ChaseBall(
+            new[] {
+                RelativeDirection.Up,
+                RelativeDirection.UpLeft,
+                RelativeDirection.UpRight
+            })
     };
 
     public override string BehaviorDescription

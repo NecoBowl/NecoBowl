@@ -136,8 +136,10 @@ internal class NecoPlayStepperNew
                 if (movement.Source?.ResultKind == NecoUnitActionResult.Kind.Failure) {
                     // Add bump event
                     if (!PendingMutations.Any(m => m.Subject == uid)) {
-                        resultantMutations.Add(new NecoPlayfieldMutation.UnitBumps(uid,
-                            source.Movement.AsDirection()));
+                        resultantMutations.Add(
+                            new NecoPlayfieldMutation.UnitBumps(
+                                uid,
+                                source.Movement.AsDirection()));
                     }
                 }
                 else if (!movement.IsChange) {
@@ -319,17 +321,20 @@ internal class NecoPlayStepperNew
                     shouldReset = true;
                 }
                 else {
-                    PendingMutations.Add(new NecoPlayfieldMutation.UnitAttacks(Field.AsReadOnly(),
-                        movement.UnitId,
-                        conflict.UnitId,
-                        NecoPlayfieldMutation.UnitAttacks.Kind.SpaceConflict,
-                        movement.NewPos));
+                    PendingMutations.Add(
+                        new NecoPlayfieldMutation.UnitAttacks(
+                            Field.AsReadOnly(),
+                            movement.UnitId,
+                            conflict.UnitId,
+                            NecoPlayfieldMutation.UnitAttacks.Kind.SpaceConflict,
+                            movement.NewPos));
                     shouldReset = true;
                 }
             }
             else {
                 // TAGIMPL:Carrier
-                if (unitPair.TryGetUnitsBy(m => m.Unit.Tags.Contains(NecoUnitTag.Item),
+                if (unitPair.TryGetUnitsBy(
+                        m => m.Unit.Tags.Contains(NecoUnitTag.Item),
                         m => m.Unit.Tags.Contains(NecoUnitTag.Carrier),
                         out var itemUnit,
                         out var carrierUnit)) {
@@ -350,9 +355,11 @@ internal class NecoPlayStepperNew
                      && collisionWinner.Unit.Tags.Contains(NecoUnitTag.Carrier)) {
                         // force handoff 
                         var ballItem = collisionLoser.Unit.Inventory.Single(i => i.Tags.Contains(NecoUnitTag.TheBall));
-                        PendingMutations.Add(new NecoPlayfieldMutation.UnitHandsOffItem(collisionLoser.UnitId,
-                            collisionWinner.UnitId,
-                            ballItem.Id));
+                        PendingMutations.Add(
+                            new NecoPlayfieldMutation.UnitHandsOffItem(
+                                collisionLoser.UnitId,
+                                collisionWinner.UnitId,
+                                ballItem.Id));
                     }
                 }
                 else {
@@ -385,10 +392,12 @@ internal class NecoPlayStepperNew
         if (unitPair.UnitsAreEnemies()) {
             // TAGIMPL:Defender
             if (unitPair.UnitWithTag(NecoUnitTag.Defender, out _) != movement) {
-                PendingMutations.Add(new NecoPlayfieldMutation.UnitAttacks(Field.AsReadOnly(),
-                    movement.UnitId,
-                    swap.UnitId,
-                    NecoPlayfieldMutation.UnitAttacks.Kind.SpaceSwap));
+                PendingMutations.Add(
+                    new NecoPlayfieldMutation.UnitAttacks(
+                        Field.AsReadOnly(),
+                        movement.UnitId,
+                        swap.UnitId,
+                        NecoPlayfieldMutation.UnitAttacks.Kind.SpaceSwap));
             }
         }
         else {
@@ -468,7 +477,8 @@ internal class NecoPlayStepperNew
         }
 
         // Unit with Bossy
-        if (unitPair.TryUnitWhereSingle(u => u.Unit.Tags.Contains(NecoUnitTag.Bossy),
+        if (unitPair.TryUnitWhereSingle(
+                u => u.Unit.Tags.Contains(NecoUnitTag.Bossy),
                 out var bossyUnit,
                 out var otherUnit)) {
             other = otherUnit!;
@@ -476,7 +486,8 @@ internal class NecoPlayStepperNew
         }
 
         // Forced handoff interaction
-        if (unitPair.TryUnitWhereSingle(m => m.Unit.Inventory.Any(u => u.Tags.Contains(NecoUnitTag.TheBall)),
+        if (unitPair.TryUnitWhereSingle(
+                m => m.Unit.Inventory.Any(u => u.Tags.Contains(NecoUnitTag.TheBall)),
                 out var ballHolder,
                 out var nonBallHolder)) {
             // TAGIMPL:Carrier
@@ -489,7 +500,8 @@ internal class NecoPlayStepperNew
         }
 
         // Unit holding ball
-        if (unitPair.TryUnitWhereSingle(u => u.Unit.Tags.Contains(NecoUnitTag.TheBall),
+        if (unitPair.TryUnitWhereSingle(
+                u => u.Unit.Tags.Contains(NecoUnitTag.TheBall),
                 out var ballUnit,
                 out var nonBallUnit)) {
             other = nonBallUnit!;
@@ -518,7 +530,8 @@ internal class NecoPlayStepperNew
 
         {
             // Diagonal
-            if (unitPair.TryUnitWhereSingle(m => Math.Abs(m.Difference.X) + Math.Abs(m.Difference.Y) > 1,
+            if (unitPair.TryUnitWhereSingle(
+                    m => Math.Abs(m.Difference.X) + Math.Abs(m.Difference.Y) > 1,
                     out var diagonalMover,
                     out var nonDiagonalMover)) {
                 other = nonDiagonalMover!;

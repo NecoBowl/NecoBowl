@@ -2,8 +2,6 @@ using neco_soft.NecoBowlDefinitions;
 
 using NLog;
 
-using NUnit.Framework;
-
 namespace neco_soft.NecoBowlTest;
 
 public class DefinitionsTests
@@ -13,6 +11,8 @@ public class DefinitionsTests
     [Test]
     public void AllUnitModels()
     {
-        foreach (var v in NecoDefinitions.AllUnitModels) Logger.Info(v);
+        foreach (var v in NecoDefinitions.AllUnitModels) {
+            Logger.Info(v);
+        }
     }
 }

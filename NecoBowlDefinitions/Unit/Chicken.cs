@@ -18,7 +18,9 @@ public class Chicken : NecoUnitModel
         => new NecoUnitTag[] { };
 
     public override IEnumerable<NecoUnitAction> Actions
-        => new[] { new NecoUnitAction.TranslateUnit(RelativeDirection.Up) };
+        => new[] {
+            new NecoUnitAction.TranslateUnit(RelativeDirection.Up)
+        };
 
     public override string BehaviorDescription
         => "Walks forward.";

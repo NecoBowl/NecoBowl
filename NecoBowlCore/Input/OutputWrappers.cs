@@ -32,9 +32,9 @@ public class NecoFieldInformation
 
 public class NecoSpaceInformation
 {
+    private readonly NecoSpaceContents Contents;
     public readonly (int X, int Y) Coords;
     public readonly NecoPlayerRole? PlayerRole;
-    private readonly NecoSpaceContents Contents;
 
     internal NecoSpaceInformation(NecoSpaceContents contents, (int X, int Y) coords, NecoPlayerRole? playerRole)
     {
@@ -134,7 +134,9 @@ public class NecoTurnInformation
     {
         foreach (var role in Enum.GetValues<NecoPlayerRole>()) {
             var cardPlay = Turn.CardPlaysByRole[role].SingleOrDefault(p => p.Position == coords);
-            if (cardPlay is not null) return cardPlay;
+            if (cardPlay is not null) {
+                return cardPlay;
+            }
         }
 
         return null;

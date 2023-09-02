@@ -1,8 +1,5 @@
 using neco_soft.NecoBowlCore.Input;
-using neco_soft.NecoBowlCore.Model;
 using neco_soft.NecoBowlCore.Tactics;
-
-using NUnit.Framework;
 
 namespace neco_soft.NecoBowlTest;
 
