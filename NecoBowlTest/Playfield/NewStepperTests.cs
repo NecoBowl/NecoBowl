@@ -26,26 +26,62 @@ public class NewStepperTests
 
     private readonly NecoPlayer Player1 = new(), Player2 = new();
 
-    [Test]
-    public void TestCombat()
+    private void SetUp_VerticalCollision(out NecoUnit unitA1, out NecoUnit unitA2)
     {
-        var unitA1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverN", 5, 2));
-        var unitA2 = new NecoUnit(NecoUnitModelCustom.Mover("MoverW", 5, 2, RelativeDirection.Left));
+        unitA1 = NecoUnitModelCustom.Mover("MoverN", 5, 2).ToUnit(Player1);
+        unitA2 = NecoUnitModelCustom.Mover("MoverS", 5, 2, RelativeDirection.Down).ToUnit(Player2);
+        Field[0, 0] = new(unitA1);
+        Field[0, 1] = new(unitA2);
+    }
+
+    [Test]
+    public void Play_UnitCanAttackUnitBumpingIntoWall()
+    {
+        var unitA1 = NecoUnitModelCustom.Mover("MoverN", 5, 2).ToUnit(Player1);
+        var unitA2 = NecoUnitModelCustom.Mover("MoverW", 5, 2, RelativeDirection.Left).ToUnit(Player2);
         Field[0, 0] = new(unitA1);
         Field[0, 1] = new(unitA2);
 
         var mutations = new Queue<NecoPlayfieldMutation>(Play.Step());
-        Assert.That(mutations,
+        Assert.That(
+            mutations,
             Has.MutationWhere<NecoPlayfieldMutation.UnitBumps>(mut => mut.Direction == AbsoluteDirection.West));
-        Assert.That(mutations,
+        Assert.That(
+            mutations,
             Has.MutationWhere<NecoPlayfieldMutation.UnitAttacks>(mut => mut.Attacker == unitA1.Id));
     }
 
     [Test]
-    public void TestPush()
+    public void Play_UnitCanAttackUnitOnSpaceSwap()
+    {
+        SetUp_VerticalCollision(out var unitA1, out var unitA2);
+
+        var mutations = new Queue<NecoPlayfieldMutation>(Play.Step());
+        Assert.That(
+            mutations,
+            Has.MutationWhere<NecoPlayfieldMutation.UnitAttacks>(mut => mut.Attacker == unitA2.Id));
+        Assert.That(
+            mutations,
+            Has.MutationWhere<NecoPlayfieldMutation.UnitAttacks>(mut => mut.Attacker == unitA1.Id));
+    }
+
+    [Test]
+    public void Mutation_AttacksCauseUnitsToTakeDamage()
+    {
+        SetUp_VerticalCollision(out var unit1, out var unit2);
+
+        Play.Step();
+
+        Assert.That(unit1.CurrentHealth, Is.EqualTo(unit1.MaxHealth - unit2.Power));
+    }
+
+    [Test]
+    public void Tag_Pusher_PushesUnitWhenCollidingPreemptively()
     {
         var unitA1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverS", 5, 2, RelativeDirection.Down), Player1.Id);
-        var unitA2 = new NecoUnit(NecoUnitModelCustom.Mover("MoverN",
+        var unitA2 = new NecoUnit(
+            NecoUnitModelCustom.Mover(
+                "MoverN",
                 5,
                 2,
                 tags: new[] {
@@ -57,26 +93,32 @@ public class NewStepperTests
 
         Play.Step();
 
-        Assert.That(Field,
-            Has.FieldContents(new() {
-                { (0, 2), unitA1 },
-                { (0, 1), unitA2 }
-            }));
+        Assert.That(
+            Field,
+            Has.FieldContents(
+                new() {
+                    { (0, 2), unitA1 },
+                    { (0, 1), unitA2 }
+                }));
 
         Play.Step();
 
-        Assert.That(Field,
-            Has.FieldContents(new() {
-                { (0, 3), unitA1 },
-                { (0, 2), unitA2 }
-            }));
+        Assert.That(
+            Field,
+            Has.FieldContents(
+                new() {
+                    { (0, 3), unitA1 },
+                    { (0, 2), unitA2 }
+                }));
     }
 
     [Test]
-    public void Tag_Defender_SpaceSwap()
+    public void Tag_Defender_DoesNotAttackWhenMovingIntoSpaceSwap()
     {
         var unitA1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverS", 5, 2, RelativeDirection.Down), Player1.Id);
-        var enemy = new NecoUnit(NecoUnitModelCustom.Mover("MoverN",
+        var enemy = new NecoUnit(
+            NecoUnitModelCustom.Mover(
+                "MoverN",
                 5,
                 2,
                 tags: new[] {
@@ -92,10 +134,12 @@ public class NewStepperTests
     }
 
     [Test]
-    public void Tag_Defender_SpaceConflict()
+    public void Tag_Defender_DoesNotAttackWhenMovingIntoSpaceConflict()
     {
         var other = new NecoUnit(NecoUnitModelCustom.Mover(null, 5, 2, RelativeDirection.Left), Player1.Id);
-        var defender = new NecoUnit(NecoUnitModelCustom.Mover("MoverN",
+        var defender = new NecoUnit(
+            NecoUnitModelCustom.Mover(
+                "MoverN",
                 5,
                 2,
                 tags: new[] {
@@ -111,9 +155,11 @@ public class NewStepperTests
     }
 
     [Test]
-    public void Tag_Carrier_Pickup()
+    public void Tag_Carrier_PickupOccursWhenMoveOntoItem()
     {
-        var pickupper = new NecoUnit(NecoUnitModelCustom.Mover("CarrierN",
+        var pickupper = new NecoUnit(
+            NecoUnitModelCustom.Mover(
+                "CarrierN",
                 5,
                 2,
                 RelativeDirection.Up,
@@ -126,7 +172,47 @@ public class NewStepperTests
         Field[0, 1] = new(item);
 
         var mutations = Play.Step().ToList();
+
+        Assert.Multiple(
+            () => {
+                Assert.That(
+                    mutations,
+                    Has.MutationWhere<NecoPlayfieldMutation.UnitPicksUpItem>(m => m.Subject == pickupper.Id));
+                Assert.That(pickupper.Inventory, Contains.Item(item));
+            });
+    }
+
+    [Test]
+    public void Tag_Bossy_UnitTakesTopPriority()
+    {
+        var unitControl1 = TestHelpers.UnitMover(player: Player1);
+        var unitControl2 = TestHelpers.UnitMover(RelativeDirection.UpRight, player: Player1);
+
+        var unitTest1 = TestHelpers.UnitMover(player: Player1);
+        var unitTest2 = TestHelpers.UnitMover(
+            RelativeDirection.UpRight,
+            new[] {
+                NecoUnitTag.Bossy
+            },
+            Player1);
+
+        Field[1, 0] = new(unitControl1);
+        Field[0, 0] = new(unitControl2);
+
+        Field[3, 0] = new(unitTest1);
+        Field[2, 0] = new(unitTest2);
+
         Play.Step();
+
+        Assert.That(
+            Field,
+            Has.FieldContents(
+                new() {
+                    { (0, 0), unitControl2 },
+                    { (1, 1), unitControl1 },
+                    { (3, 1), unitTest2 },
+                    { (3, 0), unitTest1 }
+                }));
     }
 }
 

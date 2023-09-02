@@ -1,11 +1,5 @@
-using neco_soft.NecoBowlCore;
-using neco_soft.NecoBowlCore.Action;
 using neco_soft.NecoBowlCore.Input;
-using neco_soft.NecoBowlCore.Model;
 using neco_soft.NecoBowlCore.Tactics;
-using neco_soft.NecoBowlCore.Tags;
-
-using NUnit.Framework;
 
 namespace neco_soft.NecoBowlTest;
 
@@ -16,29 +10,38 @@ public static class TestHelpers
         return new(NecoCardModelCustom.FromUnitModel(NecoUnitModelCustom_HealthEqualsPower.DoNothing(), cost));
     }
 
+    public static NecoUnit UnitMover(RelativeDirection direction = RelativeDirection.Up,
+                                     NecoUnitTag[]? tags = null,
+                                     NecoPlayer? player = null)
+    {
+        return new(NecoUnitModelCustom.Mover(direction: direction, tags: tags), player?.Id ?? new());
+    }
+
     public static void AssertSendInput(this NecoBowlContext context,
-        NecoInput input,
-        NecoInputResponse.Kind kind = NecoInputResponse.Kind.Success)
+                                       NecoInput input,
+                                       NecoInputResponse.Kind kind = NecoInputResponse.Kind.Success)
     {
         var resp = context.SendInput(input);
-        if (resp.ResponseKind == NecoInputResponse.Kind.Error) throw resp.Exception!;
+        if (resp.ResponseKind == NecoInputResponse.Kind.Error) {
+            throw resp.Exception!;
+        }
 
         Assert.That(resp.ResponseKind, Is.EqualTo(kind));
     }
 }
 
 /// <summary>
-/// Dummy implementation of a UnitModel for testing purposes.
-/// Deprecated.
+///     Dummy implementation of a UnitModel for testing purposes.
+///     Deprecated.
 /// </summary>
 // ReSharper disable once InconsistentNaming
 public class NecoUnitModelCustom_HealthEqualsPower : NecoUnitModel
 {
     public NecoUnitModelCustom_HealthEqualsPower(string name,
-        int health,
-        int power,
-        IReadOnlyCollection<NecoUnitTag> tags,
-        IEnumerable<NecoUnitAction> actions)
+                                                 int health,
+                                                 int power,
+                                                 IReadOnlyCollection<NecoUnitTag> tags,
+                                                 IEnumerable<NecoUnitAction> actions)
     {
         Name = name;
         InternalName = name;
@@ -49,9 +52,9 @@ public class NecoUnitModelCustom_HealthEqualsPower : NecoUnitModel
     }
 
     public NecoUnitModelCustom_HealthEqualsPower(string name,
-        int power,
-        IReadOnlyCollection<NecoUnitTag> tags,
-        IEnumerable<NecoUnitAction> actions)
+                                                 int power,
+                                                 IReadOnlyCollection<NecoUnitTag> tags,
+                                                 IEnumerable<NecoUnitAction> actions)
         : this(name, power, power, tags, actions)
     { }
 
@@ -64,21 +67,23 @@ public class NecoUnitModelCustom_HealthEqualsPower : NecoUnitModel
     public override IEnumerable<NecoUnitAction> Actions { get; }
 
     public static NecoUnitModelCustom_HealthEqualsPower Mover(string name,
-        int health,
-        int power,
-        AbsoluteDirection direction)
+                                                              int health,
+                                                              int power,
+                                                              AbsoluteDirection direction)
     {
         var unit = new NecoUnitModelCustom_HealthEqualsPower(
             name,
             health,
             power,
             new NecoUnitTag[] { },
-            new[] { new NecoUnitAction.TranslateUnit((RelativeDirection)direction) });
+            new[] {
+                new NecoUnitAction.TranslateUnit((RelativeDirection)direction)
+            });
 
         return unit;
     }
 
-    #region Old Methods (no health field)
+#region Old Methods (no health field)
 
     public static NecoUnitModelCustom_HealthEqualsPower Mover(string name, int power, AbsoluteDirection direction)
     {
@@ -86,7 +91,9 @@ public class NecoUnitModelCustom_HealthEqualsPower : NecoUnitModel
             name,
             power,
             new NecoUnitTag[] { },
-            new[] { new NecoUnitAction.TranslateUnit((RelativeDirection)direction) });
+            new[] {
+                new NecoUnitAction.TranslateUnit((RelativeDirection)direction)
+            });
 
         return unit;
     }
@@ -96,45 +103,59 @@ public class NecoUnitModelCustom_HealthEqualsPower : NecoUnitModel
         var unit = new NecoUnitModelCustom_HealthEqualsPower(
             name,
             power,
-            new[] { NecoUnitTag.Pusher },
-            new[] { new NecoUnitAction.TranslateUnit((RelativeDirection)direction) });
+            new[] {
+                NecoUnitTag.Pusher
+            },
+            new[] {
+                new NecoUnitAction.TranslateUnit((RelativeDirection)direction)
+            });
 
         return unit;
     }
 
     public static NecoUnitModelCustom_HealthEqualsPower DoNothing(string name = "DoNothing", int power = 1)
     {
-        var unit = new NecoUnitModelCustom_HealthEqualsPower(name,
+        var unit = new NecoUnitModelCustom_HealthEqualsPower(
+            name,
             power,
             new NecoUnitTag[] { },
-            new NecoUnitAction[] { new NecoUnitAction.DoNothing() });
+            new NecoUnitAction[] {
+                new NecoUnitAction.DoNothing()
+            });
         return unit;
     }
 
     public static NecoUnitModelCustom_HealthEqualsPower Ball(string name = "TestBall", int power = 1)
     {
-        return new(name,
+        return new(
+            name,
             power,
-            new[] { NecoUnitTag.TheBall },
-            new NecoUnitAction[] { new NecoUnitAction.DoNothing() });
+            new[] {
+                NecoUnitTag.TheBall
+            },
+            new NecoUnitAction[] {
+                new NecoUnitAction.DoNothing()
+            });
     }
 
-    #endregion
+#endregion
 }
 
 /// <summary>
-/// Dummy implementation of a UnitModel for testing purposes.
+///     Dummy implementation of a UnitModel for testing purposes.
 /// </summary>
 public class NecoUnitModelCustom : NecoUnitModel
 {
     public NecoUnitModelCustom(string name,
-        int health,
-        int power,
-        IReadOnlyCollection<NecoUnitTag>? tags = null,
-        IEnumerable<NecoUnitAction>? actions = null)
+                               int health,
+                               int power,
+                               IReadOnlyCollection<NecoUnitTag>? tags = null,
+                               IEnumerable<NecoUnitAction>? actions = null)
     {
         tags ??= new NecoUnitTag[] { };
-        actions ??= new NecoUnitAction[] { new NecoUnitAction.DoNothing() };
+        actions ??= new NecoUnitAction[] {
+            new NecoUnitAction.DoNothing()
+        };
 
         Name = name;
         InternalName = name;
@@ -157,31 +178,39 @@ public class NecoUnitModelCustom : NecoUnitModel
         return new(this, owner.Id);
     }
 
-    #region Initializers
+#region Initializers
 
     public static NecoUnitModelCustom Mover(string? name = null,
-        int health = 1,
-        int power = 1,
-        RelativeDirection direction = RelativeDirection.Up,
-        NecoUnitTag[]? tags = null)
+                                            int health = 1,
+                                            int power = 1,
+                                            RelativeDirection direction = RelativeDirection.Up,
+                                            NecoUnitTag[]? tags = null)
     {
         name ??= $"Mover_{direction.ToString()}";
         tags ??= new NecoUnitTag[] { };
-        return new(name,
+        return new(
+            name,
             health,
             power,
             tags,
-            new[] { new NecoUnitAction.TranslateUnit(direction) });
+            new[] {
+                new NecoUnitAction.TranslateUnit(direction)
+            });
     }
 
     public static NecoUnitModelCustom Item(string name = "Item", int health = 1, int power = 1)
     {
-        return new(name,
+        return new(
+            name,
             health,
             power,
-            new[] { NecoUnitTag.Item },
-            new[] { new NecoUnitAction.DoNothing() });
+            new[] {
+                NecoUnitTag.Item
+            },
+            new[] {
+                new NecoUnitAction.DoNothing()
+            });
     }
 
-    #endregion
+#endregion
 }

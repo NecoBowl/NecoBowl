@@ -1,7 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 
-using Microsoft.CSharp.RuntimeBinder;
-
 using neco_soft.NecoBowlCore.Tags;
 
 using NLog;
@@ -11,13 +9,13 @@ namespace neco_soft.NecoBowlCore.Action;
 internal class NecoPlayStepperNew
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+    private readonly List<NecoPlayfieldMutation.MovementMutation> DeferredMovements = new();
 
     private readonly NecoField Field;
     private readonly List<NecoPlayfieldMutation> MutationHistory = new();
 
     private readonly Dictionary<NecoUnitId, NecoPlayfieldMutation.MovementMutation> PendingMovements = new();
     private readonly List<NecoPlayfieldMutation.BaseMutation> PendingMutations = new();
-    private List<NecoPlayfieldMutation.MovementMutation> DeferredMovements = new();
 
     public NecoPlayStepperNew(NecoField field)
     {
@@ -31,19 +29,9 @@ internal class NecoPlayStepperNew
     [SuppressMessage("ReSharper", "RedundantBoolCompare")]
     public IEnumerable<NecoPlayfieldMutation> Process()
     {
-        Dictionary<NecoUnitId, NecoUnitAction?> ChainedActions = new();
         List<NecoPlayfieldMutation> stepMutations = new();
 
-        // Perform the actions of each unit to populate the lists
-        foreach (var (pos, unit) in Field.GetAllUnits()) {
-            var action = unit.PopAction();
-            var result = action.Result(unit.Id, Field.AsReadOnly());
-            EnqueueMutationFromAction(unit.Id, result);
-
-            ChainedActions[unit.Id] = action.Next;
-        }
-
-        AddPreMovementMutations();
+        PopUnitActions(out var chainedActions);
 
         // Begin the substep loop
         while (MutationsRemaining) {
@@ -56,7 +44,7 @@ internal class NecoPlayStepperNew
 
             FixFailedActionResultMovements();
             ResolvePendingMovementCollisions();
-            
+
             if (PendingMovements.Any()) {
                 ConsumeMovements(out var resultantMutations);
                 stepMutations.AddRange(resultantMutations);
@@ -64,9 +52,9 @@ internal class NecoPlayStepperNew
             }
 
             // Add movements/mutations from multi-actions
-            foreach (var (id, action) in ChainedActions.Where(kv => kv.Value is not null)) {
+            foreach (var (id, action) in chainedActions.Where(kv => kv.Value is not null)) {
                 EnqueueMutationFromAction(id, action!.Result(id, Field.AsReadOnly()));
-                ChainedActions[id] = action.Next;
+                chainedActions[id] = action.Next;
             }
         }
 
@@ -77,6 +65,21 @@ internal class NecoPlayStepperNew
         MutationHistory.AddRange(stepMutations);
 
         return stepMutations;
+    }
+
+    private void PopUnitActions(out Dictionary<NecoUnitId, NecoUnitAction?> chainedActions)
+    {
+        chainedActions = new();
+        // Perform the actions of each unit to populate the lists
+        foreach (var (pos, unit) in Field.GetAllUnits()) {
+            var action = unit.PopAction();
+            var result = action.Result(unit.Id, Field.AsReadOnly());
+            EnqueueMutationFromAction(unit.Id, result);
+
+            chainedActions[unit.Id] = action.Next;
+        }
+
+        AddPreMovementMutations();
     }
 
     private void ProcessPreMovementMutations()
@@ -107,13 +110,15 @@ internal class NecoPlayStepperNew
         // Perform each movement.
         foreach (var (uid, movement) in unitBuffer.Select(kv => (kv.Key, kv.Value))) {
             // Sanity check for collisions that didn't get handled
-            var collisionError = unitBuffer.Values.Where(m => m.NewPos == movement.NewPos && m != movement && movement.IsChange);
+            var collisionError
+                = unitBuffer.Values.Where(m => m.NewPos == movement.NewPos && m != movement && movement.IsChange);
             if (collisionError.Any() || Field[movement.NewPos].Unit is not null) {
                 if (Field[movement.NewPos].Unit is { } newPosUnit && newPosUnit != movement.Unit) {
                     if (movement.Unit.Tags.Contains(NecoUnitTag.Carrier)
                      && newPosUnit.Tags.Contains(NecoUnitTag.Item)) {
                         Field.TempUnitZone.Add(newPosUnit);
-                        PendingMutations.Add(new NecoPlayfieldMutation.UnitPicksUpItem(movement.UnitId, newPosUnit.Id, movement));
+                        PendingMutations.Add(
+                            new NecoPlayfieldMutation.UnitPicksUpItem(movement.UnitId, newPosUnit.Id, movement));
                     }
                     else {
                         throw new NecoPlayfieldMutationException("collision in the unit buffer");
@@ -124,7 +129,7 @@ internal class NecoPlayStepperNew
             // Update the unit position
             Field[movement.NewPos] = Field[movement.NewPos] with { Unit = movement.Unit };
 
-            if (movement.IsChange) { 
+            if (movement.IsChange) {
                 resultantMutations.Add(new NecoPlayfieldMutation.MovementMutation(movement));
             }
             else if (movement.Source!.StateChange is NecoUnitActionOutcome.UnitTranslated source) {
@@ -134,9 +139,10 @@ internal class NecoPlayStepperNew
                         resultantMutations.Add(new NecoPlayfieldMutation.UnitBumps(uid,
                             source.Movement.AsDirection()));
                     }
-                } else if (!movement.IsChange) {
+                }
+                else if (!movement.IsChange) {
                     // The unit had a legal move but was blocked
-                    deferredMovements.Add(new NecoPlayfieldMutation.MovementMutation(source.Movement));
+                    deferredMovements.Add(new(source.Movement));
                 }
                 else {
                     Logger.Warn($"unknown failure for movement: {movement.Source?.StateChange}");
@@ -147,7 +153,9 @@ internal class NecoPlayStepperNew
         DeferredMovements.Clear();
         DeferredMovements.AddRange(deferredMovements);
         PendingMovements.Clear();
-        foreach (var m in DeferredMovements) PendingMovements[m.Subject] = m;
+        foreach (var m in DeferredMovements) {
+            PendingMovements[m.Subject] = m;
+        }
     }
 
     private void AddPreMovementMutations()
@@ -194,7 +202,8 @@ internal class NecoPlayStepperNew
         } while (GetConflicts(collisionOverrides).Any());
     }
 
-    private IEnumerable<List<NecoPlayfieldMutation.MovementMutation>> GetConflicts(IEnumerable<NecoUnitMovement> forceCollisions)
+    private IEnumerable<List<NecoPlayfieldMutation.MovementMutation>> GetConflicts(
+        IEnumerable<NecoUnitMovement> forceCollisions)
     {
         return PendingMovements
             .ExceptBy(forceCollisions, kv => kv.Value.Movement)
@@ -303,7 +312,8 @@ internal class NecoPlayStepperNew
             var unitPair = new UnitMovementPair(movement, conflict);
 
             // Prioritize combat first.
-            if (unitPair.UnitsCanFight() && movement.IsChange && !spaceSwapMutations.Any(mut => mut.Subject == movement.UnitId)) {
+            if (unitPair.UnitsCanFight() && movement.IsChange
+             && !spaceSwapMutations.Any(mut => mut.Subject == movement.UnitId)) {
                 // TAGIMPL:Defender
                 if (unitPair.UnitWithTag(NecoUnitTag.Defender, out _) == movement) {
                     shouldReset = true;

@@ -63,8 +63,19 @@ internal abstract class TacticsTests
 
             NecoInputResponse resp;
 
-            Context.AssertSendInput(new NecoInput.PlaceCard(Players.Offense, card1, (0, 0)));
-            Context.AssertSendInput(new NecoInput.PlaceCard(Players.Offense, card2, (0, 1)),
+            int x = 0, y = 0;
+            while (Context.Push.RemainingMoney(NecoPlayerRole.Offense) > 1) {
+                var card = TestHelpers.TestCard(2);
+                Context.AssertSendInput(new NecoInput.PlaceCard(Players.Offense, card, (x, y)));
+
+                // move to next position
+                x = (x + 1) % Context.FieldParameters.Bounds.X;
+                if (x == 0) {
+                    y += 1;
+                }
+            }
+
+            Context.AssertSendInput(new NecoInput.PlaceCard(Players.Offense, card2, (x, y)),
                 NecoInputResponse.Kind.Illegal);
 
             Context.FinishTurn();
