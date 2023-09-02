@@ -15,14 +15,10 @@ public class Cat : NecoUnitModel
     public override int Power => 3;
 
     public override IEnumerable<NecoUnitTag> Tags
-        => new[] {
-            NecoUnitTag.Carrier
-        };
+        => new[] { NecoUnitTag.Carrier };
 
     public override IEnumerable<NecoUnitAction> Actions
-        => new NecoUnitAction[] {
-            new NecoUnitAction.TranslateUnit(RelativeDirection.Up)
-        };
+        => new NecoUnitAction[] { new NecoUnitAction.TranslateUnit(RelativeDirection.Up) };
 
     public override string BehaviorDescription
         => "Walks forward.";

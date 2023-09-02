@@ -84,9 +84,7 @@ public class NewStepperTests
                 "MoverN",
                 5,
                 2,
-                tags: new[] {
-                    NecoUnitTag.Pusher
-                }),
+                tags: new[] { NecoUnitTag.Pusher }),
             Player1.Id);
         Field[0, 1] = new(unitA1);
         Field[0, 0] = new(unitA2);
@@ -121,9 +119,7 @@ public class NewStepperTests
                 "MoverN",
                 5,
                 2,
-                tags: new[] {
-                    NecoUnitTag.Defender
-                }),
+                tags: new[] { NecoUnitTag.Defender }),
             Player2.Id);
         Field[0, 1] = new(unitA1);
         Field[0, 0] = new(enemy);
@@ -142,9 +138,7 @@ public class NewStepperTests
                 "MoverN",
                 5,
                 2,
-                tags: new[] {
-                    NecoUnitTag.Defender
-                }),
+                tags: new[] { NecoUnitTag.Defender }),
             Player2.Id);
         Field[0, 0] = new(defender);
         Field[1, 1] = new(other);
@@ -163,9 +157,7 @@ public class NewStepperTests
                 5,
                 2,
                 RelativeDirection.Up,
-                new[] {
-                    NecoUnitTag.Carrier
-                }),
+                new[] { NecoUnitTag.Carrier }),
             Player1.Id);
         var item = new NecoUnit(NecoUnitModelCustom.Item(), NecoPlayer.NeutralPlayer.Id);
         Field[0, 0] = new(pickupper);
@@ -191,9 +183,7 @@ public class NewStepperTests
         var unitTest1 = TestHelpers.UnitMover(player: Player1);
         var unitTest2 = TestHelpers.UnitMover(
             RelativeDirection.UpRight,
-            new[] {
-                NecoUnitTag.Bossy
-            },
+            new[] { NecoUnitTag.Bossy },
             Player1);
 
         Field[1, 0] = new(unitControl1);

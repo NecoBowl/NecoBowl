@@ -35,10 +35,7 @@ public record class NecoPlayerPair(NecoPlayer Offense, NecoPlayer Defense)
 
     public IEnumerable<NecoPlayer> Enumerate()
     {
-        return new[] {
-            Offense,
-            Defense
-        };
+        return new[] { Offense, Defense };
     }
 
     public NecoPlayer? PlayerByIdOrNull(NecoPlayerId playerId)

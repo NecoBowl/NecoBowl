@@ -11,7 +11,5 @@ public class Donkey : NecoUnitCardModel
     public override NecoUnitModel Model => Unit.Donkey.Instance;
 
     public override IEnumerable<NecoCardOptionPermission> OptionPermissions
-        => new[] {
-            new NecoCardOptionPermission.FlipX()
-        };
+        => new[] { new NecoCardOptionPermission.FlipX() };
 }

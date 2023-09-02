@@ -17,17 +17,11 @@ public class Goose : NecoUnitModel
     public override int Health => 10;
     public override int Power => 5;
 
-    public override IEnumerable<NecoUnitTag> Tags => new[] {
-        NecoUnitTag.Carrier
-    };
+    public override IEnumerable<NecoUnitTag> Tags => new[] { NecoUnitTag.Carrier };
 
     public override IEnumerable<NecoUnitAction> Actions => new[] {
         new NecoUnitAction.ChaseBall(
-            new[] {
-                RelativeDirection.Up,
-                RelativeDirection.UpLeft,
-                RelativeDirection.UpRight
-            })
+            new[] { RelativeDirection.Up, RelativeDirection.UpLeft, RelativeDirection.UpRight })
     };
 
     public override string BehaviorDescription

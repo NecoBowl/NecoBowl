@@ -20,8 +20,5 @@ public class Pebble : NecoUnitModel
 
     public override string BehaviorDescription => "Walks forward.";
 
-    public override IEnumerable<NecoUnitTag> Tags => new[] {
-        NecoUnitTag.Carrier,
-        NecoUnitTag.Bossy
-    };
+    public override IEnumerable<NecoUnitTag> Tags => new[] { NecoUnitTag.Carrier, NecoUnitTag.Bossy };
 }

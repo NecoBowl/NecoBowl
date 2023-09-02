@@ -114,10 +114,7 @@ public abstract class NecoCardOptionPermission
 
         public override string Identifier { get; }
 
-        public override object[] AllowedValues { get; } = new[] {
-                false,
-                true
-            }.Cast<object>()
+        public override object[] AllowedValues { get; } = new[] { false, true }.Cast<object>()
             .ToArray();
 
         protected override void ApplyToUnit(NecoUnit unit, bool value)
@@ -136,10 +133,7 @@ public abstract class NecoCardOptionPermission
 
         public override string Identifier { get; }
 
-        public override object[] AllowedValues { get; } = new[] {
-                false,
-                true
-            }.Cast<object>()
+        public override object[] AllowedValues { get; } = new[] { false, true }.Cast<object>()
             .ToArray();
 
         protected override void ApplyToUnit(NecoUnit unit, bool value)

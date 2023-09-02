@@ -18,13 +18,9 @@ public class Dog : NecoUnitModel
         => "Walks forward. Turns around upon picking up the ball.";
 
     public override IEnumerable<NecoUnitAction> Actions
-        => new NecoUnitAction[] {
-            new NecoUnitAction.TranslateUnit(RelativeDirection.Up)
-        };
+        => new NecoUnitAction[] { new NecoUnitAction.TranslateUnit(RelativeDirection.Up) };
 
-    public override IEnumerable<NecoUnitTag> Tags => new[] {
-        NecoUnitTag.Carrier
-    };
+    public override IEnumerable<NecoUnitTag> Tags => new[] { NecoUnitTag.Carrier };
 
     public override ReactionDict Reactions { get; } = new() {
         new(typeof(NecoPlayfieldMutation.UnitPicksUpItem), (unit, field, mut) => OnPicksUp(unit, mut))

@@ -65,16 +65,8 @@ internal record UnitMovementPair
         Movement1 = movement1;
         Movement2 = movement2;
 
-        Movements = new(
-            new[] {
-                Movement1.Unit,
-                Movement2.Unit
-            });
-        Collection = new(
-            new[] {
-                Movement1,
-                Movement2
-            });
+        Movements = new(new[] { Movement1.Unit, Movement2.Unit });
+        Collection = new(new[] { Movement1, Movement2 });
     }
 
     /// <summary>Finds the unit in the pair with the specified tag.</summary>

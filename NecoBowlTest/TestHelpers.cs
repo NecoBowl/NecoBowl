@@ -76,9 +76,7 @@ public class NecoUnitModelCustom_HealthEqualsPower : NecoUnitModel
             health,
             power,
             new NecoUnitTag[] { },
-            new[] {
-                new NecoUnitAction.TranslateUnit((RelativeDirection)direction)
-            });
+            new[] { new NecoUnitAction.TranslateUnit((RelativeDirection)direction) });
 
         return unit;
     }
@@ -91,9 +89,7 @@ public class NecoUnitModelCustom_HealthEqualsPower : NecoUnitModel
             name,
             power,
             new NecoUnitTag[] { },
-            new[] {
-                new NecoUnitAction.TranslateUnit((RelativeDirection)direction)
-            });
+            new[] { new NecoUnitAction.TranslateUnit((RelativeDirection)direction) });
 
         return unit;
     }
@@ -103,12 +99,8 @@ public class NecoUnitModelCustom_HealthEqualsPower : NecoUnitModel
         var unit = new NecoUnitModelCustom_HealthEqualsPower(
             name,
             power,
-            new[] {
-                NecoUnitTag.Pusher
-            },
-            new[] {
-                new NecoUnitAction.TranslateUnit((RelativeDirection)direction)
-            });
+            new[] { NecoUnitTag.Pusher },
+            new[] { new NecoUnitAction.TranslateUnit((RelativeDirection)direction) });
 
         return unit;
     }
@@ -119,9 +111,7 @@ public class NecoUnitModelCustom_HealthEqualsPower : NecoUnitModel
             name,
             power,
             new NecoUnitTag[] { },
-            new NecoUnitAction[] {
-                new NecoUnitAction.DoNothing()
-            });
+            new NecoUnitAction[] { new NecoUnitAction.DoNothing() });
         return unit;
     }
 
@@ -130,12 +120,8 @@ public class NecoUnitModelCustom_HealthEqualsPower : NecoUnitModel
         return new(
             name,
             power,
-            new[] {
-                NecoUnitTag.TheBall
-            },
-            new NecoUnitAction[] {
-                new NecoUnitAction.DoNothing()
-            });
+            new[] { NecoUnitTag.TheBall },
+            new NecoUnitAction[] { new NecoUnitAction.DoNothing() });
     }
 
 #endregion
@@ -153,9 +139,7 @@ public class NecoUnitModelCustom : NecoUnitModel
                                IEnumerable<NecoUnitAction>? actions = null)
     {
         tags ??= new NecoUnitTag[] { };
-        actions ??= new NecoUnitAction[] {
-            new NecoUnitAction.DoNothing()
-        };
+        actions ??= new NecoUnitAction[] { new NecoUnitAction.DoNothing() };
 
         Name = name;
         InternalName = name;
@@ -193,9 +177,7 @@ public class NecoUnitModelCustom : NecoUnitModel
             health,
             power,
             tags,
-            new[] {
-                new NecoUnitAction.TranslateUnit(direction)
-            });
+            new[] { new NecoUnitAction.TranslateUnit(direction) });
     }
 
     public static NecoUnitModelCustom Item(string name = "Item", int health = 1, int power = 1)
@@ -204,12 +186,8 @@ public class NecoUnitModelCustom : NecoUnitModel
             name,
             health,
             power,
-            new[] {
-                NecoUnitTag.Item
-            },
-            new[] {
-                new NecoUnitAction.DoNothing()
-            });
+            new[] { NecoUnitTag.Item },
+            new[] { new NecoUnitAction.DoNothing() });
     }
 
 #endregion
