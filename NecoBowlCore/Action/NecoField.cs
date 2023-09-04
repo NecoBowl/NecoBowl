@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 using neco_soft.NecoBowlCore.Tactics;
@@ -23,6 +24,7 @@ internal class NecoField
     private readonly NecoSpaceContents[,] FieldContents;
     public readonly NecoFieldParameters FieldParameters;
 
+    public readonly List<NecoUnit> GraveyardZone = new();
     public readonly List<NecoUnit> TempUnitZone = new();
 
     public NecoField(NecoFieldParameters param)
@@ -56,6 +58,18 @@ internal class NecoField
         }
     }
 
+    public NecoUnit? LookupUnit(string shortUid)
+    {
+        foreach (var unit in GetAllUnits(true).Select(tuple => tuple.Item2).Concat(GraveyardZone)) { 
+            if (unit.Id.Value.ToString().StartsWith(shortUid)) {
+                return unit;
+            }
+        }
+
+        return null;
+    }
+        
+
     public (int x, int y) GetBounds()
     {
         return (FieldContents.GetLength(0), FieldContents.GetLength(1));
@@ -66,26 +80,52 @@ internal class NecoField
         return FieldContents[pos.X, pos.Y];
     }
 
-    public IEnumerable<(Vector2i, NecoUnit)> GetAllUnits()
+    public IEnumerable<(Vector2i, NecoUnit)> GetAllUnits(bool includeInventory = false)
     {
-        return SpacePositions.Where(tuple => tuple.Item2.Unit is not null)
-            .Select(tuple => (tuple.Item1, tuple.Item2.Unit!));
-    }
-
-    public IEnumerable<(Vector2i pos, NecoUnit unit, NecoUnit? carrier)> GetAllUnitsWithInventory()
-    {
-        var allUnits = SpacePositions.Where(tuple => tuple.Item2.Unit is not null)
-            .Select(tuple => (tuple.Item1, tuple.Item2.Unit!, default(NecoUnit)));
-        var list = allUnits.ToList();
-        foreach (var (pos, parent, _) in allUnits) {
-            list.AddRange(
-                parent.Inventory.Select<NecoUnit, (Vector2i pos, NecoUnit unit, NecoUnit? carrier)>(
-                    u => (pos, u, parent)));
+        var spaceUnits = SpacePositions.Where(tuple => tuple.Item2.Unit is not null)
+            .Select(tuple => (tuple.Item1, tuple.Item2.Unit!)).ToList();
+        var tempSpaceUnits = spaceUnits.ToList();
+        if (includeInventory) {
+            spaceUnits.AddRange(
+                tempSpaceUnits.SelectMany(
+                    tuple => tuple.Item2!.GetInventoryTree(includeParent: false).Where(u => u != tuple.Item2).Select(u => (tuple.Item1, u))));
         }
 
-        return list;
+        return spaceUnits;
     }
 
+    public IReadOnlyList<NecoUnit> GetGraveyard()
+    {
+        return GraveyardZone.AsReadOnly();
+    }
+
+    public bool TryLookupUnit(NecoUnitId uid,
+                              [NotNullWhen(true)] out NecoUnit? unit,
+                              [NotNullWhen(true)] out Vector2i? pos,
+                              bool includeInventories = false)
+    {
+        foreach (var (p, u) in SpacePositions) {
+            if (u.Unit is not null) {
+                if (includeInventories) {
+                    var match = u.Unit.GetInventoryTree().SingleOrDefault(u => u.Id == uid);
+                    if (match is not null) {
+                        unit = u.Unit;
+                        pos = p;
+                        return true;
+                    }
+                }
+                else if (u.Unit.Id == uid) {
+                    unit = u.Unit;
+                    pos = p;
+                    return true;
+                }
+            }
+        }
+
+        unit = null;
+        pos = null;
+        return false;
+    }
 
     public Vector2i GetUnitPosition(NecoUnitId uid, bool searchInventory = false)
     {
@@ -96,14 +136,14 @@ internal class NecoField
             .Item1;
     }
 
-    public NecoUnit GetUnit(NecoUnitId uid)
+    public NecoUnit GetUnit(NecoUnitId uid, bool includeInventories = true)
     {
-        return GetUnit(uid, out _);
+        return GetUnit(uid, out _, includeInventories);
     }
 
-    public NecoUnit GetUnit(NecoUnitId uid, out Vector2i pos)
+    public NecoUnit GetUnit(NecoUnitId uid, out Vector2i pos, bool includeInventories = false)
     {
-        pos = GetUnitPosition(uid);
+        pos = GetUnitPosition(uid, includeInventories);
         return FieldContentsByVec(pos).Unit ?? throw new NecoBowlFieldException($"no unit found with ID {uid}");
     }
 
@@ -255,16 +295,26 @@ public sealed class ReadOnlyNecoField
 
     public NecoFieldParameters FieldParameters => Field.FieldParameters;
 
-    public IEnumerable<(Vector2i, NecoUnit)> GetAllUnits()
+    public IEnumerable<(Vector2i, NecoUnit)> GetAllUnits(bool includeInventory = false)
     {
-        return Field.GetAllUnits();
+        return Field.GetAllUnits(includeInventory);
+    }
+    
+    public IReadOnlyList<NecoUnit> GetGraveyard()
+    {
+        return Field.GetGraveyard();
+    }
+    
+    public NecoUnit? LookupUnit(string shortUid)
+    {
+        return Field.LookupUnit(shortUid);
     }
 
-    public Vector2i GetUnitPosition(NecoUnitId uid)
+    public Vector2i GetUnitPosition(NecoUnitId uid, bool includeInventories = false)
     {
-        return Field.GetUnitPosition(uid);
+        return Field.GetUnitPosition(uid, includeInventories);
     }
-
+    
     public NecoUnit GetUnit(NecoUnitId uid)
     {
         return Field.GetUnit(uid);
@@ -300,14 +350,14 @@ public sealed class ReadOnlyNecoField
         return Field.IsInBounds(pos);
     }
 
-    public IEnumerable<(Vector2i pos, NecoUnit unit, NecoUnit? carrier)> GetAllUnitsWithInventory()
-    {
-        return Field.GetAllUnitsWithInventory();
-    }
-
     public string ToAscii(string prefix = "> ")
     {
         return Field.ToAscii(prefix);
+    }
+
+    public bool TryLookupUnit(NecoUnitId uid, out NecoUnit? unit, out Vector2i? pos, bool includeInventories = false)
+    {
+        return Field.TryLookupUnit(uid, out unit, out pos, includeInventories);
     }
 
 #endregion

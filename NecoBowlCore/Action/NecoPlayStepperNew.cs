@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization.Metadata;
 
 using neco_soft.NecoBowlCore.Tags;
 
@@ -180,6 +181,7 @@ internal class NecoPlayStepperNew
         var movementsToReset = new List<NecoPlayfieldMutation.MovementMutation>();
         var spaceSwapMovements = new List<NecoPlayfieldMutation.MovementMutation>();
         var collisionOverrides = new List<NecoUnitMovement>();
+        var collisionOverrideRejections = new List<NecoUnitMovement>();
 
         do {
             // Then resolve movements, which may create more mutations.
@@ -193,9 +195,24 @@ internal class NecoPlayStepperNew
 
             foreach (var (uid, mut) in PendingMovements) {
                 // Then figure out if this unit will get its movement canceled due to space conflicts.
-                if (UpdatePendingMutationsBySpaceConflict(mut.Movement, spaceSwapMovements, collisionOverrides)) {
+                if (UpdatePendingMutationsBySpaceConflict(mut.Movement, spaceSwapMovements, collisionOverrides, collisionOverrideRejections)) {
                     movementsToReset.Add(mut);
                 }
+            }
+            
+            // Allow units engaging in a pickup to take the space even if they would otherwise collide with an ally
+            foreach (var (uid, mut) in PendingMovements) {
+                if (collisionOverrides.Contains(mut.Movement)) {
+                    movementsToReset.Remove(mut);
+                    PendingMutations.RemoveAll(
+                        m => m is NecoPlayfieldMutation.UnitBumps bumpMut && bumpMut.Subject == uid);
+                }
+            }
+
+            var collisionOverrideCollisions = collisionOverrides.GroupBy(mut => mut.NewPos).Where(g => g.Count() > 1).ToList();
+            foreach (var group in collisionOverrideCollisions) {
+                collisionOverrideRejections.AddRange(group);
+                collisionOverrides.RemoveAll(o => group.Contains(o));
             }
 
             foreach (var moveMut in movementsToReset) {
@@ -291,9 +308,9 @@ internal class NecoPlayStepperNew
     }
 
     private bool UpdatePendingMutationsBySpaceConflict(NecoUnitMovement movement,
-                                                       IEnumerable<NecoPlayfieldMutation.MovementMutation>
-                                                           spaceSwapMutations,
-                                                       List<NecoUnitMovement> collisionOverrides)
+                                                       IEnumerable<NecoPlayfieldMutation.MovementMutation> spaceSwapMutations,
+                                                       List<NecoUnitMovement> collisionOverrides,
+                                                       List<NecoUnitMovement> collisionOverrideRejections)
     {
         IEnumerable<NecoUnitMovement> OtherMovements()
         {
@@ -338,10 +355,9 @@ internal class NecoPlayStepperNew
                         m => m.Unit.Tags.Contains(NecoUnitTag.Carrier),
                         out var itemUnit,
                         out var carrierUnit)) {
-                    if (carrierUnit == movement) {
+                    if (carrierUnit == movement && !collisionOverrideRejections.Contains(movement)) {
                         // Pickup occurs
                         collisionOverrides.Add(movement);
-//                        shouldReset = true;
                         goto DoneCheckingUnitPair;
                     }
                 }
@@ -349,22 +365,29 @@ internal class NecoPlayStepperNew
                 // Friendly unit conflict 
                 var collisionWinner = DecideCollisionWinner(unitPair, out var collisionLoser);
                 if (collisionWinner == movement) {
-                    // this unit is the collision winner
-                    // TAGIMPL:Carrier
+                    // TAGIMPL:Carrier : loser hands off ball to winner
                     if (collisionLoser!.Unit.Inventory.Any(i => i.Tags.Contains(NecoUnitTag.TheBall))
                      && collisionWinner.Unit.Tags.Contains(NecoUnitTag.Carrier)) {
-                        // force handoff 
                         var ballItem = collisionLoser.Unit.Inventory.Single(i => i.Tags.Contains(NecoUnitTag.TheBall));
+                        // TODO This 
                         PendingMutations.Add(
                             new NecoPlayfieldMutation.UnitHandsOffItem(
                                 collisionLoser.UnitId,
                                 collisionWinner.UnitId,
                                 ballItem.Id));
                     }
+                    
+                    // One unit wins
+                    shouldReset = false;
+                    goto DoneCheckingUnitPair;
                 }
-                else {
-                    shouldReset = true;
+                
+                // Two units are colliding with no stupid bullshit happening
+                Logger.Error(movement);
+                if (movement.IsChange && !PendingMutations.Any(mut => mut is NecoPlayfieldMutation.UnitBumps bump && bump.Subject == movement.UnitId)) {
+                    PendingMutations.Add(new NecoPlayfieldMutation.UnitBumps(movement.UnitId, movement.AsDirection()));
                 }
+                shouldReset = true;
             }
 
         DoneCheckingUnitPair: ;
@@ -508,15 +531,6 @@ internal class NecoPlayStepperNew
             return ballUnit!;
         }
 
-        {
-            // Max power
-            var groups = unitPair.Collection.GroupBy(m => m.Unit.Power).ToList();
-            if (groups.Count > 1) {
-                var sorted = groups.Select(g => g.First()).OrderByDescending(m => m.Unit.Power).ToList();
-                other = sorted.Last();
-                return sorted.First();
-            }
-        }
 
         {
             // Vertical
@@ -536,6 +550,16 @@ internal class NecoPlayStepperNew
                     out var nonDiagonalMover)) {
                 other = nonDiagonalMover!;
                 return diagonalMover!;
+            }
+        }
+        
+        {
+            // Max power
+            var groups = unitPair.Collection.GroupBy(m => m.Unit.Power).ToList();
+            if (groups.Count > 1) {
+                var sorted = groups.Select(g => g.First()).OrderByDescending(m => m.Unit.Power).ToList();
+                other = sorted.Last();
+                return sorted.First();
             }
         }
 

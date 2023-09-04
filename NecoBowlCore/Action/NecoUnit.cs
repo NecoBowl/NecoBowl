@@ -13,7 +13,7 @@ public record NecoUnitId
     public const int StringLength = 6;
 
     public static readonly Regex StringIdRegex
-        = new($"@U:(?<id>[0-9a-z]){StringLength}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        = new($"@U:(?<id>[0-9a-z]{{{StringLength}}})", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public readonly Guid Value = Guid.NewGuid();
 
@@ -113,6 +113,14 @@ public sealed class NecoUnit : IEquatable<NecoUnit>
     public T GetMod<T>() where T : NecoUnitMod, new()
     {
         return Mods.OfType<T>().Any() ? Mods.OfType<T>().Aggregate((orig, next) => (T)next.Apply(orig)) : new();
+    }
+
+    public List<NecoUnit> GetInventoryTree(bool includeParent = true)
+    {
+        return new List<NecoUnit> { this }
+            .Concat(Inventory.SelectMany(u => u.GetInventoryTree()))
+            .Where(u => includeParent || u != this)
+            .ToList();
     }
 
     public override string ToString()

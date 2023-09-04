@@ -130,7 +130,8 @@ public abstract partial class NecoPlayfieldMutation
 
         internal override void Pass1Mutate(NecoField field)
         {
-            field.GetAndRemoveUnit(Subject);
+            var unit = field.GetAndRemoveUnit(Subject);
+            field.GraveyardZone.Add(unit);
         }
 
         internal override void Pass2Mutate(NecoField field)

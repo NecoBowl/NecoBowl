@@ -9,6 +9,17 @@ public class NecoFieldInformation
 {
     private readonly ReadOnlyNecoField Field;
 
+    public NecoUnitInformation GetUnit(NecoUnitId uid)
+    {
+        return new(Field.GetUnit(uid));
+    }
+
+    public NecoUnitInformation? LookupUnit(string shortUid)
+    {
+        var unit = Field.LookupUnit(shortUid);
+        return unit is null ? null : new(unit);
+    }
+
     internal NecoFieldInformation(ReadOnlyNecoField field)
     {
         Field = field;
@@ -18,6 +29,16 @@ public class NecoFieldInformation
     public NecoSpaceInformation this[(int, int) coords] => Contents(coords);
 
     public NecoFieldParameters FieldParameters => Field.FieldParameters;
+
+    public Vector2i GetUnitPosition(NecoUnitId uid, bool includeInventories = false)
+    {
+        return Field.GetUnitPosition(uid, includeInventories);
+    }
+    
+    public IReadOnlyList<NecoUnit> GetGraveyard()
+    {
+        return Field.GetGraveyard();
+    }
 
     public NecoSpaceInformation Contents((int, int) coords)
     {
@@ -60,7 +81,9 @@ public class NecoUnitInformation
     public int Power => Unit.Power;
     public int MaxHealth => Unit.MaxHealth;
     public int CurrentHealth => Unit.CurrentHealth;
-    public string Name => Unit.FullName;
+
+    public string FullName => Unit.FullName;
+    public NecoPlayerId OwnerId => Unit.OwnerId;
 
     public IReadOnlyList<NecoUnitActionInformation> Actions
         => Unit.ActionStack.Select(a => new NecoUnitActionInformation(a)).ToList();
@@ -102,6 +125,11 @@ public class NecoPlayInformation
         return Play.Step();
     }
 
+    public void Step(uint count)
+    {
+        Play.Step(count);
+    }
+    
     public void StepToFinish()
     {
         Play.StepToFinish();

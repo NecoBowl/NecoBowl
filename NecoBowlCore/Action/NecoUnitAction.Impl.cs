@@ -17,7 +17,10 @@ public abstract partial class NecoUnitAction
         {
             var pos = field.GetUnitPosition(uid);
             var unit = field.GetUnit(pos);
-            var movementDirection = unit.Facing.RotatedBy(Direction);
+            var flippedDirection = Direction.Mirror(
+                unit.GetMod<NecoUnitMod.Flip>().EnableX,
+                unit.GetMod<NecoUnitMod.Flip>().EnableY);
+            var movementDirection = unit.Facing.RotatedBy(flippedDirection);
             var newPos = pos + movementDirection.ToVector2i();
 
             var outcome = new NecoUnitActionOutcome.UnitTranslated(new(unit, newPos, pos));
@@ -37,8 +40,8 @@ public abstract partial class NecoUnitAction
             var pos = field.GetUnitPosition(uid);
             var unit = field.GetUnit(pos);
 
-            var (ballPos, ball, _)
-                = field.GetAllUnitsWithInventory().SingleOrDefault(tup => tup.Item2.Tags.Contains(NecoUnitTag.TheBall));
+            var (ballPos, ball)
+                = field.GetAllUnits(includeInventory: true).SingleOrDefault(tup => tup.Item2.Tags.Contains(NecoUnitTag.TheBall));
             if (ball is null) {
                 throw new NecoUnitActionException("no ball found on field");
             }
@@ -72,9 +75,15 @@ public abstract partial class NecoUnitAction
     public class ChaseBall : NecoUnitAction
     {
         private readonly RelativeDirection[] AllowedDirections;
+        private readonly RelativeDirection FallbackDirection;
 
-        public ChaseBall(RelativeDirection[] allowedDirections)
+        public ChaseBall(RelativeDirection[] allowedDirections, RelativeDirection? fallback = null)
         {
+            if (allowedDirections.Length == 0) {
+                throw new NecoUnitActionException("no directions provided");
+            }
+            
+            FallbackDirection = fallback ?? allowedDirections[0];
             AllowedDirections = allowedDirections;
         }
 
@@ -83,8 +92,13 @@ public abstract partial class NecoUnitAction
             var unit = field.GetUnit(uid, out var pos);
             var (ballPos, ball)
                 = field.GetAllUnits().SingleOrDefault(tup => tup.Item2.Tags.Contains(NecoUnitTag.TheBall));
-            var result = AllowedDirections.MinBy(dir => (pos + dir.ToVector2i(unit.Facing) - ballPos).LengthSquared);
-            return new TranslateUnit(result).CallResult(uid, field);
+            var (minDistanceDirection, minDistanceAfterMove) = AllowedDirections.Select(dir => {
+                var lengthSquared = (pos + dir.ToVector2i(unit.Facing) - ballPos).LengthSquared;
+                return (dir, lengthSquared);
+            }).MinBy(tuple => tuple.lengthSquared);
+            var originalDistance = (pos - ballPos).LengthSquared;
+            var direction = minDistanceAfterMove > originalDistance ? FallbackDirection : minDistanceDirection;
+            return new TranslateUnit(direction).CallResult(uid, field);
         }
     }
 

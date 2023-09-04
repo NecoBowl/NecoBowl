@@ -17,7 +17,8 @@ public class NecoPlay
     private readonly bool LogFieldAscii;
     private readonly NecoPlayStepperNew PlayStepper;
 
-    public bool IsFinished = false;
+    public bool IsFinished;
+    public bool CanEnd => IsFinished || StepCount >= 100;
 
     public uint StepCount;
 
@@ -72,7 +73,7 @@ public class NecoPlay
 
     public void StepToFinish()
     {
-        while (!IsFinished) {
+        while (!CanEnd) {
             Step();
         }
     }

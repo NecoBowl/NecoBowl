@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NecoBowlCore\NecoBowlCore.csproj"/>
+    <ProjectReference Include="..\NecoBowlCore\NecoBowlCore.csproj" />
   </ItemGroup>
 
 </Project>

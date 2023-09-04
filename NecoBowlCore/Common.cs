@@ -153,6 +153,22 @@ public static class AbsoluteDirectionExt
 public static class RelativeDirectionExt
 {
     private const char ArrowGlyphOffset = '\u2B60';
+    
+    // ReSharper disable once InconsistentNaming
+    public static Vector2i ToVector2i(this RelativeDirection direction)
+    {
+        return direction switch {
+            RelativeDirection.Up => Vector2i.Up,
+            RelativeDirection.UpRight => Vector2i.Up + Vector2i.Right,
+            RelativeDirection.Right => Vector2i.Right,
+            RelativeDirection.DownRight => Vector2i.Down + Vector2i.Right,
+            RelativeDirection.Down => Vector2i.Down,  
+            RelativeDirection.DownLeft => Vector2i.Down + Vector2i.Left,
+            RelativeDirection.Left => Vector2i.Left,
+            RelativeDirection.UpLeft => Vector2i.Up + Vector2i.Left,
+            _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
+        };
+    }
 
     public static readonly char[] RelativeDirectionToArrowGlyph = {
         (char)(ArrowGlyphOffset + 1), // Up
@@ -173,6 +189,18 @@ public static class RelativeDirectionExt
     public static RelativeDirection RotatedBy(this RelativeDirection direction, int rotation)
     {
         return (RelativeDirection)(((uint)direction + rotation) % 8);
+    }
+
+    public static RelativeDirection Mirror(this RelativeDirection direction, bool mirrorX, bool mirrorY)
+    {
+        var vec = direction.ToVector2i();
+        var newVec = new Vector2i(mirrorX ? -vec.X : vec.X, mirrorY ? -vec.Y : vec.Y);
+        try {
+            return Enum.GetValues<RelativeDirection>().Single(d => d.ToVector2i() == newVec);
+        }
+        catch (InvalidOperationException e) {
+            throw new NecoBowlException("Failed to find mirrored vector", e);
+        }
     }
 }
 

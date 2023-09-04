@@ -56,7 +56,7 @@ public class NecoBowlContext
 
     public NecoPlayInformation GetPlayPreview()
     {
-        return new(Match.CurrentPush.CreatePlay(true));
+        return new(Match.CurrentPush.CreatePlay(true, true));
     }
 
     public void FinishTurn()
