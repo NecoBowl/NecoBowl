@@ -27,16 +27,24 @@ internal class NecoPlayStepperNew
         => PendingMovements.Values.Any(m => m.Movement.IsChange || m.Movement.IsChangeInSource)
          || PendingMutations.Any();
 
-    [SuppressMessage("ReSharper", "RedundantBoolCompare")]
+    /// <summary>
+    /// Run the step.
+    /// </summary>
+    /// <returns>The log of mutations that occurred during the step.</returns>
     public IEnumerable<NecoPlayfieldMutation> Process()
     {
         List<NecoPlayfieldMutation> stepMutations = new();
 
         PopUnitActions(out var chainedActions);
 
+        AddPreMovementMutations();
+
         // Begin the substep loop
         while (MutationsRemaining) {
-            ProcessPreMovementMutations();
+            // Perform pre-movement mutations.
+            foreach (var mutation in PendingMutations) {
+                mutation.PreMovementMutate(Field, new(PendingMovements, PendingMutations));
+            }
 
             // TODO Order the mutations before processing them.
             // First, process mutations that might effect how movement happens.
@@ -79,8 +87,6 @@ internal class NecoPlayStepperNew
 
             chainedActions[unit.Id] = action.Next;
         }
-
-        AddPreMovementMutations();
     }
 
     private void ProcessPreMovementMutations()
@@ -209,6 +215,7 @@ internal class NecoPlayStepperNew
                 }
             }
 
+            // Find collisions in the collision overrides
             var collisionOverrideCollisions = collisionOverrides.GroupBy(mut => mut.NewPos).Where(g => g.Count() > 1).ToList();
             foreach (var group in collisionOverrideCollisions) {
                 collisionOverrideRejections.AddRange(group);
@@ -235,7 +242,7 @@ internal class NecoPlayStepperNew
     ///     Performs the effects of each mutation in <see cref="PendingMutations" />, removing the mutation in the process.
     ///     Populates it with the mutations that result from running the current ones.
     /// </summary>
-    private void ConsumeMutations(out List<NecoPlayfieldMutation> mutations)
+    private void ConsumeMutations(out List<NecoPlayfieldMutation> mutationLog)
     {
         var baseMutations = PendingMutations.ToList();
 
@@ -278,11 +285,10 @@ internal class NecoPlayStepperNew
             tempMutations.AddRange(mutation.GetResultantMutations(Field.AsReadOnly()));
         }
 
-        mutations = new();
-        mutations.AddRange(PendingMutations);
-
-        // We have processed the pending mutations.
+        mutationLog = new();
+        mutationLog.AddRange(PendingMutations);
         PendingMutations.Clear();
+        
         foreach (var mutation in tempMutations) {
             switch (mutation) {
                 case NecoPlayfieldMutation.MovementMutation moveMut: {
@@ -355,10 +361,14 @@ internal class NecoPlayStepperNew
                         m => m.Unit.Tags.Contains(NecoUnitTag.Carrier),
                         out var itemUnit,
                         out var carrierUnit)) {
-                    if (carrierUnit == movement && !collisionOverrideRejections.Contains(movement)) {
-                        // Pickup occurs
-                        collisionOverrides.Add(movement);
-                        goto DoneCheckingUnitPair;
+                    if (carrierUnit == movement) {
+                        if (collisionOverrideRejections.Contains(movement)) {
+                                 
+                        }
+                        else {
+                            collisionOverrides.Add(movement);
+                            goto DoneCheckingUnitPair;
+                        }
                     }
                 }
 
@@ -382,7 +392,6 @@ internal class NecoPlayStepperNew
                     goto DoneCheckingUnitPair;
                 }
                 
-                // Two units are colliding with no stupid bullshit happening
                 Logger.Error(movement);
                 if (movement.IsChange && !PendingMutations.Any(mut => mut is NecoPlayfieldMutation.UnitBumps bump && bump.Subject == movement.UnitId)) {
                     PendingMutations.Add(new NecoPlayfieldMutation.UnitBumps(movement.UnitId, movement.AsDirection()));
@@ -413,6 +422,7 @@ internal class NecoPlayStepperNew
 
         var unitPair = new UnitMovementPair(movement, swap);
         if (unitPair.UnitsAreEnemies()) {
+            // Opposing units are space swapping
             // TAGIMPL:Defender
             if (unitPair.UnitWithTag(NecoUnitTag.Defender, out _) != movement) {
                 PendingMutations.Add(
@@ -424,7 +434,7 @@ internal class NecoPlayStepperNew
             }
         }
         else {
-            // Friendly space swappers will just bump off each other.
+            // Friendly units are space swapping
             PendingMutations.Add(new NecoPlayfieldMutation.UnitBumps(movement.UnitId, swap.AsDirection()));
         }
 

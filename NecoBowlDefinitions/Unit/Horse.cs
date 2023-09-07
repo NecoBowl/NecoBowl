@@ -23,5 +23,8 @@ public class Horse : NecoUnitModel
     };
 
     public override string BehaviorDescription
-        => "Moves two spaces upward and one space to the right, forming an upside-down \"L\" shape.";
+        => $"Moves {Arrow0}. After the second move, rotates {Arrow2}, and after the third move, rotates {Arrow6}.";
+
+    public override IEnumerable<NecoUnitTag> Tags { get; }
+        = new[] { NecoUnitTag.Bossy, NecoUnitTag.Carrier };
 }

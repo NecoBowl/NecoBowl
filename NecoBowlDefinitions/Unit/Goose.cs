@@ -25,5 +25,5 @@ public class Goose : NecoUnitModel
     };
 
     public override string BehaviorDescription
-        => "predator";
+        => $"If carrying the ball, moves [b]Direction[/b]. Otherwise, moves {Arrow7}, {Arrow0}, or {Arrow1}, whichever brings it closer to the ball.";
 }

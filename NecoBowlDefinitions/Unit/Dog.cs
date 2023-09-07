@@ -10,9 +10,9 @@ public class Dog : NecoUnitModel
     public static readonly Dog Instance = new();
 
     public override string InternalName => "Dog";
-    public override string Name => "Dog";
-    public override int Health => 2;
-    public override int Power => 1;
+    public override string Name => "Playful Dog";
+    public override int Health => 3;
+    public override int Power => 0;
 
     public override string BehaviorDescription
         => "Walks forward. Turns around upon picking up the ball.";

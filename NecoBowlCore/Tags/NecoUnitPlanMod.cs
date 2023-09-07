@@ -14,6 +14,11 @@ namespace neco_soft.NecoBowlCore.Tags;
 /// </remarks>
 public abstract class NecoUnitMod
 {
+    public virtual NecoUnitMod Update(NecoUnit subject)
+    {
+        return this;
+    }
+
     public abstract NecoUnitMod Apply<T>(T original) where T : NecoUnitMod;
 
     public sealed class Rotate : NecoUnitMod
@@ -26,6 +31,15 @@ public abstract class NecoUnitMod
         public Rotate(int rotation)
         {
             Rotation = rotation % 8;
+        }
+
+        public override NecoUnitMod Update(NecoUnit subject)
+        {
+            if (subject.GetMod<InvertRotation>().Enable) {
+                return new Rotate(-Rotation);
+            }
+
+            return this;
         }
 
         public override NecoUnitMod Apply<T>(T original)
@@ -60,8 +74,96 @@ public abstract class NecoUnitMod
             return new Flip(EnableX ^ flip.EnableX, EnableY ^ flip.EnableY);
         }
     }
+
+    public sealed class InvertRotation : NecoUnitMod
+    {
+        public readonly bool Enable;
+
+        public InvertRotation()
+        { }
+
+        public InvertRotation(bool enable)
+        {
+            Enable = enable;
+        }
+
+        public override NecoUnitMod Apply<T>(T original)
+        {
+            if (original is not InvertRotation rot) {
+                throw new InvalidModException();
+            }
+
+            return new InvertRotation(Enable ^ rot.Enable);
+        }
+    }
+
+    public sealed class OptionValues : NecoUnitMod
+    {
+        private readonly string Key;
+        private readonly object Value;
+
+        private Dictionary<string, object> OptionValueCollector = new();
+
+        public OptionValues()
+        { }
+
+        public OptionValues(string key, object value)
+        {
+            Key = key;
+            Value = value;
+        }
+
+        public override NecoUnitMod Apply<T>(T original)
+        {
+            if (original is not OptionValues optionValue) {
+                throw new InvalidModException();
+            }
+
+            OptionValueCollector = new(optionValue.OptionValueCollector) { [Key] = Value };
+            return this;
+        }
+
+        public object GetValue<T>(string key)
+        {
+            var value = GetValueOrNull<T>(key);
+            if (value is not T) {
+                throw new InvalidModException();
+            }
+
+            return value;
+        }
+
+        public object? GetValueOrNull<T>(string key)
+        {
+            var value = OptionValueCollector.GetValueOrDefault(key);
+            if (value is null) {
+                return null;
+            }
+
+            if (value is not T) {
+                throw new InvalidModException();
+            }
+
+            return value;
+        }
+    }
 }
 
+/// <summary>
+///     Definitions of a permission for a player-modifiable option on a card.
+///     Options are set by the player during Turns and are applied to units at the start of the play.
+///     <p />
+///     There are two main types of option permission: <b>dictionary-type</b> (the default), and <b>apply-type</b>.
+///     Dictionary-type options simply add an entry in the <see cref="NecoUnitMod.OptionValues" /> mod of a unit,
+///     which is a dictionary accessible by calling <see cref="NecoUnit.GetMod" /> with
+///     <see cref="NecoUnitMod.OptionValues" />
+///     as the type. Apply-type options, on the other hand, provide a function that is called at play start.
+///     The function takes a unit as input and performs whatever manipulations it wants (typically, adding mods of a type
+///     other than <see cref="NecoUnitMod.OptionValues" />).
+/// </summary>
+/// <remarks>
+///     There are two ways an option
+/// </remarks>
 public abstract class NecoCardOptionPermission
 {
     public abstract string Identifier { get; }
@@ -75,93 +177,98 @@ public abstract class NecoCardOptionPermission
 
     public abstract void ApplyToUnit(NecoUnit unit, object val);
 
-    public sealed class Rotate : NecoCardOptionPermission<int>
+    public sealed class Rotate : DirectionOption
     {
         public static readonly string StaticIdentifier = nameof(Rotate);
-        public readonly int[] RotationsAllowed;
 
-        public Rotate(int[] rotationsAllowed, int @default, string identifier = nameof(Rotate))
-            : base(@default, identifier)
+        public Rotate(RelativeDirection[] rotationsAllowed,
+                      RelativeDirection @default = RelativeDirection.Up,
+                      string identifier = nameof(Rotate))
+            : base(@default, identifier, rotationsAllowed)
+        { }
+
+        protected override void ApplyToUnit(NecoUnit unit, RelativeDirection value)
         {
-            RotationsAllowed = rotationsAllowed;
+            unit.AddMod(new NecoUnitMod.Rotate((int)value));
         }
 
-        public override object[] AllowedValues => RotationsAllowed.Cast<object>().ToArray();
+    }
 
-        protected override void ApplyToUnit(NecoUnit unit, int value)
-        {
-            unit.Mods.Add(new NecoUnitMod.Rotate(value));
-        }
+    public sealed class InvertRotations : NecoCardOptionPermission<bool>
+    {
+        public InvertRotations(string identifier = nameof(InvertRotations))
+            : base(false, identifier, new object[] { true, false })
+        { }
 
-        protected override string AllowedValueVisual(int t)
+        protected override void ApplyToUnit(NecoUnit unit, bool value)
         {
-            return ((RelativeDirection)((int)RelativeDirection.Up + t)).ToArrowGlyph().ToString();
-        }
-
-        public override bool ValidateValueChange(int newValue)
-        {
-            return RotationsAllowed.Contains(newValue);
+            unit.AddMod(new NecoUnitMod.InvertRotation(value));
         }
     }
 
-    public sealed class FlipX : NecoCardOptionPermission<bool>
+    public sealed class FlipX : BoolOption
     {
         public FlipX(string identifier = nameof(FlipX))
             : base(default, identifier)
-        {
-            Identifier = identifier;
-        }
-
-        public override string Identifier { get; }
+        { }
 
         public override object[] AllowedValues { get; } = new[] { false, true }.Cast<object>()
             .ToArray();
 
         protected override void ApplyToUnit(NecoUnit unit, bool value)
         {
-            unit.Mods.Add(new NecoUnitMod.Flip(value, false));
+            unit.AddMod(new NecoUnitMod.Flip(value, false));
         }
     }
 
-    public sealed class FlipY : NecoCardOptionPermission<bool>
+    public sealed class FlipY : BoolOption
     {
         public FlipY(bool defaultValue, string identifier = nameof(FlipY))
             : base(defaultValue, identifier)
-        {
-            Identifier = identifier;
-        }
-
-        public override string Identifier { get; }
-
-        public override object[] AllowedValues { get; } = new[] { false, true }.Cast<object>()
-            .ToArray();
+        { }
 
         protected override void ApplyToUnit(NecoUnit unit, bool value)
         {
-            unit.Mods.Add(new NecoUnitMod.Flip(false, value));
+            unit.AddMod(new NecoUnitMod.Flip(false, value));
+        }
+    }
+
+    public class BoolOption : NecoCardOptionPermission<bool>
+    {
+        protected BoolOption(bool defaultValue, string identifier)
+            : base(defaultValue, identifier, new object[] { false, true })
+        { }
+    }
+
+    public class DirectionOption : NecoCardOptionPermission<RelativeDirection>
+    {
+        public DirectionOption(RelativeDirection defaultvalue, string identifier, RelativeDirection[] allowedValues)
+            : base(defaultvalue, identifier, allowedValues.Cast<object>().ToArray())
+        { }
+        
+        protected override string AllowedValueVisual(RelativeDirection t)
+        {
+            return t.ToArrowGlyph();
         }
     }
 }
 
-public abstract class NecoCardOptionPermission<T> : NecoCardOptionPermission
+public class NecoCardOptionPermission<T> : NecoCardOptionPermission
 {
     public readonly T DefaultValue;
 
-    protected NecoCardOptionPermission(T defaultValue, string identifier)
+    protected NecoCardOptionPermission(T defaultValue, string identifier, object[] allowedValues)
     {
         Identifier = identifier;
         DefaultValue = defaultValue;
+        AllowedValues = allowedValues;
     }
 
+    public override object[] AllowedValues { get; }
     public override string Identifier { get; }
     public override object Default => DefaultValue!;
 
     public override Type ArgumentType => typeof(T);
-
-    public override string AllowedValueVisual(object o)
-    {
-        return AllowedValueVisual((T)o);
-    }
 
     protected virtual string AllowedValueVisual(T t)
     {
@@ -173,12 +280,20 @@ public abstract class NecoCardOptionPermission<T> : NecoCardOptionPermission
         return true;
     }
 
+    protected virtual void ApplyToUnit(NecoUnit unit, T value)
+    {
+        unit.AddMod(new NecoUnitMod.OptionValues(Identifier, value!));
+    }
+
     public sealed override void ApplyToUnit(NecoUnit unit, object val)
     {
         ApplyToUnit(unit, (T)val);
     }
 
-    protected abstract void ApplyToUnit(NecoUnit unit, T value);
+    public override string AllowedValueVisual(object o)
+    {
+        return AllowedValueVisual((T)o);
+    }
 }
 
 public class InvalidModException : Exception

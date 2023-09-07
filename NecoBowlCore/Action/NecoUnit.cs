@@ -39,7 +39,7 @@ public sealed class NecoUnit : IEquatable<NecoUnit>
 
     public readonly NecoUnitId Id;
     public readonly List<NecoUnit> Inventory = new();
-    public readonly List<NecoUnitMod> Mods = new();
+    private readonly List<NecoUnitMod> Mods = new();
 
     public readonly NecoPlayerId OwnerId;
     public readonly ReactionDict Reactions = new();
@@ -73,15 +73,7 @@ public sealed class NecoUnit : IEquatable<NecoUnit>
     public int MaxHealth => UnitModel.Health;
     public int CurrentHealth => MaxHealth - DamageTaken;
 
-    public int Rotation {
-        get {
-            var rotation = (AbsoluteDirection)GetMod<NecoUnitMod.Rotate>().Rotation;
-            var newRot = GetMod<NecoUnitMod.Flip>().EnableX
-                ? rotation.Mirror(true, false)
-                : rotation;
-            return (int)newRot;
-        }
-    }
+    public int Rotation => (int)(AbsoluteDirection)GetMod<NecoUnitMod.Rotate>().Rotation;
 
     public AbsoluteDirection Facing => (AbsoluteDirection)Rotation;
 
@@ -110,9 +102,17 @@ public sealed class NecoUnit : IEquatable<NecoUnit>
         return value;
     }
 
+    public void AddMod(NecoUnitMod mod)
+    {
+        mod = mod.Update(this);
+        Mods.Add(mod);
+    }
+
     public T GetMod<T>() where T : NecoUnitMod, new()
     {
-        return Mods.OfType<T>().Any() ? Mods.OfType<T>().Aggregate((orig, next) => (T)next.Apply(orig)) : new();
+        return Mods.OfType<T>().Any()
+            ? (T)Mods.OfType<T>().Aggregate((orig, next) => (T)next.Apply(orig)).Apply(new T())
+            : new();
     }
 
     public List<NecoUnit> GetInventoryTree(bool includeParent = true)

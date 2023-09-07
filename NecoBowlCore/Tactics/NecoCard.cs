@@ -80,6 +80,11 @@ public class NecoCardOptions : IEnumerable<(string, object)>
         return GetEnumerator();
     }
 
+    public object? GetValue(string id)
+    {
+        return Values.TryGetValue(id, out var value) ? value : null;
+    }
+
     public void SetValue(string id, object value)
     {
         if (!Values.ContainsKey(id)) {

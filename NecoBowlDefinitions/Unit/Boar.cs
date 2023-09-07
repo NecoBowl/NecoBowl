@@ -15,15 +15,11 @@ public class Boar : NecoUnitModel
     public override int Power => 2;
 
     public override IReadOnlyCollection<NecoUnitTag> Tags
-        => new[] {
-            NecoUnitTag.Pusher
-        };
+        => new[] { NecoUnitTag.Pusher };
 
     public override IEnumerable<NecoUnitAction> Actions
-        => new[] {
-            new NecoUnitAction.TranslateUnit(RelativeDirection.Up)
-        };
+        => new[] { new NecoUnitAction.TranslateUnit(RelativeDirection.Up) };
 
     public override string BehaviorDescription
-        => "Walks forward.";
+        => $"Moves {Arrow0}.";
 }

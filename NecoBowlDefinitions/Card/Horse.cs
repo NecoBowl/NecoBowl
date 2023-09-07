@@ -11,5 +11,5 @@ public class Horse : NecoUnitCardModel
     public override NecoUnitModel Model => Unit.Horse.Instance;
 
     public override IEnumerable<NecoCardOptionPermission> OptionPermissions { get; }
-        = new[] { new NecoCardOptionPermission.FlipX() };
+        = new[] { new NecoCardOptionPermission.InvertRotations() };
 }

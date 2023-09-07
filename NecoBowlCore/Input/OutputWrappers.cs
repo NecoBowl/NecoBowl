@@ -9,6 +9,16 @@ public class NecoFieldInformation
 {
     private readonly ReadOnlyNecoField Field;
 
+    internal NecoFieldInformation(ReadOnlyNecoField field)
+    {
+        Field = field;
+    }
+
+    public NecoSpaceInformation this[int x, int y] => this[(x, y)];
+    public NecoSpaceInformation this[(int, int) coords] => Contents(coords);
+
+    public NecoFieldParameters FieldParameters => Field.FieldParameters;
+
     public NecoUnitInformation GetUnit(NecoUnitId uid)
     {
         return new(Field.GetUnit(uid));
@@ -20,21 +30,11 @@ public class NecoFieldInformation
         return unit is null ? null : new(unit);
     }
 
-    internal NecoFieldInformation(ReadOnlyNecoField field)
-    {
-        Field = field;
-    }
-
-    public NecoSpaceInformation this[int x, int y] => this[(x, y)];
-    public NecoSpaceInformation this[(int, int) coords] => Contents(coords);
-
-    public NecoFieldParameters FieldParameters => Field.FieldParameters;
-
     public Vector2i GetUnitPosition(NecoUnitId uid, bool includeInventories = false)
     {
         return Field.GetUnitPosition(uid, includeInventories);
     }
-    
+
     public IReadOnlyList<NecoUnit> GetGraveyard()
     {
         return Field.GetGraveyard();
@@ -92,7 +92,11 @@ public class NecoUnitInformation
         => Unit.Inventory.Select(u => new NecoUnitInformation(u)).ToList();
 
     public IReadOnlyList<NecoUnitTag> Tags => Unit.Tags.AsReadOnly();
-    public IReadOnlyList<NecoUnitMod> Mods => Unit.Mods.AsReadOnly();
+
+    public T GetMod<T>() where T : NecoUnitMod, new()
+    {
+        return Unit.GetMod<T>();
+    }
 }
 
 public class NecoUnitActionInformation
@@ -129,7 +133,7 @@ public class NecoPlayInformation
     {
         Play.Step(count);
     }
-    
+
     public void StepToFinish()
     {
         Play.StepToFinish();

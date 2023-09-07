@@ -18,7 +18,6 @@ public class NecoPlay
     private readonly NecoPlayStepperNew PlayStepper;
 
     public bool IsFinished;
-    public bool CanEnd => IsFinished || StepCount >= 100;
 
     public uint StepCount;
 
@@ -37,6 +36,8 @@ public class NecoPlay
             StepToFinish();
         }
     }
+
+    public bool CanEnd => IsFinished || StepCount >= 100;
 
     public ReadOnlyNecoField GetField()
     {
@@ -82,7 +83,7 @@ public class NecoPlay
     {
         foreach (var (pos, unit) in Field.GetAllUnits()) {
             if (Field.FieldParameters.GetPlayerAffiliation(pos) == NecoPlayerRole.Defense) {
-                unit.Mods.Add(new NecoUnitMod.Rotate(4));
+                unit.AddMod(new NecoUnitMod.Rotate(4));
             }
         }
 

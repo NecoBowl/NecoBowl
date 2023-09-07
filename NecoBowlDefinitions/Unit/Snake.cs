@@ -1,6 +1,7 @@
 using neco_soft.NecoBowlCore;
 using neco_soft.NecoBowlCore.Action;
 using neco_soft.NecoBowlCore.Model;
+using neco_soft.NecoBowlCore.Tags;
 
 namespace neco_soft.NecoBowlDefinitions.Unit;
 
@@ -21,4 +22,7 @@ public class Snake : NecoUnitModel
     };
 
     public override string BehaviorDescription => "Moves in an \"S\" motion, starting by moving right.";
+
+    public override IEnumerable<NecoUnitTag> Tags { get; }
+        = new[] { NecoUnitTag.Carrier };
 }

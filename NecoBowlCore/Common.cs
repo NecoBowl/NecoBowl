@@ -152,8 +152,17 @@ public static class AbsoluteDirectionExt
 
 public static class RelativeDirectionExt
 {
-    private const char ArrowGlyphOffset = '\u2B60';
-    
+    public static readonly int[] RelativeDirectionToArrowGlyph = {
+        1, // Up
+        7, // UpRight
+        2, // Right
+        8, // DownRight
+        3, // Down
+        9, // DownLeft
+        0, // Left
+        6 // UpLeft
+    };
+
     // ReSharper disable once InconsistentNaming
     public static Vector2i ToVector2i(this RelativeDirection direction)
     {
@@ -162,7 +171,7 @@ public static class RelativeDirectionExt
             RelativeDirection.UpRight => Vector2i.Up + Vector2i.Right,
             RelativeDirection.Right => Vector2i.Right,
             RelativeDirection.DownRight => Vector2i.Down + Vector2i.Right,
-            RelativeDirection.Down => Vector2i.Down,  
+            RelativeDirection.Down => Vector2i.Down,
             RelativeDirection.DownLeft => Vector2i.Down + Vector2i.Left,
             RelativeDirection.Left => Vector2i.Left,
             RelativeDirection.UpLeft => Vector2i.Up + Vector2i.Left,
@@ -170,20 +179,24 @@ public static class RelativeDirectionExt
         };
     }
 
-    public static readonly char[] RelativeDirectionToArrowGlyph = {
-        (char)(ArrowGlyphOffset + 1), // Up
-        (char)(ArrowGlyphOffset + 7), // UpRight
-        (char)(ArrowGlyphOffset + 2), // Right
-        (char)(ArrowGlyphOffset + 8), // DownRight
-        (char)(ArrowGlyphOffset + 3), // Down
-        (char)(ArrowGlyphOffset + 9), // DownLeft
-        (char)(ArrowGlyphOffset + 0), // Left
-        (char)(ArrowGlyphOffset + 6) // UpLeft
-    };
-
-    public static char ToArrowGlyph(this RelativeDirection direction)
+    public static string ToArrowGlyph(this RelativeDirection direction)
     {
-        return RelativeDirectionToArrowGlyph[(int)direction];
+        // 🡨 
+        const int arrowCodepointOffset = 0x1f868;
+
+        return char.ConvertFromUtf32(
+            arrowCodepointOffset +
+            direction switch {
+                RelativeDirection.Up => 1,
+                RelativeDirection.UpRight => 5,
+                RelativeDirection.Right => 2,
+                RelativeDirection.DownRight => 6,
+                RelativeDirection.Down => 3,
+                RelativeDirection.DownLeft => 7,
+                RelativeDirection.Left => 0,
+                RelativeDirection.UpLeft => 4,
+                _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
+            });
     }
 
     public static RelativeDirection RotatedBy(this RelativeDirection direction, int rotation)

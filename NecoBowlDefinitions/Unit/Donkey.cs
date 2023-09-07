@@ -11,7 +11,7 @@ public class Donkey : NecoUnitModel
 
     public override string InternalName => "Donkey";
     public override string Name => "Donkey";
-    public override int Health => 3;
+    public override int Health => 4;
     public override int Power => 2;
 
     public override IEnumerable<NecoUnitAction> Actions => new[] {
@@ -21,5 +21,9 @@ public class Donkey : NecoUnitModel
             new NecoUnitAction.ApplyMod(new NecoUnitMod.Rotate(-2)))
     };
 
-    public override string BehaviorDescription => "Moves forward and then to the right.";
+    public override string BehaviorDescription
+        => $"Moves forward. Alternates between rotating {Arrow2} and {Arrow6} after each move.";
+
+    public override IEnumerable<NecoUnitTag> Tags { get; }
+        = new[] { NecoUnitTag.Pusher };
 }

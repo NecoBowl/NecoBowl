@@ -41,7 +41,7 @@ public abstract partial class NecoUnitAction
             var unit = field.GetUnit(pos);
 
             var (ballPos, ball)
-                = field.GetAllUnits(includeInventory: true).SingleOrDefault(tup => tup.Item2.Tags.Contains(NecoUnitTag.TheBall));
+                = field.GetAllUnits(true).SingleOrDefault(tup => tup.Item2.Tags.Contains(NecoUnitTag.TheBall));
             if (ball is null) {
                 throw new NecoUnitActionException("no ball found on field");
             }
@@ -74,6 +74,7 @@ public abstract partial class NecoUnitAction
 
     public class ChaseBall : NecoUnitAction
     {
+        public const string Option_FallbackDirecttion = "FallbackDirection";
         private readonly RelativeDirection[] AllowedDirections;
         private readonly RelativeDirection FallbackDirection;
 
@@ -82,7 +83,7 @@ public abstract partial class NecoUnitAction
             if (allowedDirections.Length == 0) {
                 throw new NecoUnitActionException("no directions provided");
             }
-            
+
             FallbackDirection = fallback ?? allowedDirections[0];
             AllowedDirections = allowedDirections;
         }
@@ -92,12 +93,17 @@ public abstract partial class NecoUnitAction
             var unit = field.GetUnit(uid, out var pos);
             var (ballPos, ball)
                 = field.GetAllUnits().SingleOrDefault(tup => tup.Item2.Tags.Contains(NecoUnitTag.TheBall));
-            var (minDistanceDirection, minDistanceAfterMove) = AllowedDirections.Select(dir => {
-                var lengthSquared = (pos + dir.ToVector2i(unit.Facing) - ballPos).LengthSquared;
-                return (dir, lengthSquared);
-            }).MinBy(tuple => tuple.lengthSquared);
+            var (minDistanceDirection, minDistanceAfterMove) = AllowedDirections.Select(
+                    dir => {
+                        var lengthSquared = (pos + dir.ToVector2i(unit.Facing) - ballPos).LengthSquared;
+                        return (dir, lengthSquared);
+                    })
+                .MinBy(tuple => tuple.lengthSquared);
             var originalDistance = (pos - ballPos).LengthSquared;
-            var direction = minDistanceAfterMove > originalDistance ? FallbackDirection : minDistanceDirection;
+
+            var fallbackDirection = (RelativeDirection)(unit.GetMod<NecoUnitMod.OptionValues>()
+                .GetValueOrNull<RelativeDirection>(Option_FallbackDirecttion) ?? FallbackDirection);
+            var direction = minDistanceAfterMove > originalDistance ? fallbackDirection : minDistanceDirection;
             return new TranslateUnit(direction).CallResult(uid, field);
         }
     }
