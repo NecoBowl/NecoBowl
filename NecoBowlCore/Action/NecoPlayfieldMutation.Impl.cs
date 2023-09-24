@@ -21,7 +21,7 @@ public abstract partial class NecoPlayfieldMutation
         public override string Description
             => $"{Pusher} pushes {Receiver} to the {Direction}";
 
-        internal override void PreMovementMutate(NecoField field, NecoSubstepContext substepContext)
+        internal override void EarlyMutate(NecoField field, NecoSubstepContext substepContext)
         {
             var pusher = field.GetUnit(Pusher);
             var receiver = field.GetUnit(Receiver, out var receiverPos);
@@ -57,20 +57,23 @@ public abstract partial class NecoPlayfieldMutation
 
         public readonly int Damage;
 
-        public UnitAttacks(ReadOnlyNecoField field,
-                           NecoUnitId attacker,
-                           NecoUnitId receiver,
-                           Kind attackKind,
-                           Vector2i? conflictPosition = null)
+        public UnitAttacks(
+            NecoUnitId attacker,
+            NecoUnitId receiver,
+            int attackDamage,
+            Kind attackKind,
+            Vector2i? conflictPosition)
             : base(attacker)
         {
             Attacker = attacker;
             Receiver = receiver;
             AttackKind = attackKind;
             ConflictPosition = conflictPosition;
+            Damage = attackDamage;
 
-            var unit = field.GetUnit(Attacker);
-            Damage = unit.Power;
+            if (AttackKind == Kind.SpaceConflict && conflictPosition is null) {
+                throw new("conflictPosition is required");
+            }
         }
 
         public override string Description => $"{Attacker} attacks {Receiver} for {Damage} damage";
@@ -116,6 +119,8 @@ public abstract partial class NecoPlayfieldMutation
 
         public override string Description => $"{Subject} is destroyed";
 
+        internal override NecoUnitId[] ExtractedUnits => new[] { Subject };
+
         internal override bool Prepare(NecoSubstepContext context, ReadOnlyNecoField field)
         {
             if (context.HasEntryOfType(Subject, typeof(UnitDies), this)) {
@@ -124,9 +129,6 @@ public abstract partial class NecoPlayfieldMutation
 
             return false;
         }
-
-        internal override void PreMovementMutate(NecoField field, NecoSubstepContext substepContext)
-        { }
 
         internal override void Pass1Mutate(NecoField field)
         {
@@ -165,8 +167,6 @@ public abstract partial class NecoPlayfieldMutation
         public readonly NecoUnitId Item;
         public readonly NecoUnitMovement Source;
 
-        private NecoUnit? TempUnitItem;
-
         public UnitPicksUpItem(NecoUnitId subject, NecoUnitId item, NecoUnitMovement source)
             : base(subject)
         {
@@ -175,6 +175,8 @@ public abstract partial class NecoPlayfieldMutation
         }
 
         public override string Description => $"{Subject} picks up {Item}";
+
+        internal override NecoUnitId[] ExtractedUnits => new[] { Item };
 
         internal override bool Prepare(NecoSubstepContext context, ReadOnlyNecoField field)
         {
@@ -187,15 +189,15 @@ public abstract partial class NecoPlayfieldMutation
 
         internal override void Pass1Mutate(NecoField field)
         {
-            var itemUnit = field.GetAndRemoveUnit(Item);
-            TempUnitItem = itemUnit;
+            var itemUnit = field.TempUnitZone.Single(u => u.Id == Item);
         }
 
         internal override void Pass3Mutate(NecoField field)
         {
+            var itemUnit = field.TempUnitZone.Single(u => u.Id == Item);
             var subject = field.GetUnit(Subject);
-            TempUnitItem!.Carrier = subject;
-            subject.Inventory.Add(TempUnitItem!);
+            itemUnit!.Carrier = subject;
+            subject.Inventory.Add(itemUnit!);
         }
     }
 

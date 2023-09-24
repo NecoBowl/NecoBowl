@@ -18,6 +18,7 @@ resharper_braces_redundant = true
 resharper_csharp_align_first_arg_by_paren = false
 resharper_csharp_align_multiline_argument = false
 resharper_csharp_align_multiline_calls_chain = false
+resharper_csharp_wrap_after_declaration_lpar = true
 resharper_csharp_wrap_after_invocation_lpar = true
 resharper_indent_anonymous_method_block = false
 resharper_keep_existing_initializer_arrangement = false
@@ -28,6 +29,7 @@ resharper_place_simple_initializer_on_single_line = true
 resharper_wrap_array_initializer_style = chop_if_long
 resharper_wrap_for_stmt_header_style = wrap_if_long
 resharper_wrap_object_and_collection_initializer_style = wrap_if_long
+resharper_wrap_parameters_style = wrap_if_long
 
 # Microsoft .NET properties
 csharp_new_line_before_members_in_object_initializers = false

@@ -3,21 +3,38 @@ using System.Diagnostics.CodeAnalysis;
 
 using neco_soft.NecoBowlCore.Tags;
 
+using NLog;
+
 namespace neco_soft.NecoBowlCore.Action;
 
 /// <summary>
-///     Record container for a unit that is moving to another space.
+///     Represents a unit transitioning between spaces.
 /// </summary>
 public record NecoUnitMovement
 {
+    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
+    /// <summary>
+    ///     The position of the unit after the transition.
+    /// </summary>
     public readonly Vector2i NewPos;
+
+    /// <summary>
+    ///     The position of the unit before the transition.
+    /// </summary>
     public readonly Vector2i OldPos;
 
-    // Hack to let the end of step calculation see what initiated the movements (push vs manual move).
-    internal readonly NecoUnitActionResult? Source;
+    /// <summary>
+    ///     Optionally specifies a movement from which this one was copied and modified.
+    /// </summary>
+    public readonly NecoUnitMovement? Source;
+
+    /// <summary>
+    ///     The unit being moved.
+    /// </summary>
     internal readonly NecoUnit Unit;
 
-    public NecoUnitMovement(NecoUnit unit, Vector2i newPos, Vector2i oldPos, NecoUnitActionResult? source = null)
+    public NecoUnitMovement(NecoUnit unit, Vector2i newPos, Vector2i oldPos, NecoUnitMovement? source = null)
     {
         Unit = unit;
         NewPos = newPos;
@@ -25,49 +42,57 @@ public record NecoUnitMovement
         Source = source;
     }
 
+    /// <summary>
+    ///     Creates a copy of another movement, optionally changing some of its fields.
+    ///     <p />
+    ///     Note that, due to null semantics, you cannot pass <c>null</c> as an option to <paramref name="source" /> because
+    ///     that will cause it to fallback to the <c>source</c> of <paramref name="other" />.
+    /// </summary>
     public NecoUnitMovement(NecoUnitMovement other,
                             Vector2i? newPos = null,
                             Vector2i? oldPos = null,
-                            NecoUnitActionResult? source = null)
+                            NecoUnitMovement? source = null)
     {
         NewPos = newPos ?? other.NewPos;
         OldPos = oldPos ?? other.OldPos;
-        Source = source ?? other.Source;
         Unit = other.Unit;
+        Source = source ?? other.Source;
     }
 
     public NecoUnitId UnitId => Unit.Id;
 
     public bool IsChange => NewPos != OldPos;
 
-    public bool IsChangeInSource
-        => Source?.StateChange is NecoUnitActionOutcome.UnitTranslated translation
-            ? translation.Movement.IsChange
-            : IsChange;
-
     public Vector2i Difference => NewPos - OldPos;
 
     public AbsoluteDirection AsDirection()
     {
+        // TODO Normalize
         return Enum.GetValues<AbsoluteDirection>().Single(d => d.ToVector2i() == Difference);
+    }
+
+    internal static IEnumerable<UnitMovementPair> GetMovementPairs(IEnumerable<NecoUnitMovement> movementsList)
+    {
+        var necoUnitMovements = movementsList.ToList();
+        return necoUnitMovements.SelectMany(
+            m => necoUnitMovements.Where(m2 => m != m2).Select(m2 => new UnitMovementPair(m, m2)));
     }
 }
 
 internal record UnitMovementPair
 {
-    public readonly ReadOnlyCollection<NecoUnitMovement> Collection;
-
     public readonly NecoUnitMovement Movement1, Movement2;
-    public readonly ReadOnlyCollection<NecoUnit> Movements;
 
     public UnitMovementPair(NecoUnitMovement movement1, NecoUnitMovement movement2)
     {
         Movement1 = movement1;
         Movement2 = movement2;
-
-        Movements = new(new[] { Movement1.Unit, Movement2.Unit });
-        Collection = new(new[] { Movement1, Movement2 });
     }
+
+    public ReadOnlyCollection<NecoUnitMovement> Collection => new(new[] { Movement1, Movement2 });
+
+    public NecoUnit Unit1 => Movement1.Unit;
+    public NecoUnit Unit2 => Movement2.Unit;
 
     /// <summary>Finds the unit in the pair with the specified tag.</summary>
     /// <param name="tag">The tag to search for.</param>
@@ -135,12 +160,39 @@ internal record UnitMovementPair
          && Movement1.Unit.OwnerId != Movement2.Unit.OwnerId;
     }
 
+    public bool UnitsAreFriendlies()
+    {
+        return Movement1.Unit.OwnerId != default && Movement2.Unit.OwnerId != default
+         && Movement1.Unit.OwnerId == Movement2.Unit.OwnerId;
+    }
+
     public bool IsSameUnitsAs(UnitMovementPair other)
     {
         return (Movement1 == other.Movement1 && Movement2 == other.Movement2)
          || (Movement2 == other.Movement1 && Movement1 == other.Movement2);
     }
 
+    public bool PickupCanOccur([MaybeNullWhen(false)] out NecoUnitMovement carrier,
+                               [MaybeNullWhen(false)] out NecoUnitMovement item)
+    {
+        if (UnitWithTag(NecoUnitTag.Carrier, out var itemUnit) is { } carrierUnit) {
+            if (itemUnit is not null && itemUnit.Unit.Tags.Contains(NecoUnitTag.Item)) {
+                carrier = carrierUnit;
+                item = itemUnit;
+                return true;
+            }
+        }
+
+        carrier = null;
+        item = null;
+        return false;
+    }
+
+    /// <summary>
+    ///     Get the transition in the pair that is not the given one.
+    /// </summary>
+    /// <param name="movement">The transition of which to find the pair-mate.</param>
+    /// <exception cref="NecoBowlException">The given movement is not in the pair.</exception>
     public NecoUnitMovement OtherMovement(NecoUnitMovement movement)
     {
         if (Movement1 == movement && Movement2 != movement) {
@@ -162,55 +214,14 @@ internal record UnitMovementPair
     {
         return UnitsAreEnemies();
     }
-}
 
-internal static class PlayStepperExt
-{
-    public static IEnumerable<NecoUnitMovement> OrderByCombatPriority(this IEnumerable<NecoUnitMovement> units)
+    public bool IsSpaceSwap()
     {
-        return units.OrderByDescending(u => u.Unit.Power)
-            .ThenBy(u => u.OldPos.Y)
-            .ThenBy(u => u.OldPos.X);
+        return Movement1.NewPos == Movement2.OldPos && Movement1.OldPos == Movement2.NewPos;
     }
 
-    public static IEnumerable<NecoUnitMovement[]> GroupByFriendlyUnitCollisions(
-        this IEnumerable<NecoUnitMovement> units)
+    public UnitMovementPair Opposite()
     {
-        return units.GroupBy(u => (u.NewPos, u.Unit.OwnerId))
-            .Where(g => g.Count() > 1)
-            .Select(g => g.ToArray());
-    }
-
-    public static IEnumerable<NecoUnitMovement[]> GroupByCollisions(this IEnumerable<NecoUnitMovement> units)
-    {
-        return units.GroupBy(u => u.NewPos)
-            .Where(g => g.Count() > 1)
-            .Select(g => g.ToArray());
-    }
-
-    public static IEnumerable<UnitMovementPair> GroupBySpaceSwaps(this IEnumerable<NecoUnitMovement> movements)
-    {
-        var movementsTemp = movements.ToList();
-        var construct = new List<UnitMovementPair>();
-        var usedUnits = new List<NecoUnitMovement>();
-
-        foreach (var move in movementsTemp) {
-            if (usedUnits.Contains(move)) {
-                continue;
-            }
-
-            var swap = movementsTemp.FirstOrDefault(
-                m
-                    => m.NewPos == move.OldPos
-                 && move.NewPos == m.OldPos
-                 && move.Unit != m.Unit);
-            if (swap is not null) {
-                construct.Add(new(move, swap));
-                usedUnits.Add(move);
-                usedUnits.Add(swap);
-            }
-        }
-
-        return construct;
+        return new(Movement2, Movement1);
     }
 }

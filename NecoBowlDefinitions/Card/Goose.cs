@@ -14,7 +14,7 @@ public class Goose : NecoUnitCardModel
 
     public override IEnumerable<NecoCardOptionPermission> OptionPermissions { get; }
         = new[] {
-            new NecoCardOptionPermission.DirectionOption(
+            new NecoCardOptionPermission.DirectionOptionPermission(
                 RelativeDirection.Up,
                 NecoUnitAction.ChaseBall.Option_FallbackDirecttion,
                 new[] { RelativeDirection.Up, RelativeDirection.UpLeft, RelativeDirection.UpRight })

@@ -11,6 +11,8 @@ public abstract partial class NecoPlayfieldMutation
 
     public abstract string Description { get; }
 
+    internal virtual NecoUnitId[] ExtractedUnits => new NecoUnitId[] { };
+
     public override string ToString()
     {
         return $"[{Description}]";
@@ -60,7 +62,7 @@ public abstract partial class NecoPlayfieldMutation
         internal virtual void Pass3Mutate(NecoField field)
         { }
 
-        internal virtual void PreMovementMutate(NecoField field, NecoSubstepContext substepContext)
+        internal virtual void EarlyMutate(NecoField field, NecoSubstepContext substepContext)
         { }
 
         internal virtual IEnumerable<NecoPlayfieldMutation> GetResultantMutations(ReadOnlyNecoField field)

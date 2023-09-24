@@ -69,6 +69,8 @@ public sealed class NecoUnit : IEquatable<NecoUnit>
         : this(unitModel, "", new())
     { }
 
+    public bool CanAttackByMovement => !Tags.Contains(NecoUnitTag.Defender);
+
     public int Power => UnitModel.Power;
     public int MaxHealth => UnitModel.Health;
     public int CurrentHealth => MaxHealth - DamageTaken;
@@ -126,5 +128,10 @@ public sealed class NecoUnit : IEquatable<NecoUnit>
     public override string ToString()
     {
         return $"{UnitModel.Name}@{nameof(NecoUnit)}:{Id.ToSimpleString()}";
+    }
+
+    public bool CanPickUp(NecoUnit pairUnit2)
+    {
+        return Tags.Contains(NecoUnitTag.Carrier) && pairUnit2.Tags.Contains(NecoUnitTag.Item);
     }
 }

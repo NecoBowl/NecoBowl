@@ -57,7 +57,7 @@ public class NecoUnitCard : NecoCard
     }
 }
 
-public class NecoCardOptions : IEnumerable<(string, object)>
+public class NecoCardOptions : IEnumerable<NecoCardOptionItem>
 {
     private readonly NecoCardModel CardModel;
     private readonly Dictionary<string, object> Values;
@@ -70,9 +70,9 @@ public class NecoCardOptions : IEnumerable<(string, object)>
 
     public object this[string id] => Values[id];
 
-    public IEnumerator<(string, object)> GetEnumerator()
+    public IEnumerator<NecoCardOptionItem> GetEnumerator()
     {
-        return Values.AsEnumerable().Select(kv => (kv.Key, kv.Value)).GetEnumerator();
+        return Values.AsEnumerable().Select(kv => new NecoCardOptionItem(kv.Key, kv.Value)).GetEnumerator();
     }
 
     IEnumerator IEnumerable.GetEnumerator()

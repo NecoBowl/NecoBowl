@@ -33,12 +33,6 @@ void Horse()
 {
     var boarCard = new NecoUnitCard(Donkey.Instance);
     context.SendInput(new NecoInput.PlaceCard(context.Players.Offense, boarCard, (2, 4)));
-    context.SendInput(
-        new NecoInput.SetPlanMod(
-            context.Players.Offense,
-            boarCard,
-            nameof(NecoCardOptionPermission.FlipX),
-            true));
 }
 
 Horse();

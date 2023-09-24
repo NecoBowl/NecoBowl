@@ -177,7 +177,10 @@ public abstract class NecoCardOptionPermission
 
     public abstract void ApplyToUnit(NecoUnit unit, object val);
 
-    public sealed class Rotate : DirectionOption
+    public IEnumerable<NecoCardOptionItem> GetOptionItems()
+        => AllowedValues.Select(v => new NecoCardOptionItem(AllowedValueVisual(v), v));
+
+    public sealed class Rotate : DirectionOptionPermission
     {
         public static readonly string StaticIdentifier = nameof(Rotate);
 
@@ -206,7 +209,7 @@ public abstract class NecoCardOptionPermission
         }
     }
 
-    public sealed class FlipX : BoolOption
+    public sealed class FlipX : BoolOptionPermission
     {
         public FlipX(string identifier = nameof(FlipX))
             : base(default, identifier)
@@ -221,7 +224,7 @@ public abstract class NecoCardOptionPermission
         }
     }
 
-    public sealed class FlipY : BoolOption
+    public sealed class FlipY : BoolOptionPermission
     {
         public FlipY(bool defaultValue, string identifier = nameof(FlipY))
             : base(defaultValue, identifier)
@@ -233,16 +236,16 @@ public abstract class NecoCardOptionPermission
         }
     }
 
-    public class BoolOption : NecoCardOptionPermission<bool>
+    public class BoolOptionPermission : NecoCardOptionPermission<bool>
     {
-        protected BoolOption(bool defaultValue, string identifier)
+        protected BoolOptionPermission(bool defaultValue, string identifier)
             : base(defaultValue, identifier, new object[] { false, true })
         { }
     }
 
-    public class DirectionOption : NecoCardOptionPermission<RelativeDirection>
+    public class DirectionOptionPermission : NecoCardOptionPermission<RelativeDirection>
     {
-        public DirectionOption(RelativeDirection defaultvalue, string identifier, RelativeDirection[] allowedValues)
+        public DirectionOptionPermission(RelativeDirection defaultvalue, string identifier, RelativeDirection[] allowedValues)
             : base(defaultvalue, identifier, allowedValues.Cast<object>().ToArray())
         { }
         
@@ -295,6 +298,8 @@ public class NecoCardOptionPermission<T> : NecoCardOptionPermission
         return AllowedValueVisual((T)o);
     }
 }
+
+public record NecoCardOptionItem(string OptionDisplay, object OptionValue);
 
 public class InvalidModException : Exception
 {

@@ -25,6 +25,7 @@ public abstract partial class NecoUnitAction
 
             var outcome = new NecoUnitActionOutcome.UnitTranslated(new(unit, newPos, pos));
 
+            // TODO Collision check here? Or leave it to caller?
             if (!field.IsInBounds(newPos)) {
                 return NecoUnitActionResult.Failure($"{unit} could not move {Direction} (out of bounds)", outcome);
             }

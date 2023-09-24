@@ -28,8 +28,9 @@ public abstract partial class NecoUnitAction
 }
 
 /// <summary>
-///     The final result of a unit's action, after it has considered the board state.
-///     These are consumed by the <see cref="NecoPlayStepper" />.
+/// The result of a unit's action, after considering the board state (but before collision calculation).
+///
+/// These are consumed by the <see cref="NecoPlayStepperNew" />.
 /// </summary>
 public abstract class NecoUnitActionOutcome
 {
