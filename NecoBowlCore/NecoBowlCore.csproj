@@ -5,10 +5,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>neco_soft.NecoBowlCore</RootNamespace>
+    <LangVersion>11</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NLog" Version="5.2.0" />
+    <PackageReference Include="Cogs.Collections" Version="1.12.1"/>
+    <PackageReference Include="NLog" Version="5.2.0"/>
   </ItemGroup>
 
   <ItemGroup>

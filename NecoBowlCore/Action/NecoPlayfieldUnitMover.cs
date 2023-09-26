@@ -1,5 +1,5 @@
+using Cogs.Collections;
 using neco_soft.NecoBowlCore.Tags;
-
 using NLog;
 
 namespace neco_soft.NecoBowlCore.Action;
@@ -9,6 +9,8 @@ internal class NecoPlayfieldUnitMover
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
     private readonly PlayfieldCollisionResolver CollisionResolver;
+
+    // should be readonly
     private readonly List<NecoUnitMovement> MovementsList;
 
     private readonly List<NecoPlayfieldMutation> OutputMutations = new();
@@ -39,9 +41,7 @@ internal class NecoPlayfieldUnitMover
         return MovementsList.Single(m => m.UnitId == uid);
     }
 
-    /// <summary>
-    ///     Calculate collisions and apply movements for each unit on the field.
-    /// </summary>
+    /// <summary>Calculate collisions and apply movements for each unit on the field.</summary>
     public void MoveUnits(out List<NecoPlayfieldMutation> results)
     {
         if (OutputMutations.Any()) {
@@ -69,21 +69,19 @@ internal class NecoPlayfieldUnitMover
         do {
             conflictSpaceCount = 0;
             foreach (var (pos, _) in Playfield.SpacePositions) {
-                var targeters = MovementsList.Where(m => m.NewPos == pos).ToList();
-                if (!targeters.Any()) {
+                var targeters = MovementsList.Where(m => m.NewPos == pos).ToHashSet();
+                if (targeters.Count <= 1) {
                     continue;
                 }
 
-                if (targeters.Count > 1) {
-                    OutputMutations.AddRange(CollisionResolver.ResolveSpaceConflict(targeters, out var winners));
+                OutputMutations.AddRange(CollisionResolver.ResolveSpaceConflict(targeters, out var winners));
 
-                    foreach (var targeter in targeters.Where(m => !winners.Contains(m))) {
-                        MovementsList.Remove(targeter);
-                    }
+                foreach (var targeter in targeters.Except(winners)) {
+                    MovementsList.Remove(targeter);
+                }
 
-                    if (winners.Count != targeters.Count) {
-                        conflictSpaceCount++;
-                    }
+                if (winners.Count != targeters.Count) {
+                    conflictSpaceCount++;
                 }
             }
         } while (conflictSpaceCount > 0);
@@ -117,7 +115,7 @@ internal class NecoPlayfieldUnitMover
     private void HandleSpaceSwaps()
     {
         foreach (var pair in NecoUnitMovement.GetMovementPairs(MovementsList).Where(p => p.IsSpaceSwap())) {
-            OutputMutations.AddRange(CollisionResolver.ResolveSpaceSwap(pair, out var winner));
+            OutputMutations.AddRange(PlayfieldCollisionResolver.ResolveSpaceSwap(pair, out var winner));
             if (winner is not null) {
                 MovementsList.Remove(pair.OtherMovement(winner));
             }
@@ -153,9 +151,11 @@ internal class NecoPlayfieldUnitMover
 
         foreach (var movement in MovementsList) {
             if (movementDecisions.SingleOrDefault(m => m.NewPos == movement.NewPos) is { } otherUnit) {
-                // There's a collision while reassigning unit spaces
+                // There's a collision while reassigning unit spaces.
+                // This (intentionally) occurs when two units are moving onto the space at once -- for example, a unit
+                //  moving onto the ball's space as it gets pushed there.
                 var otherUnitMovement = MovementsList.SingleOrDefault(m => m.UnitId == otherUnit.UnitId)
-                 ?? new NecoUnitMovement(otherUnit, movement.NewPos, movement.NewPos);
+                    ?? new NecoUnitMovement(otherUnit, movement.NewPos, movement.NewPos);
                 foreach (var mut in CollisionResolver.ResolveTransferConflict(
                              new(movement, otherUnitMovement),
                              out var conflictWinnner,
@@ -217,9 +217,8 @@ internal class PlayfieldCollisionResolver
         Field = field;
     }
 
-    public IEnumerable<NecoPlayfieldMutation.BaseMutation> ResolveSpaceSwap(
-        UnitMovementPair pair,
-        out NecoUnitMovement? winner)
+    public static IEnumerable<NecoPlayfieldMutation.BaseMutation> ResolveSpaceSwap(
+        UnitMovementPair pair, out NecoUnitMovement? winner)
     {
         if (!pair.IsSpaceSwap()) {
             throw new NecoPlayfieldUnitMover.PlayfieldMovementException();
@@ -259,29 +258,24 @@ internal class PlayfieldCollisionResolver
             winner = null;
         }
 
-    endCollision:
+        endCollision:
 
         return collection;
     }
 
     public IEnumerable<NecoPlayfieldMutation.BaseMutation> ResolveSpaceConflict(
-        IEnumerable<NecoUnitMovement> incomingMovements, out List<NecoUnitMovement> remainingMovements)
+        IReadOnlySet<NecoUnitMovement> incomingMovements,
+        out OrderedHashSet<NecoUnitMovement> remainingMovements)
     {
         var list = new List<NecoPlayfieldMutation.BaseMutation>();
 
         remainingMovements = new();
 
         if (incomingMovements.GroupBy(m => m.NewPos).Count() > 1) {
-            throw new NecoPlayfieldUnitMover.PlayfieldMovementException(
-                "there is more than one destination position among the colliders");
+            throw new InvalidOperationException("there is more than one destination position among the colliders");
         }
 
         var unitVictories = new Dictionary<NecoUnitMovement, int>();
-
-        void IncrementVictoryCount(NecoUnitMovement movement)
-        {
-            unitVictories![movement] = unitVictories.ContainsKey(movement) ? unitVictories[movement]++ : 1;
-        }
 
         NecoUnitMovement? finalWinner = null;
 
@@ -348,12 +342,17 @@ internal class PlayfieldCollisionResolver
             // Find units that aren't the final winner and that don't already have their own mutation.
             foreach (var movement in units.Where(
                          m => !tempRemainingMovements.Contains(m) && m.IsChange
-                          && !list.Any(mut => mut.Subject == m.UnitId))) {
+                             && list.All(mut => mut.Subject != m.UnitId))) {
                 list.Add(new NecoPlayfieldMutation.UnitBumps(movement.UnitId, movement.AsDirection()));
             }
         }
 
         return list;
+
+        void IncrementVictoryCount(NecoUnitMovement movement)
+        {
+            unitVictories[movement] = unitVictories.TryGetValue(movement, out var count) ? count + 1 : 1;
+        }
     }
 
     public IEnumerable<NecoPlayfieldMutation.BaseMutation> ResolveTransferConflict(
@@ -361,7 +360,6 @@ internal class PlayfieldCollisionResolver
         out NecoUnitMovement conflictWinnner,
         out NecoUnitMovement? auxiliaryWinner)
     {
-        // We need to use a list to have out parameters.
         var list = new List<NecoPlayfieldMutation.BaseMutation>();
 
         if (pair.PickupCanOccur(out var carrierUnit, out var itemUnit)) {
@@ -388,14 +386,13 @@ internal class PlayfieldCollisionResolver
          * - Unit that is holding ball
          * - Unit travelling vertically
          * - Unit traveling diagonally
-         * - Unit with highest power
          * - Bounce
          */
 
         // Stationary unit
         if (unitPair.TryUnitWhereSingle(u => !u.IsChange, out var stationaryUnit, out var movingUnit)) {
-            other = movingUnit!;
-            return stationaryUnit!;
+            other = movingUnit;
+            return stationaryUnit;
         }
 
         // Unit with Bossy
@@ -403,8 +400,8 @@ internal class PlayfieldCollisionResolver
                 u => u.Unit.Tags.Contains(NecoUnitTag.Bossy),
                 out var bossyUnit,
                 out var otherUnit)) {
-            other = otherUnit!;
-            return bossyUnit!;
+            other = otherUnit;
+            return bossyUnit;
         }
 
         // Forced handoff interaction
@@ -414,10 +411,10 @@ internal class PlayfieldCollisionResolver
                 out var nonBallHolder)) {
             // TAGIMPL:Carrier
             // TAGIMPL:Butterfingers
-            if (nonBallHolder!.Unit.Tags.Contains(NecoUnitTag.Carrier)
-             && !nonBallHolder.Unit.Tags.Contains(NecoUnitTag.Butterfingers)) {
-                other = ballHolder!;
-                return nonBallHolder!;
+            if (nonBallHolder.Unit.Tags.Contains(NecoUnitTag.Carrier)
+                && !nonBallHolder.Unit.Tags.Contains(NecoUnitTag.Butterfingers)) {
+                other = ballHolder;
+                return nonBallHolder;
             }
         }
 
@@ -426,17 +423,16 @@ internal class PlayfieldCollisionResolver
                 u => u.Unit.Tags.Contains(NecoUnitTag.TheBall),
                 out var ballUnit,
                 out var nonBallUnit)) {
-            other = nonBallUnit!;
-            return ballUnit!;
+            other = nonBallUnit;
+            return ballUnit;
         }
-
 
         {
             // Vertical
             var groups = unitPair.Collection.GroupBy(m => Math.Abs(m.Difference.X)).ToList();
             if (groups.Count > 1) {
-                var sorted = groups.Select(g => g.First()).OrderBy(m => Math.Abs(m.Difference.X));
-                other = sorted.Last();
+                var sorted = groups.Select(g => g.Single()).OrderBy(m => Math.Abs(m.Difference.X)).ToList();
+                other = sorted.Skip(1).Single();
                 return sorted.First(); // lowest X-difference would be vertical
             }
         }
@@ -447,18 +443,8 @@ internal class PlayfieldCollisionResolver
                     m => Math.Abs(m.Difference.X) + Math.Abs(m.Difference.Y) > 1,
                     out var diagonalMover,
                     out var nonDiagonalMover)) {
-                other = nonDiagonalMover!;
-                return diagonalMover!;
-            }
-        }
-
-        {
-            // Max power
-            var groups = unitPair.Collection.GroupBy(m => m.Unit.Power).ToList();
-            if (groups.Count > 1) {
-                var sorted = groups.Select(g => g.First()).OrderByDescending(m => m.Unit.Power).ToList();
-                other = sorted.Last();
-                return sorted.First();
+                other = nonDiagonalMover;
+                return diagonalMover;
             }
         }
 

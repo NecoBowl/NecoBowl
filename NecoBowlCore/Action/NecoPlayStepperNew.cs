@@ -1,5 +1,4 @@
 using neco_soft.NecoBowlCore.Tags;
-
 using NLog;
 
 namespace neco_soft.NecoBowlCore.Action;
@@ -22,9 +21,7 @@ internal class NecoPlayStepperNew
     private bool MutationsRemaining
         => PendingMovements.Values.Any() || PendingMutations.Any();
 
-    /// <summary>
-    ///     Run the step.
-    /// </summary>
+    /// <summary>Run the step, modifying this stepper's <see cref="NecoField" />.</summary>
     /// <returns>The log of mutations that occurred during the step.</returns>
     public IEnumerable<NecoPlayfieldMutation> Process()
     {
@@ -92,6 +89,7 @@ internal class NecoPlayStepperNew
     {
         // Case: Unit with Pusher
         // TAGIMPL:Pusher
+        // TODO Modularize
         foreach (var (pos, unit) in Field.GetAllUnits().Where(unit => unit.Item2.Tags.Contains(NecoUnitTag.Pusher))) {
             var movement = PendingMovements[unit.Id].Movement;
             if (movement.IsChange) {
@@ -104,8 +102,8 @@ internal class NecoPlayStepperNew
     }
 
     /// <summary>
-    ///     Performs the effects of each mutation in <see cref="PendingMutations" />, removing the mutation in the process.
-    ///     Populates it with the mutations that result from running the current ones.
+    /// Performs the effects of each mutation in <see cref="PendingMutations" />, removing the mutation in the process.
+    /// Populates it with the mutations that result from running the current ones.
     /// </summary>
     private void ConsumeMutations()
     {

@@ -24,6 +24,7 @@ resharper_indent_anonymous_method_block = false
 resharper_keep_existing_initializer_arrangement = false
 resharper_keep_existing_invocation_parens_arrangement = false
 resharper_max_initializer_elements_on_line = 1
+resharper_object_creation_when_type_not_evident = target_typed
 resharper_outdent_dots = false
 resharper_place_simple_initializer_on_single_line = true
 resharper_wrap_array_initializer_style = chop_if_long

@@ -1,7 +1,5 @@
 using System.Collections.ObjectModel;
-
 using neco_soft.NecoBowlCore.Tactics;
-
 using NUnit.Framework.Constraints;
 
 // ReSharper disable AccessToStaticMemberViaDerivedType
@@ -125,6 +123,32 @@ public class NewStepperTests
                 tags: new[] { NecoUnitTag.Pusher })
             .ToUnit(Player1);
         var item = new NecoUnit(NecoUnitModelCustom.Item(), Player1.Id);
+
+        Field[0, 2] = new(pusher);
+        Field[2, 1] = new(carrier);
+        Field[1, 2] = new(item);
+
+        var mutations = Play.Step().ToList();
+    }
+
+    /// <remarks>
+    /// Made this because there was a issue where <see cref="Movement_ItemPushedOntoConflictSpaceGetsPickedUp" /> would work
+    /// fine, but if you gave it the Item tag, it would infinite loop.
+    /// </remarks>
+    [Test]
+    public void Movement_BallPushedOntoConflictSpaceGetsPickedUp()
+    {
+        var carrier = NecoUnitModelCustom.Mover(
+                "Carrier",
+                direction: RelativeDirection.Up,
+                tags: new[] { NecoUnitTag.Carrier })
+            .ToUnit(Player1);
+        var pusher = NecoUnitModelCustom.Mover(
+                "Pusher",
+                direction: RelativeDirection.Right,
+                tags: new[] { NecoUnitTag.Pusher })
+            .ToUnit(Player1);
+        var item = new NecoUnit(BuiltInDefinitions.Ball.Instance, Player1.Id);
 
         Field[0, 2] = new(pusher);
         Field[2, 1] = new(carrier);
@@ -268,6 +292,24 @@ public class NewStepperTests
                     { (3, 0), unitTest1 }
                 }));
     }
+
+    [Test]
+    public void Tag_Bossy_CanBumpIntoItem()
+    {
+        // See ResolveSpaceConflict
+        var unit1 = TestHelpers.UnitMover(RelativeDirection.Right, player: Player1);
+        var unit2 = TestHelpers.UnitMover(
+            RelativeDirection.Up,
+            new[] { NecoUnitTag.Bossy },
+            Player1);
+        var ball = new NecoUnit(NecoUnitModelCustom.Item(), Player1.Id);
+
+        Field[0, 1] = new(unit1);
+        Field[1, 0] = new(unit2);
+        Field[1, 1] = new(ball);
+
+        Play.Step();
+    }
 }
 
 public record MutationChecker
@@ -298,8 +340,8 @@ public record MutationChecker
 #region Helpers
 
 /// <summary>
-///     Checks that each space coordinate in the given dictionary has its associated contents in a <see cref="NecoField" />
-///     .
+/// Checks that each space coordinate in the given dictionary has its associated contents in a
+/// <see cref="NecoField" />.
 /// </summary>
 public class FieldHasContentsConstraint : Constraint
 {
@@ -331,16 +373,15 @@ public class FieldHasContentsConstraint : Constraint
     }
 }
 
-/// <summary>
-///     Checks if a mutation list has a mutation that passes a given predicate.
-/// </summary>
+/// <summary>Checks if a mutation list has a mutation that passes a given predicate.</summary>
 public class MutationListHasConstraint : Constraint
 {
     // jank
     private readonly Func<object, bool>? Predicate;
 
     public MutationListHasConstraint()
-    { }
+    {
+    }
 
     public MutationListHasConstraint(Func<object, bool> predicate)
     {
@@ -382,8 +423,8 @@ public class MutationListHasConstraint<T> : MutationListHasConstraint
 }
 
 /// <summary>
-///     Checks if the results of a play step are equivalent to a given list of mutations. The orderings of the mutation
-///     lists are ignored.
+/// Checks if the results of a play step are equivalent to a given list of mutations. The orderings of the mutation lists
+/// are ignored.
 /// </summary>
 public class MutationListIsEquivalentConstraint : Constraint
 {

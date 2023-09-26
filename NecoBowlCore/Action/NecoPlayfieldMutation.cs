@@ -18,10 +18,8 @@ public abstract partial class NecoPlayfieldMutation
         return $"[{Description}]";
     }
 
-    /// <summary>
-    ///     Perform any pre-pass checks.
-    /// </summary>
-    /// <returns>Whether this mutation should be removed from the processing queue.</returns>
+    /// <summary>Perform any pre-pass checks.</summary>
+    /// <returns><c>true</c> if this unit should be removed from the processing queue, otherwise <c>false</c>.</returns>
     internal virtual bool Prepare(NecoSubstepContext context, ReadOnlyNecoField field)
     {
         return false;
@@ -29,7 +27,7 @@ public abstract partial class NecoPlayfieldMutation
 
     public sealed class MovementMutation : NecoPlayfieldMutation
     {
-        public NecoUnitMovement Movement;
+        public readonly NecoUnitMovement Movement;
 
         public MovementMutation(NecoUnitMovement movement)
         {
@@ -54,16 +52,20 @@ public abstract partial class NecoPlayfieldMutation
         }
 
         internal virtual void Pass1Mutate(NecoField field)
-        { }
+        {
+        }
 
         internal virtual void Pass2Mutate(NecoField field)
-        { }
+        {
+        }
 
         internal virtual void Pass3Mutate(NecoField field)
-        { }
+        {
+        }
 
         internal virtual void EarlyMutate(NecoField field, NecoSubstepContext substepContext)
-        { }
+        {
+        }
 
         internal virtual IEnumerable<NecoPlayfieldMutation> GetResultantMutations(ReadOnlyNecoField field)
         {
@@ -77,8 +79,9 @@ internal class NecoSubstepContext
     private readonly Dictionary<NecoUnitId, NecoPlayfieldMutation.MovementMutation> Dict;
     private readonly List<NecoPlayfieldMutation.BaseMutation> Mutations;
 
-    public NecoSubstepContext(Dictionary<NecoUnitId, NecoPlayfieldMutation.MovementMutation> dict,
-                              List<NecoPlayfieldMutation.BaseMutation> mutations)
+    public NecoSubstepContext(
+        Dictionary<NecoUnitId, NecoPlayfieldMutation.MovementMutation> dict,
+        List<NecoPlayfieldMutation.BaseMutation> mutations)
     {
         Dict = dict;
         Mutations = mutations;
@@ -99,11 +102,14 @@ internal class NecoSubstepContext
 public class NecoPlayfieldMutationException : ApplicationException
 {
     public NecoPlayfieldMutationException()
-    { }
+    {
+    }
 
     public NecoPlayfieldMutationException(string message) : base(message)
-    { }
+    {
+    }
 
     public NecoPlayfieldMutationException(string message, Exception inner) : base(message, inner)
-    { }
+    {
+    }
 }

@@ -1,37 +1,25 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
-
 using neco_soft.NecoBowlCore.Tags;
-
 using NLog;
 
 namespace neco_soft.NecoBowlCore.Action;
 
-/// <summary>
-///     Represents a unit transitioning between spaces.
-/// </summary>
+/// <summary>Represents a unit transitioning between spaces.</summary>
 public record NecoUnitMovement
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-    /// <summary>
-    ///     The position of the unit after the transition.
-    /// </summary>
+    /// <summary>The position of the unit after the transition.</summary>
     public readonly Vector2i NewPos;
 
-    /// <summary>
-    ///     The position of the unit before the transition.
-    /// </summary>
+    /// <summary>The position of the unit before the transition.</summary>
     public readonly Vector2i OldPos;
 
-    /// <summary>
-    ///     Optionally specifies a movement from which this one was copied and modified.
-    /// </summary>
+    /// <summary>Optionally specifies a movement from which this one was copied and modified.</summary>
     public readonly NecoUnitMovement? Source;
 
-    /// <summary>
-    ///     The unit being moved.
-    /// </summary>
+    /// <summary>The unit being moved.</summary>
     internal readonly NecoUnit Unit;
 
     public NecoUnitMovement(NecoUnit unit, Vector2i newPos, Vector2i oldPos, NecoUnitMovement? source = null)
@@ -43,15 +31,15 @@ public record NecoUnitMovement
     }
 
     /// <summary>
-    ///     Creates a copy of another movement, optionally changing some of its fields.
-    ///     <p />
-    ///     Note that, due to null semantics, you cannot pass <c>null</c> as an option to <paramref name="source" /> because
-    ///     that will cause it to fallback to the <c>source</c> of <paramref name="other" />.
+    /// Creates a copy of another movement, optionally changing some of its fields. <p /> Note that, due to null semantics, you
+    /// cannot pass <c>null</c> as an option to <paramref name="source" /> because that will cause it to fallback to the
+    /// <c>source</c> of <paramref name="other" />.
     /// </summary>
-    public NecoUnitMovement(NecoUnitMovement other,
-                            Vector2i? newPos = null,
-                            Vector2i? oldPos = null,
-                            NecoUnitMovement? source = null)
+    public NecoUnitMovement(
+        NecoUnitMovement other,
+        Vector2i? newPos = null,
+        Vector2i? oldPos = null,
+        NecoUnitMovement? source = null)
     {
         NewPos = newPos ?? other.NewPos;
         OldPos = oldPos ?? other.OldPos;
@@ -105,8 +93,8 @@ internal record UnitMovementPair
     }
 
     /// <summary>
-    ///     Finds the single unit that matches a condition. Throws an exception if both items in the pair match the
-    ///     condition.
+    /// Finds the single unit that matches a condition. Throws an exception if both items in the pair match the
+    /// condition.
     /// </summary>
     /// <param name="predicate">The condition to check for.</param>
     /// <param name="other">The unit of the pair that did not match the condition. Null if neither unit matches.</param>
@@ -118,14 +106,13 @@ internal record UnitMovementPair
         return movement;
     }
 
-    /// <summary>
-    ///     Try to find the single unit that matches a condition.
-    /// </summary>
+    /// <summary>Try to find the single unit that matches a condition.</summary>
     /// <returns>False if neither unit matches the condition or if both match the condition. Otherwise, true.</returns>
     /// <seealso cref="UnitWhereSingle" />
-    public bool TryUnitWhereSingle(Func<NecoUnitMovement, bool> predicate,
-                                   [NotNullWhen(true)] out NecoUnitMovement? result,
-                                   [NotNullWhen(true)] out NecoUnitMovement? other)
+    public bool TryUnitWhereSingle(
+        Func<NecoUnitMovement, bool> predicate,
+        [NotNullWhen(true)] out NecoUnitMovement? result,
+        [NotNullWhen(true)] out NecoUnitMovement? other)
     {
         try {
             result = UnitWhereSingle(predicate, out other);
@@ -138,13 +125,14 @@ internal record UnitMovementPair
         return result is not null;
     }
 
-    public bool TryGetUnitsBy(Func<NecoUnitMovement, bool> predicate1,
-                              Func<NecoUnitMovement, bool> predicate2,
-                              [NotNullWhen(true)] out NecoUnitMovement? result1,
-                              [NotNullWhen(true)] out NecoUnitMovement? result2)
+    public bool TryGetUnitsBy(
+        Func<NecoUnitMovement, bool> predicate1,
+        Func<NecoUnitMovement, bool> predicate2,
+        [NotNullWhen(true)] out NecoUnitMovement? result1,
+        [NotNullWhen(true)] out NecoUnitMovement? result2)
     {
         if (TryUnitWhereSingle(predicate1, out result1, out result2)) {
-            if (predicate2(result2!)) {
+            if (predicate2(result2)) {
                 return true;
             }
 
@@ -157,23 +145,24 @@ internal record UnitMovementPair
     public bool UnitsAreEnemies()
     {
         return Movement1.Unit.OwnerId != default && Movement2.Unit.OwnerId != default
-         && Movement1.Unit.OwnerId != Movement2.Unit.OwnerId;
+            && Movement1.Unit.OwnerId != Movement2.Unit.OwnerId;
     }
 
     public bool UnitsAreFriendlies()
     {
         return Movement1.Unit.OwnerId != default && Movement2.Unit.OwnerId != default
-         && Movement1.Unit.OwnerId == Movement2.Unit.OwnerId;
+            && Movement1.Unit.OwnerId == Movement2.Unit.OwnerId;
     }
 
     public bool IsSameUnitsAs(UnitMovementPair other)
     {
         return (Movement1 == other.Movement1 && Movement2 == other.Movement2)
-         || (Movement2 == other.Movement1 && Movement1 == other.Movement2);
+            || (Movement2 == other.Movement1 && Movement1 == other.Movement2);
     }
 
-    public bool PickupCanOccur([MaybeNullWhen(false)] out NecoUnitMovement carrier,
-                               [MaybeNullWhen(false)] out NecoUnitMovement item)
+    public bool PickupCanOccur(
+        [MaybeNullWhen(false)] out NecoUnitMovement carrier,
+        [MaybeNullWhen(false)] out NecoUnitMovement item)
     {
         if (UnitWithTag(NecoUnitTag.Carrier, out var itemUnit) is { } carrierUnit) {
             if (itemUnit is not null && itemUnit.Unit.Tags.Contains(NecoUnitTag.Item)) {
@@ -188,9 +177,7 @@ internal record UnitMovementPair
         return false;
     }
 
-    /// <summary>
-    ///     Get the transition in the pair that is not the given one.
-    /// </summary>
+    /// <summary>Get the transition in the pair that is not the given one.</summary>
     /// <param name="movement">The transition of which to find the pair-mate.</param>
     /// <exception cref="NecoBowlException">The given movement is not in the pair.</exception>
     public NecoUnitMovement OtherMovement(NecoUnitMovement movement)
