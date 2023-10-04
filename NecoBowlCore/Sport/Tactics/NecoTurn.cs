@@ -1,21 +1,17 @@
-using neco_soft.NecoBowlCore.Input;
-
+using NecoBowl.Core.Input;
 using NLog;
-
 using CardPlayMap
-    = System.Collections.Generic.Dictionary<neco_soft.NecoBowlCore.Tactics.NecoPlayerId,
-        System.Collections.Generic.List<neco_soft.NecoBowlCore.Tactics.NecoPlan.CardPlay>>;
+    = System.Collections.Generic.Dictionary<NecoBowl.Core.Sport.Tactics.NecoPlayerId,
+        System.Collections.Generic.List<NecoBowl.Core.Sport.Tactics.NecoPlan.CardPlay>>;
 
-namespace neco_soft.NecoBowlCore.Tactics;
+namespace NecoBowl.Core.Sport.Tactics;
 
 /// <summary>
-///     Game state container that tracks cards placed by the players. This is consolidated into a <see cref="NecoPlan" />
-///     once
-///     the inputs are done being received. Note that in an online scenario, it is probable that inputs from the client's
-///     opponent would only be received after the player has submitted their own. Therefore, the <see cref="CardPlays" />
-///     dictionary likely only contains populated data for one player until <see cref="Finished" /> is true.
-///     <p />
-///     Turns are applied to a <see cref="NecoPush" />.
+/// Game state container that tracks cards placed by the players. This is consolidated into a <see cref="NecoPlan" /> once
+/// the inputs are done being received. Note that in an online scenario, it is probable that inputs from the client's
+/// opponent would only be received after the player has submitted their own. Therefore, the <see cref="CardPlays" />
+/// dictionary likely only contains populated data for one player until <see cref="Finished" /> is true. <p /> Turns are
+/// applied to a <see cref="NecoPush" />.
 /// </summary>
 internal class NecoTurn
 {
@@ -65,9 +61,8 @@ internal class NecoTurn
     }
 
     /// <summary>
-    ///     Gets the Turn object that would come after this one. Note that this does not check if this turn is Finished; that
-    ///     is up
-    ///     to the caller to check if this is being used to progress the game.
+    /// Gets the Turn object that would come after this one. Note that this does not check if this turn is Finished; that is up
+    /// to the caller to check if this is being used to progress the game.
     /// </summary>
     public NecoTurn NextTurn()
     {

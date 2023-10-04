@@ -1,7 +1,7 @@
-using neco_soft.NecoBowlCore;
-using neco_soft.NecoBowlCore.Action;
-using neco_soft.NecoBowlCore.Model;
-using neco_soft.NecoBowlCore.Tags;
+using NecoBowl.Core;
+using NecoBowl.Core.Model;
+using NecoBowl.Core.Sport.Play;
+using NecoBowl.Core.Tags;
 
 namespace neco_soft.NecoBowlDefinitions.Unit;
 
@@ -23,15 +23,16 @@ public class Dog : NecoUnitModel
     public override IEnumerable<NecoUnitTag> Tags => new[] { NecoUnitTag.Carrier };
 
     public override ReactionDict Reactions { get; } = new() {
-        new(typeof(NecoPlayfieldMutation.UnitPicksUpItem), (unit, field, mut) => OnPicksUp(unit, mut))
+        new(typeof(Mutation.UnitPicksUpItem), (unit, field, mut) => OnPicksUp(unit, mut))
     };
 
-    private static IEnumerable<NecoPlayfieldMutation.BaseMutation> OnPicksUp(NecoUnit unit,
-                                                                             NecoPlayfieldMutation.BaseMutation
-                                                                                 mutation)
+    private static IEnumerable<Mutation.BaseMutation> OnPicksUp(
+        NecoBowl.Core.Sport.Play.Unit unit,
+        Mutation.BaseMutation
+            mutation)
     {
         if (unit.Id == mutation.Subject) {
-            yield return new NecoPlayfieldMutation.UnitGetsMod(unit.Id, new NecoUnitMod.Rotate(4));
+            yield return new Mutation.UnitGetsMod(unit.Id, new NecoUnitMod.Rotate(4));
         }
     }
 }

@@ -1,18 +1,17 @@
-using neco_soft.NecoBowlCore.Tactics;
-using neco_soft.NecoBowlCore.Tags;
-
+using NecoBowl.Core.Machine.Reports;
+using NecoBowl.Core.Sport.Play;
+using NecoBowl.Core.Sport.Tactics;
+using NecoBowl.Core.Tags;
 using NLog;
 
-namespace neco_soft.NecoBowlCore.Action;
+namespace NecoBowl.Core.Machine;
 
-/// <summary>
-///     Tracks the state of a <see cref="NecoField" /> as the units perform their actions each step.
-/// </summary>
-public class NecoPlay
+/// <summary>Tracks the state of a <see cref="Playfield" /> as the units perform their actions each step.</summary>
+internal class PlayMachine
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-    private readonly NecoField Field;
+    private readonly Playfield Field;
 
     private readonly bool LogFieldAscii;
     private readonly NecoPlayStepperNew PlayStepper;
@@ -21,7 +20,7 @@ public class NecoPlay
 
     public uint StepCount;
 
-    internal NecoPlay(NecoField field, bool autoRun = false, bool logFieldAscii = true, bool preprocessUnits = false)
+    internal PlayMachine(Playfield field, bool autoRun = false, bool logFieldAscii = true, bool preprocessUnits = false)
     {
         Field = field;
         PlayStepper = new(field);
@@ -44,7 +43,7 @@ public class NecoPlay
         return Field.AsReadOnly();
     }
 
-    public IEnumerable<NecoPlayfieldMutation> Step()
+    public StepReport Step()
     {
         if (IsFinished) {
             throw new InvalidOperationException("cannot step a play that has finished");
@@ -54,7 +53,21 @@ public class NecoPlay
             LogFieldToAscii();
         }
 
-        var step = PlayStepper.Process();
+        var result = new StepReport(PlayStepper.Process());
+
+        foreach (var (substep, i) in result.Select((c, i) => (c, i))) {
+            if (result.Count() > 1) {
+                Logger.Debug($"Substep {i}:");
+            }
+
+            foreach (var mut in substep.Mutations) {
+                Logger.Debug(mut);
+            }
+
+            foreach (var movement in substep.Movements.Where(m => m.IsChange)) {
+                Logger.Debug(movement);
+            }
+        }
 
         if (LogFieldAscii) {
             LogFieldToAscii();
@@ -62,7 +75,7 @@ public class NecoPlay
 
         StepCount++;
 
-        return step;
+        return result;
     }
 
     public void Step(uint count)

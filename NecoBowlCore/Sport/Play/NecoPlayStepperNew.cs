@@ -1,19 +1,30 @@
-using neco_soft.NecoBowlCore.Tags;
+using NecoBowl.Core.Tags;
 using NLog;
 
-namespace neco_soft.NecoBowlCore.Action;
+namespace NecoBowl.Core.Sport.Play;
 
-internal class NecoPlayStepperNew
+internal interface IMutationReceiver
+{
+    public void BufferMutation(Mutation mutation);
+}
+
+public record SubstepContents(
+    IReadOnlyCollection<Mutation.BaseMutation> Mutations,
+    IReadOnlyCollection<NecoUnitMovement> Movements);
+
+internal class NecoPlayStepperNew : IMutationReceiver
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-    private readonly NecoField Field;
-    private readonly List<NecoPlayfieldMutation> MutationHistory = new();
+    private readonly Playfield Field;
 
-    private readonly Dictionary<NecoUnitId, NecoPlayfieldMutation.MovementMutation> PendingMovements = new();
-    private readonly List<NecoPlayfieldMutation.BaseMutation> PendingMutations = new();
+    private readonly List<Mutation> MutationLog = new();
 
-    public NecoPlayStepperNew(NecoField field)
+    private readonly Dictionary<NecoUnitId, NecoUnitMovement> PendingMovements = new();
+    private readonly List<Mutation.BaseMutation> PendingMutations = new();
+    private int LastTurnMutationLogEndIndex;
+
+    public NecoPlayStepperNew(Playfield field)
     {
         Field = field;
     }
@@ -21,11 +32,22 @@ internal class NecoPlayStepperNew
     private bool MutationsRemaining
         => PendingMovements.Values.Any() || PendingMutations.Any();
 
-    /// <summary>Run the step, modifying this stepper's <see cref="NecoField" />.</summary>
-    /// <returns>The log of mutations that occurred during the step.</returns>
-    public IEnumerable<NecoPlayfieldMutation> Process()
+    public void BufferMutation(Mutation mutation)
     {
-        List<NecoPlayfieldMutation> stepMutations = new();
+        switch (mutation) {
+            case Mutation.BaseMutation baseMutation:
+                PendingMutations.Add(baseMutation);
+                break;
+            default:
+                throw new ArgumentException($"unknown type: {mutation.GetType()}");
+        }
+    }
+
+    /// <summary>Run the step, modifying this stepper's <see cref="Playfield" />.</summary>
+    /// <returns>The log of mutations that occurred during the step.</returns>
+    public IEnumerable<SubstepContents> Process()
+    {
+        var substeps = new List<SubstepContents>();
 
         PopUnitActions(out var chainedActions);
 
@@ -33,6 +55,9 @@ internal class NecoPlayStepperNew
 
         // Begin the substep loop
         while (MutationsRemaining) {
+            List<Mutation.BaseMutation> outputMutations = new();
+            List<NecoUnitMovement> outputMovements = new();
+
             // Perform early mutations.
             // For example, a unit getting pushed adds its movement here.
             foreach (var mutation in PendingMutations) {
@@ -40,35 +65,29 @@ internal class NecoPlayStepperNew
             }
 
             // Perform regular mutation, since they might affect movement.
-            ConsumeMutations();
-            stepMutations.AddRange(PendingMutations);
+            // This will consume all mutations, and enqueue mutations and movements created as a result.
+            outputMutations.AddRange(PendingMutations);
+            ProcessMutations();
 
+            // TempZone needs to be cleared when moving.
             Field.TempUnitZone.Clear();
 
-            // Perform movement
-            var mover = new NecoPlayfieldUnitMover(Field, PendingMovements.Select(kv => kv.Value.Movement));
-            mover.MoveUnits(out var movementMutations);
-            stepMutations.AddRange(movementMutations);
-            PendingMutations.AddRange(
-                movementMutations.Where(m => m is NecoPlayfieldMutation.BaseMutation)
-                    .Cast<NecoPlayfieldMutation.BaseMutation>());
-
+            // Perform movement.
+            var mover = new UnitMover(this, Field, PendingMovements.Values);
+            mover.MoveUnits(out var movements);
+            outputMovements.AddRange(movements);
             PendingMovements.Clear();
 
-            // Add movements/mutations from multi-actions
+            // Add movements/mutations from chain actions
             foreach (var (id, action) in chainedActions.Where(kv => kv.Value is not null)) {
                 EnqueueMutationFromAction(id, action!.Result(id, Field.AsReadOnly()));
                 chainedActions[id] = action.Next;
             }
+
+            substeps.Add(new(outputMutations, outputMovements));
         }
 
-        foreach (var mut in stepMutations) {
-            Logger.Debug(mut);
-        }
-
-        MutationHistory.AddRange(stepMutations);
-
-        return stepMutations;
+        return substeps;
     }
 
     private void PopUnitActions(out Dictionary<NecoUnitId, NecoUnitAction?> chainedActions)
@@ -84,18 +103,17 @@ internal class NecoPlayStepperNew
         }
     }
 
-
     private void AddPreStepMutations()
     {
         // Case: Unit with Pusher
         // TAGIMPL:Pusher
         // TODO Modularize
         foreach (var (pos, unit) in Field.GetAllUnits().Where(unit => unit.Item2.Tags.Contains(NecoUnitTag.Pusher))) {
-            var movement = PendingMovements[unit.Id].Movement;
+            var movement = PendingMovements[unit.Id];
             if (movement.IsChange) {
                 if (Field.TryGetUnit(movement.NewPos, out var targetUnit)) {
                     PendingMutations.Add(
-                        new NecoPlayfieldMutation.UnitPushes(unit.Id, targetUnit!.Id, movement.AsDirection()));
+                        new Mutation.UnitPushes(unit.Id, targetUnit!.Id, movement.AsDirection()));
                 }
             }
         }
@@ -103,9 +121,10 @@ internal class NecoPlayStepperNew
 
     /// <summary>
     /// Performs the effects of each mutation in <see cref="PendingMutations" />, removing the mutation in the process.
-    /// Populates it with the mutations that result from running the current ones.
+    /// Populates it with the mutations that result from running the current ones. Also adds the ran mutations to the
+    /// <see cref="MutationLog" />.
     /// </summary>
-    private void ConsumeMutations()
+    private void ProcessMutations()
     {
         var baseMutations = PendingMutations.ToList();
 
@@ -122,17 +141,13 @@ internal class NecoPlayStepperNew
         }
 
         // Then run the mutate passes
-        foreach (var func in NecoPlayfieldMutation.ExecutionOrder) {
+        foreach (var func in Mutation.ExecutionOrder) {
             foreach (var mutation in baseMutations) {
                 func.Invoke(mutation, substepContext, Field);
             }
         }
 
-        foreach (var mutation in baseMutations) {
-            MutationHistory.Add(mutation);
-        }
-
-        var tempMutations = new List<NecoPlayfieldMutation>();
+        var tempMutations = new List<Mutation.BaseMutation>();
 
         foreach (var (pos, unit) in Field.GetAllUnits()) {
             foreach (var mutation in baseMutations) {
@@ -151,26 +166,13 @@ internal class NecoPlayStepperNew
         PendingMutations.Clear();
 
         foreach (var mutation in tempMutations) {
-            switch (mutation) {
-                case NecoPlayfieldMutation.MovementMutation moveMut: {
-                    PendingMovements[moveMut.Subject] = moveMut;
-                    break;
-                }
-                case NecoPlayfieldMutation.BaseMutation baseMut: {
-                    PendingMutations.Add(baseMut);
-                    break;
-                }
-            }
+            PendingMutations.Add(mutation);
+            break;
         }
     }
 
     private void EnqueueMutationFromAction(NecoUnitId uid, NecoUnitActionResult result)
     {
-        NecoPlayfieldMutation.MovementMutation Default(NecoUnit unit, Vector2i pos)
-        {
-            return new(new(unit, pos, pos));
-        }
-
         switch (result) {
             // Cases where an error ocurred 
             case { ResultKind: NecoUnitActionResult.Kind.Error }: {
@@ -186,31 +188,44 @@ internal class NecoPlayStepperNew
                 StateChange: NecoUnitActionOutcome.UnitTranslated translation
             }: {
                 var unit = Field.GetUnit(uid, out var pos);
-                PendingMovements[uid] = new(new(translation.Movement, pos, pos, translation.Movement));
+                PendingMovements[uid] = translation.Movement;
                 break;
             }
 
             // Cases where things happen
             case { StateChange: NecoUnitActionOutcome.UnitTranslated translation }: {
-                PendingMovements[uid] = new(new(translation.Movement));
+                PendingMovements[uid] = translation.Movement;
                 break;
             }
 
             case { StateChange: NecoUnitActionOutcome.UnitChanged unitChanged }: {
-                PendingMutations.Add(new NecoPlayfieldMutation.UnitGetsMod(uid, unitChanged.Mod));
+                PendingMutations.Add(new Mutation.UnitGetsMod(uid, unitChanged.Mod));
+                break;
+            }
+
+            case { StateChange: NecoUnitActionOutcome.ThrewItem threwItem }: {
+                PendingMutations.Add(
+                    new Mutation.UnitThrowsItem(uid, threwItem.Item.Id, threwItem.Destination));
+                break;
+            }
+
+            case { StateChange: NecoUnitActionOutcome.NothingHappened }: {
+                break;
+            }
+
+            case { ResultKind: NecoUnitActionResult.Kind.Failure }: {
+                Logger.Debug($"Action failed: {result.Message}");
                 break;
             }
 
             default: {
-                var unit = Field.GetUnit(uid, out var pos);
-                PendingMovements[uid] = Default(unit, pos);
-                break;
+                throw new ArgumentException($"Unhandled outcome type {result.StateChange}");
             }
         }
     }
 }
 
-internal static class Extension
+static file class Extension
 {
     public static void RemoveUnitPair(this Dictionary<NecoUnitId, NecoUnitMovement> source, UnitMovementPair unitPair)
     {

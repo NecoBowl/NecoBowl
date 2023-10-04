@@ -1,7 +1,7 @@
-using neco_soft.NecoBowlCore.Action;
-using neco_soft.NecoBowlCore.Tags;
+using NecoBowl.Core.Sport.Play;
+using NecoBowl.Core.Tags;
 
-namespace neco_soft.NecoBowlCore.Model;
+namespace NecoBowl.Core.Model;
 
 public abstract class NecoUnitModel
 {
@@ -32,9 +32,11 @@ public class ReactionDict : List<ReactionDict.Entry>
     }
 }
 
-public delegate IEnumerable<NecoPlayfieldMutation.BaseMutation> MutationReaction<in T>(NecoUnit unit,
+public delegate IEnumerable<Mutation.BaseMutation> MutationReaction<in T>(
+    Unit unit,
     ReadOnlyNecoField field,
     T mutation);
 
 public class UnitReactionContext
-{ }
+{
+}

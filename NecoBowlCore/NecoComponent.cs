@@ -1,4 +1,5 @@
-namespace neco_soft.NecoBowlCore;
+namespace NecoBowl.Core;
 
 public abstract class NecoComponent
-{ }
+{
+}

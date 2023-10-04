@@ -1,6 +1,6 @@
-using neco_soft.NecoBowlCore.Tags;
+using NecoBowl.Core.Tags;
 
-namespace neco_soft.NecoBowlCore.Action;
+namespace NecoBowl.Core.Sport.Play;
 
 public abstract partial class NecoUnitAction
 {
@@ -28,9 +28,8 @@ public abstract partial class NecoUnitAction
 }
 
 /// <summary>
-/// The result of a unit's action, after considering the board state (but before collision calculation).
-///
-/// These are consumed by the <see cref="NecoPlayStepperNew" />.
+/// The result of a unit's action, after considering the board state (but before collision calculation). These are consumed
+/// by the <see cref="NecoPlayStepperNew" />.
 /// </summary>
 public abstract class NecoUnitActionOutcome
 {
@@ -63,6 +62,21 @@ public abstract class NecoUnitActionOutcome
         public override string Description => $"Mod {Mod} applied";
     }
 
+    public class ThrewItem : NecoUnitActionOutcome
+    {
+        public readonly Vector2i Destination;
+        public readonly Unit Subject, Item;
+
+        public ThrewItem(Unit subject, Unit item, Vector2i destination)
+        {
+            Subject = subject;
+            Item = item;
+            Destination = destination;
+        }
+
+        public override string Description => $"{Subject} threw {Item}";
+    }
+
     public class NothingHappened : NecoUnitActionOutcome
     {
         public readonly NecoUnitId UnitId;
@@ -92,10 +106,11 @@ public class NecoUnitActionResult
     public readonly Kind ResultKind;
     public readonly NecoUnitActionOutcome? StateChange;
 
-    public NecoUnitActionResult(string message,
-                                Kind resultKind,
-                                NecoUnitActionOutcome? stateChange = null,
-                                Exception? exception = null)
+    public NecoUnitActionResult(
+        string message,
+        Kind resultKind,
+        NecoUnitActionOutcome? stateChange = null,
+        Exception? exception = null)
     {
         Message = message;
         ResultKind = resultKind;
@@ -108,7 +123,7 @@ public class NecoUnitActionResult
         return new(change.Description, Kind.Success, change);
     }
 
-    public static NecoUnitActionResult Failure(string message, NecoUnitActionOutcome attemptedChange)
+    public static NecoUnitActionResult Failure(string message, NecoUnitActionOutcome? attemptedChange)
     {
         return new(message, Kind.Failure, attemptedChange);
     }

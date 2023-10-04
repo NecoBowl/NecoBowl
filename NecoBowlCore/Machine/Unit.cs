@@ -1,12 +1,10 @@
 using System.Text.RegularExpressions;
-
-using neco_soft.NecoBowlCore.Model;
-using neco_soft.NecoBowlCore.Tactics;
-using neco_soft.NecoBowlCore.Tags;
-
+using NecoBowl.Core.Model;
+using NecoBowl.Core.Sport.Tactics;
+using NecoBowl.Core.Tags;
 using NLog;
 
-namespace neco_soft.NecoBowlCore.Action;
+namespace NecoBowl.Core.Sport.Play;
 
 public record NecoUnitId
 {
@@ -28,27 +26,25 @@ public record NecoUnitId
     }
 }
 
-/// <summary>
-///     A unit as exists during a play.
-/// </summary>
-public sealed class NecoUnit : IEquatable<NecoUnit>
+/// <summary>A unit as exists during a play.</summary>
+public sealed class Unit : IEquatable<Unit>
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
     public readonly Stack<NecoUnitAction> ActionStack;
     public readonly string Discriminator;
 
     public readonly NecoUnitId Id;
-    public readonly List<NecoUnit> Inventory = new();
+    public readonly List<Unit> Inventory = new();
     private readonly List<NecoUnitMod> Mods = new();
 
     public readonly NecoPlayerId OwnerId;
     public readonly ReactionDict Reactions = new();
     public readonly List<NecoUnitTag> Tags = new();
     public readonly NecoUnitModel UnitModel;
-    public NecoUnit? Carrier;
+    public Unit? Carrier;
     public int DamageTaken;
 
-    public NecoUnit(NecoUnitModel unitModel, string discriminator, NecoPlayerId ownerId)
+    public Unit(NecoUnitModel unitModel, string discriminator, NecoPlayerId ownerId)
     {
         Id = new();
 
@@ -61,13 +57,15 @@ public sealed class NecoUnit : IEquatable<NecoUnit>
         ActionStack = new(unitModel.Actions.Reverse());
     }
 
-    public NecoUnit(NecoUnitModel unitModel, NecoPlayerId playerId)
+    public Unit(NecoUnitModel unitModel, NecoPlayerId playerId)
         : this(unitModel, "", playerId)
-    { }
+    {
+    }
 
-    internal NecoUnit(NecoUnitModel unitModel)
+    internal Unit(NecoUnitModel unitModel)
         : this(unitModel, "", new())
-    { }
+    {
+    }
 
     public bool CanAttackByMovement => !Tags.Contains(NecoUnitTag.Defender);
 
@@ -81,9 +79,14 @@ public sealed class NecoUnit : IEquatable<NecoUnit>
 
     public string FullName => $"{UnitModel.Name}{(Discriminator != string.Empty ? $" {Discriminator}" : "")}";
 
-    public bool Equals(NecoUnit? other)
+    public bool Equals(Unit? other)
     {
         return Id.Equals(other?.Id);
+    }
+
+    public bool CanAttackOther(Unit other)
+    {
+        return other.OwnerId != default && OwnerId != other.OwnerId && !Tags.Contains(NecoUnitTag.Defender);
     }
 
     internal NecoUnitAction PopAction()
@@ -117,9 +120,9 @@ public sealed class NecoUnit : IEquatable<NecoUnit>
             : new();
     }
 
-    public List<NecoUnit> GetInventoryTree(bool includeParent = true)
+    public List<Unit> GetInventoryTree(bool includeParent = true)
     {
-        return new List<NecoUnit> { this }
+        return new List<Unit> { this }
             .Concat(Inventory.SelectMany(u => u.GetInventoryTree()))
             .Where(u => includeParent || u != this)
             .ToList();
@@ -127,11 +130,17 @@ public sealed class NecoUnit : IEquatable<NecoUnit>
 
     public override string ToString()
     {
-        return $"{UnitModel.Name}@{nameof(NecoUnit)}:{Id.ToSimpleString()}";
+        return $"{UnitModel.Name}@{nameof(Unit)}:{Id.ToSimpleString()}";
     }
 
-    public bool CanPickUp(NecoUnit pairUnit2)
+    public bool CanPickUp(Unit pairUnit2)
     {
         return Tags.Contains(NecoUnitTag.Carrier) && pairUnit2.Tags.Contains(NecoUnitTag.Item);
+    }
+
+    /// <returns>The unit in this unit's inventory that should be used in a hand-off situation, or null if there isn't one.</returns>
+    public Unit? HandoffItem()
+    {
+        return Inventory.Any() ? Inventory.FirstOrDefault() : null;
     }
 }

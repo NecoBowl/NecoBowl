@@ -1,6 +1,6 @@
-using neco_soft.NecoBowlCore.Tactics;
+using NecoBowl.Core.Sport.Tactics;
 
-namespace neco_soft.NecoBowlCore.Input;
+namespace NecoBowl.Core.Input;
 
 public abstract partial class NecoInput
 {
@@ -36,6 +36,7 @@ public abstract partial class NecoInput
     {
         public RequestEndPlay(NecoPlayer player)
             : base(player)
-        { }
+        {
+        }
     }
 }

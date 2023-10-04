@@ -1,7 +1,7 @@
-using neco_soft.NecoBowlCore.Input;
-using neco_soft.NecoBowlCore.Tactics;
-using neco_soft.NecoBowlCore.Tags;
 using neco_soft.NecoBowlDefinitions.Card;
+using NecoBowl.Core.Input;
+using NecoBowl.Core.Sport.Tactics;
+using NecoBowl.Core.Tags;
 
 var context = new NecoBowlContext(new());
 

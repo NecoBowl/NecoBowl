@@ -1,6 +1,7 @@
-using neco_soft.NecoBowlCore.Tags;
+using NecoBowl.Core.Tags;
+using TupleSplatter;
 
-namespace neco_soft.NecoBowlCore.Action;
+namespace NecoBowl.Core.Sport.Play;
 
 public abstract partial class NecoUnitAction
 {
@@ -23,7 +24,12 @@ public abstract partial class NecoUnitAction
             var movementDirection = unit.Facing.RotatedBy(flippedDirection);
             var newPos = pos + movementDirection.ToVector2i();
 
-            var outcome = new NecoUnitActionOutcome.UnitTranslated(new(unit, newPos, pos));
+            var outcome = new NecoUnitActionOutcome.UnitTranslated(
+                new() {
+                    Unit = unit,
+                    NewPos = newPos,
+                    OldPos = pos
+                });
 
             // TODO Collision check here? Or leave it to caller?
             if (!field.IsInBounds(newPos)) {
@@ -106,6 +112,33 @@ public abstract partial class NecoUnitAction
                 .GetValueOrNull<RelativeDirection>(Option_FallbackDirecttion) ?? FallbackDirection);
             var direction = minDistanceAfterMove > originalDistance ? fallbackDirection : minDistanceDirection;
             return new TranslateUnit(direction).CallResult(uid, field);
+        }
+    }
+
+    /// <summary>Tries to throw the ball to the farthest-away friendly unit.</summary>
+    public class AutoThrowBall : NecoUnitAction
+    {
+        protected override NecoUnitActionResult CallResult(NecoUnitId uid, ReadOnlyNecoField field)
+        {
+            var subjectUnit = field.GetUnit(uid, out var unitPos);
+
+            if (subjectUnit.HandoffItem() is not { } itemUnit) {
+                return NecoUnitActionResult.Failure("no item to throw", null);
+            }
+
+            var search = field.GetAllUnits()
+                .Where(t => t.Splat((pos, unit) => unit.Id != uid && unit.OwnerId == subjectUnit.OwnerId))
+                .OrderByDescending(t => t.Splat((pos, unit) => (unitPos - pos).LengthSquared))
+                .ToList();
+
+            if (!search.Any()) {
+                return NecoUnitActionResult.Failure("no friendly units", null);
+            }
+
+            var (resultUnitPos, _) = search.FirstOrDefault();
+
+            return NecoUnitActionResult.Success(
+                new NecoUnitActionOutcome.ThrewItem(subjectUnit, itemUnit, resultUnitPos));
         }
     }
 

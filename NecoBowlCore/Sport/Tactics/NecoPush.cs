@@ -1,30 +1,27 @@
 using System.Collections.Immutable;
+using NecoBowl.Core.Input;
+using NecoBowl.Core.Machine;
+using NecoBowl.Core.Sport.Play;
 
-using neco_soft.NecoBowlCore.Action;
-using neco_soft.NecoBowlCore.Input;
-
-namespace neco_soft.NecoBowlCore.Tactics;
+namespace NecoBowl.Core.Sport.Tactics;
 
 /// <summary>
-///     Game state container representing the state of the board as the offense pushes towards the defense.
-///     Stores a <see cref="NecoPlan" /> for each player that develop over the course of a number of turns (see
-///     <see cref="NecoTurn" />).
-///     Pushes are used to create a <see cref="NecoPlay" /> to hand off to the Action of the game.
+/// Game state container representing the state of the board as the offense pushes towards the defense. Stores a
+/// <see cref="NecoPlan" /> for each player that develop over the course of a number of turns (see <see cref="NecoTurn" />
+/// ). Pushes are used to create a <see cref="PlayMachine" /> to hand off to the Action of the game.
 /// </summary>
 internal class NecoPush : INecoPushInformation
 {
     private readonly Dictionary<NecoPlayerId, bool> EndPlayRequested = new();
     public readonly NecoFieldParameters FieldParameters;
 
-    /// <summary>
-    ///     Stores the <see cref="NecoPlan" /> of each player, indexed by the player role.
-    /// </summary>
+    /// <summary>Stores the <see cref="NecoPlan" /> of each player, indexed by the player role.</summary>
     public readonly ImmutableDictionary<NecoPlayerRole, NecoPlan> Plans;
 
     private bool _isPlayFinished;
 
     public NecoTurn CurrentTurn;
-    private NecoPlay? TempPlay;
+    private PlayMachine? TempPlay;
 
     public NecoPush(NecoPlayerPair players, NecoFieldParameters fieldParameters)
     {
@@ -80,12 +77,10 @@ internal class NecoPush : INecoPushInformation
         }
     }
 
-    /// <summary>
-    ///     Advances the state of this push to the next turn.
-    /// </summary>
+    /// <summary>Advances the state of this push to the next turn.</summary>
     /// <exception cref="InvalidOperationException">
-    ///     If the current turn has not been finished (see
-    ///     <see cref="NecoTurn.Finished" />).
+    /// If the current turn has not been finished (see
+    /// <see cref="NecoTurn.Finished" />).
     /// </exception>
     public void AdvancePushStage()
     {
@@ -105,15 +100,14 @@ internal class NecoPush : INecoPushInformation
     }
 
     /// <summary>
-    ///     Creates a new Play from the cards played during this push. The Play object is self-contained and has no direct
-    ///     effect
-    ///     on the state of the match.
+    /// Creates a new Play from the cards played during this push. The Play object is self-contained and has no direct effect
+    /// on the state of the match.
     /// </summary>
     /// <seealso cref="CreateField" />
-    public NecoPlay CreatePlay(bool isPreview = false, bool preprocessUnits = false)
+    public PlayMachine CreatePlay(bool isPreview = false, bool preprocessUnits = false)
     {
         var field = CreateField(isPreview);
-        var play = new NecoPlay(field, preprocessUnits: preprocessUnits);
+        var play = new PlayMachine(field, preprocessUnits: preprocessUnits);
         if (!isPreview) {
             if (!IsTurnFinished) {
                 throw new InvalidOperationException("cannot run real play before finishing turn");
@@ -125,13 +119,11 @@ internal class NecoPush : INecoPushInformation
         return play;
     }
 
-    /// <summary>
-    ///     Creates a Field that represents the field state at the start of the play.
-    /// </summary>
+    /// <summary>Creates a Field that represents the field state at the start of the play.</summary>
     /// <returns>A Field with its spaces populated with contents corresponding to the cards played in this push.</returns>
-    public NecoField CreateField(bool isPreview)
+    public Playfield CreateField(bool isPreview)
     {
-        var field = new NecoField(FieldParameters);
+        var field = new Playfield(FieldParameters);
 
         foreach (var (role, plan) in Plans) {
             var plays = plan.GetCardPlays().ToList();

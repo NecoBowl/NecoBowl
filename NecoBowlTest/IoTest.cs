@@ -1,5 +1,6 @@
-using neco_soft.NecoBowlCore.Input;
-using neco_soft.NecoBowlCore.Tactics;
+using NecoBowl.Core.Input;
+using NecoBowl.Core.Model;
+using NecoBowl.Core.Sport.Tactics;
 
 namespace neco_soft.NecoBowlTest;
 

@@ -1,9 +1,10 @@
+using System.Collections;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
-using neco_soft.NecoBowlCore.Tags;
+using NecoBowl.Core.Tags;
 using NLog;
 
-namespace neco_soft.NecoBowlCore.Action;
+namespace NecoBowl.Core.Sport.Play;
 
 /// <summary>Represents a unit transitioning between spaces.</summary>
 public record NecoUnitMovement
@@ -11,41 +12,13 @@ public record NecoUnitMovement
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
     /// <summary>The position of the unit after the transition.</summary>
-    public readonly Vector2i NewPos;
+    public required Vector2i NewPos { get; init; }
 
     /// <summary>The position of the unit before the transition.</summary>
-    public readonly Vector2i OldPos;
-
-    /// <summary>Optionally specifies a movement from which this one was copied and modified.</summary>
-    public readonly NecoUnitMovement? Source;
+    public required Vector2i OldPos { get; init; }
 
     /// <summary>The unit being moved.</summary>
-    internal readonly NecoUnit Unit;
-
-    public NecoUnitMovement(NecoUnit unit, Vector2i newPos, Vector2i oldPos, NecoUnitMovement? source = null)
-    {
-        Unit = unit;
-        NewPos = newPos;
-        OldPos = oldPos;
-        Source = source;
-    }
-
-    /// <summary>
-    /// Creates a copy of another movement, optionally changing some of its fields. <p /> Note that, due to null semantics, you
-    /// cannot pass <c>null</c> as an option to <paramref name="source" /> because that will cause it to fallback to the
-    /// <c>source</c> of <paramref name="other" />.
-    /// </summary>
-    public NecoUnitMovement(
-        NecoUnitMovement other,
-        Vector2i? newPos = null,
-        Vector2i? oldPos = null,
-        NecoUnitMovement? source = null)
-    {
-        NewPos = newPos ?? other.NewPos;
-        OldPos = oldPos ?? other.OldPos;
-        Unit = other.Unit;
-        Source = source ?? other.Source;
-    }
+    public required Unit Unit { get; init; }
 
     public NecoUnitId UnitId => Unit.Id;
 
@@ -53,21 +26,40 @@ public record NecoUnitMovement
 
     public Vector2i Difference => NewPos - OldPos;
 
+    /// <returns>A copy of this movement, but with <see cref="NewPos" /> equal to the current value of <see cref="OldPos" />.</returns>
+    public NecoUnitMovement WithoutMovement()
+    {
+        return new() {
+            NewPos = OldPos,
+            OldPos = OldPos,
+            Unit = Unit
+        };
+    }
+
     public AbsoluteDirection AsDirection()
     {
         // TODO Normalize
-        return Enum.GetValues<AbsoluteDirection>().Single(d => d.ToVector2i() == Difference);
+        var difference = Difference;
+        return Enum.GetValues<AbsoluteDirection>().Single(d => d.ToVector2i() == difference);
     }
 
-    internal static IEnumerable<UnitMovementPair> GetMovementPairs(IEnumerable<NecoUnitMovement> movementsList)
+    public bool CanFlattenOthers(IEnumerable<NecoUnitMovement> others)
     {
-        var necoUnitMovements = movementsList.ToList();
-        return necoUnitMovements.SelectMany(
-            m => necoUnitMovements.Where(m2 => m != m2).Select(m2 => new UnitMovementPair(m, m2)));
+        others = others.ToList();
+        return others.Count() switch {
+            0 => true,
+            1 => Unit.CanPickUp(others.Single().Unit),
+            _ => false
+        };
+    }
+
+    public override string ToString()
+    {
+        return $"[{Unit}: {OldPos} -> {NewPos}]";
     }
 }
 
-internal record UnitMovementPair
+internal record UnitMovementPair : IEnumerable<NecoUnitMovement>
 {
     public readonly NecoUnitMovement Movement1, Movement2;
 
@@ -79,8 +71,18 @@ internal record UnitMovementPair
 
     public ReadOnlyCollection<NecoUnitMovement> Collection => new(new[] { Movement1, Movement2 });
 
-    public NecoUnit Unit1 => Movement1.Unit;
-    public NecoUnit Unit2 => Movement2.Unit;
+    public Unit Unit1 => Movement1.Unit;
+    public Unit Unit2 => Movement2.Unit;
+
+    public IEnumerator<NecoUnitMovement> GetEnumerator()
+    {
+        return Collection.GetEnumerator();
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
 
     /// <summary>Finds the unit in the pair with the specified tag.</summary>
     /// <param name="tag">The tag to search for.</param>

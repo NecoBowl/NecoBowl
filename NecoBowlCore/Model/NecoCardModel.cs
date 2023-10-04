@@ -1,6 +1,6 @@
-using neco_soft.NecoBowlCore.Tags;
+using NecoBowl.Core.Tags;
 
-namespace neco_soft.NecoBowlCore.Model;
+namespace NecoBowl.Core.Model;
 
 public abstract class NecoCardModel
 {
@@ -30,9 +30,8 @@ public class NecoCardModelCustom : NecoCardModel
     public override int Cost { get; }
 
     /// <summary>
-    ///     Create a new anonymous CardModel from a UnitModel.
-    ///     This should only be used for testing purposes. Please refer to the <c>Instance</c> property of
-    ///     actual CardModel implementations for game purposes.
+    /// Create a new anonymous CardModel from a UnitModel. This should only be used for testing purposes. Please refer to the
+    /// <c>Instance</c> property of actual CardModel implementations for game purposes.
     /// </summary>
     public static NecoUnitCardModel FromUnitModel(NecoUnitModel model, int cost = 0)
     {

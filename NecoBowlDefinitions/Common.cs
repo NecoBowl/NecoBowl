@@ -1,4 +1,4 @@
-using neco_soft.NecoBowlCore;
+using NecoBowl.Core;
 
 namespace neco_soft.NecoBowlDefinitions;
 

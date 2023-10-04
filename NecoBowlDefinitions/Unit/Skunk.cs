@@ -1,12 +1,10 @@
-using neco_soft.NecoBowlCore.Action;
-using neco_soft.NecoBowlCore.Model;
-using neco_soft.NecoBowlCore.Tags;
+using NecoBowl.Core.Model;
+using NecoBowl.Core.Sport.Play;
+using NecoBowl.Core.Tags;
 
 namespace neco_soft.NecoBowlDefinitions.Unit;
 
-/// <summary>
-///     High-commitment, high-coverage control unit.
-/// </summary>
+/// <summary>High-commitment, high-coverage control unit.</summary>
 public class Skunk : NecoUnitModel
 {
     public static readonly Skunk Instance = new();

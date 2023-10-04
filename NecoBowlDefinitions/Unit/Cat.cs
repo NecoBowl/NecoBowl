@@ -1,6 +1,6 @@
-using neco_soft.NecoBowlCore;
-using neco_soft.NecoBowlCore.Action;
-using neco_soft.NecoBowlCore.Model;
+using NecoBowl.Core;
+using NecoBowl.Core.Model;
+using NecoBowl.Core.Sport.Play;
 
 namespace neco_soft.NecoBowlDefinitions.Unit;
 

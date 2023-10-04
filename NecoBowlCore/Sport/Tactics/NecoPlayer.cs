@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace neco_soft.NecoBowlCore.Tactics;
+namespace NecoBowl.Core.Sport.Tactics;
 
 [SuppressMessage("ReSharper", "EmptyConstructor")]
 public readonly record struct NecoPlayerId()
@@ -15,7 +15,8 @@ public class NecoPlayer
     public readonly NecoPlayerId Id = new();
 
     public NecoPlayer()
-    { }
+    {
+    }
 
     internal NecoPlayer(NecoPlayerId id)
     {
@@ -29,7 +30,8 @@ public record class NecoPlayerPair(NecoPlayer Offense, NecoPlayer Defense)
 {
     public NecoPlayerPair()
         : this(new(), new())
-    { }
+    {
+    }
 
     public NecoPlayer this[NecoPlayerRole role] => FromRole(role);
 

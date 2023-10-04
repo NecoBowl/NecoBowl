@@ -1,6 +1,6 @@
-using neco_soft.NecoBowlCore.Action;
+using NecoBowl.Core.Sport.Play;
 
-namespace neco_soft.NecoBowlCore.Tactics;
+namespace NecoBowl.Core.Sport.Tactics;
 
 internal class NecoMatch
 {

@@ -1,5 +1,5 @@
-using neco_soft.NecoBowlCore.Model;
-using neco_soft.NecoBowlCore.Tags;
+using NecoBowl.Core.Model;
+using NecoBowl.Core.Tags;
 
 namespace neco_soft.NecoBowlDefinitions.Card;
 

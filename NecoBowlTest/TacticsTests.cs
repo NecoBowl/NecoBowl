@@ -1,6 +1,5 @@
-using neco_soft.NecoBowlCore.Input;
-using neco_soft.NecoBowlCore.Tactics;
-
+using NecoBowl.Core.Input;
+using NecoBowl.Core.Sport.Tactics;
 using NLog;
 
 namespace neco_soft.NecoBowlTest.Tactics;
@@ -141,7 +140,7 @@ internal abstract class TacticsTests
         }
     }
 
-#region Helpers
+    #region Helpers
 
-#endregion
+    #endregion
 }

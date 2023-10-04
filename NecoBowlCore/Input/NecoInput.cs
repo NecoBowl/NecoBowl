@@ -1,6 +1,6 @@
-using neco_soft.NecoBowlCore.Tactics;
+using NecoBowl.Core.Sport.Tactics;
 
-namespace neco_soft.NecoBowlCore.Input;
+namespace NecoBowl.Core.Input;
 
 public abstract partial class NecoInput
 {
@@ -52,11 +52,14 @@ public class NecoInputResponse
 public class NecoInputException : NecoBowlException
 {
     public NecoInputException()
-    { }
+    {
+    }
 
     public NecoInputException(string message) : base(message)
-    { }
+    {
+    }
 
     public NecoInputException(string message, Exception inner) : base(message, inner)
-    { }
+    {
+    }
 }

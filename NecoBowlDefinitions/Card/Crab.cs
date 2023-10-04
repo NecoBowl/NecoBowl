@@ -1,4 +1,4 @@
-using neco_soft.NecoBowlCore.Model;
+using NecoBowl.Core.Model;
 
 namespace neco_soft.NecoBowlDefinitions.Card;
 

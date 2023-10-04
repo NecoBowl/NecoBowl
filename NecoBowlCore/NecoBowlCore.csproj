@@ -4,19 +4,24 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>neco_soft.NecoBowlCore</RootNamespace>
+    <RootNamespace>NecoBowl.Core</RootNamespace>
     <LangVersion>11</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Cogs.Collections" Version="1.12.1"/>
     <PackageReference Include="NLog" Version="5.2.0"/>
+    <PackageReference Include="TupleSplatter" Version="1.0.0"/>
   </ItemGroup>
 
   <ItemGroup>
     <None Update="NLog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Sport\"/>
   </ItemGroup>
 
 </Project>

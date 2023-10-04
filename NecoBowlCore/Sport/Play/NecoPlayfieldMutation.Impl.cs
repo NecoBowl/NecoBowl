@@ -1,8 +1,8 @@
-using neco_soft.NecoBowlCore.Tags;
+using NecoBowl.Core.Tags;
 
-namespace neco_soft.NecoBowlCore.Action;
+namespace NecoBowl.Core.Sport.Play;
 
-public abstract partial class NecoPlayfieldMutation
+public abstract partial class Mutation
 {
     public class UnitPushes : BaseMutation
     {
@@ -21,12 +21,17 @@ public abstract partial class NecoPlayfieldMutation
         public override string Description
             => $"{Pusher} pushes {Receiver} to the {Direction}";
 
-        internal override void EarlyMutate(NecoField field, NecoSubstepContext substepContext)
+        internal override void EarlyMutate(Playfield field, NecoSubstepContext substepContext)
         {
             var pusher = field.GetUnit(Pusher);
             var receiver = field.GetUnit(Receiver, out var receiverPos);
             if (field.IsInBounds(receiverPos + Direction.ToVector2i())) {
-                substepContext.AddEntry(receiver.Id, new(receiver, receiverPos + Direction.ToVector2i(), receiverPos));
+                substepContext.AddEntry(
+                    receiver.Id, new() {
+                        NewPos = receiverPos + Direction.ToVector2i(),
+                        OldPos = receiverPos,
+                        Unit = receiver
+                    });
             }
         }
     }
@@ -96,7 +101,7 @@ public abstract partial class NecoPlayfieldMutation
 
         public override string Description => $"{Subject} takes {DamageAmount} damage";
 
-        internal override void Pass1Mutate(NecoField field)
+        internal override void Pass1Mutate(Playfield field)
         {
             var unit = field.GetUnit(Subject);
             unit.DamageTaken += (int)DamageAmount;
@@ -115,7 +120,8 @@ public abstract partial class NecoPlayfieldMutation
     {
         public UnitDies(NecoUnitId subject)
             : base(subject)
-        { }
+        {
+        }
 
         public override string Description => $"{Subject} is destroyed";
 
@@ -130,14 +136,15 @@ public abstract partial class NecoPlayfieldMutation
             return false;
         }
 
-        internal override void Pass1Mutate(NecoField field)
+        internal override void Pass1Mutate(Playfield field)
         {
             var unit = field.GetAndRemoveUnit(Subject);
             field.GraveyardZone.Add(unit);
         }
 
-        internal override void Pass2Mutate(NecoField field)
-        { }
+        internal override void Pass2Mutate(Playfield field)
+        {
+        }
     }
 
     public class UnitGetsMod : BaseMutation
@@ -152,14 +159,15 @@ public abstract partial class NecoPlayfieldMutation
 
         public override string Description => $"{Subject} gets {Mod}";
 
-        internal override void Pass1Mutate(NecoField field)
+        internal override void Pass1Mutate(Playfield field)
         {
             var unit = field.GetUnit(Subject);
             unit.AddMod(Mod);
         }
 
-        internal override void Pass2Mutate(NecoField field)
-        { }
+        internal override void Pass2Mutate(Playfield field)
+        {
+        }
     }
 
     public class UnitPicksUpItem : BaseMutation
@@ -187,12 +195,12 @@ public abstract partial class NecoPlayfieldMutation
             return false;
         }
 
-        internal override void Pass1Mutate(NecoField field)
+        internal override void Pass1Mutate(Playfield field)
         {
             var itemUnit = field.TempUnitZone.Single(u => u.Id == Item);
         }
 
-        internal override void Pass3Mutate(NecoField field)
+        internal override void Pass3Mutate(Playfield field)
         {
             var itemUnit = field.TempUnitZone.Single(u => u.Id == Item);
             var subject = field.GetUnit(Subject);
@@ -205,7 +213,7 @@ public abstract partial class NecoPlayfieldMutation
     {
         public readonly NecoUnitId Item;
         public readonly NecoUnitId Receiver;
-        private NecoUnit? TempUnitItem;
+        private Unit? TempUnitItem;
 
         public UnitHandsOffItem(NecoUnitId subject, NecoUnitId receiver, NecoUnitId item) : base(subject)
         {
@@ -215,7 +223,7 @@ public abstract partial class NecoPlayfieldMutation
 
         public override string Description => $"{Subject} hands off {Item} to {Receiver}";
 
-        internal override void Pass1Mutate(NecoField field)
+        internal override void Pass1Mutate(Playfield field)
         {
             var passer = field.GetUnit(Subject);
             var itemUnit = passer.Inventory.Single(u => u.Id == Item);
@@ -224,11 +232,41 @@ public abstract partial class NecoPlayfieldMutation
             TempUnitItem.Carrier = null;
         }
 
-        internal override void Pass3Mutate(NecoField field)
+        internal override void Pass3Mutate(Playfield field)
         {
             var receiver = field.GetUnit(Receiver);
             receiver.Inventory.Add(TempUnitItem!);
             TempUnitItem!.Carrier = receiver;
+        }
+    }
+
+    public class UnitThrowsItem : BaseMutation
+    {
+        public readonly Vector2i Destination;
+        public readonly NecoUnitId Item;
+
+        public UnitThrowsItem(NecoUnitId subject, NecoUnitId item, Vector2i destination) : base(subject)
+        {
+            Item = item;
+            Destination = destination;
+        }
+
+        public override string Description => $"{Subject} throws {Item} to {Destination}";
+
+        internal override void Pass3Mutate(Playfield field)
+        {
+            // TODO Sanity check and make sure the item is in the Subject's inventory
+            var itemUnit = field.GetUnit(Item);
+            var subject = field.GetUnit(Subject);
+            itemUnit.Carrier = null;
+            subject.Inventory.Remove(itemUnit);
+
+            var unitAtPosition = field.GetAllUnits(true)
+                .Single(t => t.Item1 == Destination && t.Item2.HandoffItem() is null).Item2;
+            unitAtPosition.Inventory.Add(itemUnit);
+            itemUnit.Carrier = unitAtPosition;
+
+            // carrier is adding itself
         }
     }
 }

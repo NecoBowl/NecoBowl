@@ -1,9 +1,10 @@
-using neco_soft.NecoBowlCore.Action;
-using neco_soft.NecoBowlCore.Model;
-using neco_soft.NecoBowlCore.Tactics;
-using neco_soft.NecoBowlCore.Tags;
+using NecoBowl.Core.Machine;
+using NecoBowl.Core.Model;
+using NecoBowl.Core.Sport.Play;
+using NecoBowl.Core.Sport.Tactics;
+using NecoBowl.Core.Tags;
 
-namespace neco_soft.NecoBowlCore.Input;
+namespace NecoBowl.Core.Input;
 
 public class NecoFieldInformation
 {
@@ -35,7 +36,7 @@ public class NecoFieldInformation
         return Field.GetUnitPosition(uid, includeInventories);
     }
 
-    public IReadOnlyList<NecoUnit> GetGraveyard()
+    public IReadOnlyList<Unit> GetGraveyard()
     {
         return Field.GetGraveyard();
     }
@@ -69,9 +70,9 @@ public class NecoSpaceInformation
 
 public class NecoUnitInformation
 {
-    private readonly NecoUnit Unit;
+    private readonly Unit Unit;
 
-    internal NecoUnitInformation(NecoUnit unit)
+    internal NecoUnitInformation(Unit unit)
     {
         Unit = unit;
     }
@@ -113,30 +114,30 @@ public class NecoUnitActionInformation
 
 public class NecoPlayInformation
 {
-    private readonly NecoPlay Play;
+    private readonly PlayMachine PlayMachine;
 
-    internal NecoPlayInformation(NecoPlay play)
+    internal NecoPlayInformation(PlayMachine playMachine)
     {
-        Play = play;
+        PlayMachine = playMachine;
     }
 
-    public uint StepCount => Play.StepCount;
-    public bool IsFinished => Play.IsFinished;
-    public NecoFieldInformation Field => new(Play.GetField());
+    public uint StepCount => PlayMachine.StepCount;
+    public bool IsFinished => PlayMachine.IsFinished;
+    public NecoFieldInformation Field => new(PlayMachine.GetField());
 
-    public IEnumerable<NecoPlayfieldMutation> Step()
+    public PlayStepResult Step()
     {
-        return Play.Step();
+        return PlayMachine.Step();
     }
 
     public void Step(uint count)
     {
-        Play.Step(count);
+        PlayMachine.Step(count);
     }
 
     public void StepToFinish()
     {
-        Play.StepToFinish();
+        PlayMachine.StepToFinish();
     }
 }
 

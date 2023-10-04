@@ -1,8 +1,6 @@
 using System.Reflection;
-
-using neco_soft.NecoBowlCore;
-using neco_soft.NecoBowlCore.Model;
-
+using NecoBowl.Core;
+using NecoBowl.Core.Model;
 using NLog;
 
 namespace neco_soft.NecoBowlDefinitions;

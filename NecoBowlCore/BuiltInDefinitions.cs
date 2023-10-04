@@ -1,8 +1,8 @@
-using neco_soft.NecoBowlCore.Action;
-using neco_soft.NecoBowlCore.Model;
-using neco_soft.NecoBowlCore.Tags;
+using NecoBowl.Core.Model;
+using NecoBowl.Core.Sport.Play;
+using NecoBowl.Core.Tags;
 
-namespace neco_soft.NecoBowlCore;
+namespace NecoBowl.Core;
 
 public class BuiltInDefinitions
 {
@@ -18,14 +18,9 @@ public class BuiltInDefinitions
         public override string BehaviorDescription => "Does nothing.";
 
         public override IReadOnlyCollection<NecoUnitTag> Tags
-            => new[] {
-                NecoUnitTag.TheBall,
-                NecoUnitTag.Item
-            };
+            => new[] { NecoUnitTag.TheBall, NecoUnitTag.Item };
 
         public override IEnumerable<NecoUnitAction> Actions
-            => new[] {
-                new NecoUnitAction.DoNothing()
-            };
+            => new[] { new NecoUnitAction.DoNothing() };
     }
 }

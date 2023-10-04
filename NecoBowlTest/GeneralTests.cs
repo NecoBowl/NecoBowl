@@ -1,3 +1,5 @@
+using NecoBowl.Core;
+
 namespace neco_soft.NecoBowlTest;
 
 [TestFixture]

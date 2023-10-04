@@ -1,10 +1,9 @@
 using System.Collections;
+using NecoBowl.Core.Model;
+using NecoBowl.Core.Sport.Play;
+using NecoBowl.Core.Tags;
 
-using neco_soft.NecoBowlCore.Action;
-using neco_soft.NecoBowlCore.Model;
-using neco_soft.NecoBowlCore.Tags;
-
-namespace neco_soft.NecoBowlCore.Tactics;
+namespace NecoBowl.Core.Sport.Tactics;
 
 public class NecoCard
 {
@@ -41,14 +40,15 @@ public class NecoCard
 public class NecoUnitCard : NecoCard
 {
     public NecoUnitCard(NecoUnitCardModel cardModel) : base(cardModel)
-    { }
+    {
+    }
 
     public NecoUnitModel UnitModel
         => ((NecoUnitCardModel)CardModel).Model;
 
-    public NecoUnit ToUnit(NecoPlayerId playerId)
+    public Unit ToUnit(NecoPlayerId playerId)
     {
-        var unit = new NecoUnit(UnitModel, playerId);
+        var unit = new Unit(UnitModel, playerId);
         foreach (var planOption in CardModel.OptionPermissions) {
             planOption.ApplyToUnit(unit, Options[planOption.Identifier]);
         }

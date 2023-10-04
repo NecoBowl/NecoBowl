@@ -1,9 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("NecoBowlTest")]
 
 
-namespace neco_soft.NecoBowlCore;
+namespace NecoBowl.Core;
 
 public enum AbsoluteDirection : uint
 {
@@ -219,9 +220,7 @@ public static class RelativeDirectionExt
 
 public static class Ext
 {
-    /// <summary>
-    ///     Gets an attribute on an enum field value
-    /// </summary>
+    /// <summary>Gets an attribute on an enum field value</summary>
     /// <typeparam name="T">The type of the attribute you want to retrieve</typeparam>
     /// <param name="enumVal">The enum value</param>
     /// <returns>The attribute of type T that exists on the enum value</returns>
@@ -233,24 +232,39 @@ public static class Ext
         return attributes.Length > 0 ? (T)attributes[0] : null;
     }
 
-    public static IEnumerable<(TKey, TValue)> Entries<TKey, TValue>(this Dictionary<TKey, TValue> source)
-        where TKey : notnull
+    public static bool TrySingle<T>(this IEnumerable<T> list, Func<T, bool> predicate, [NotNullWhen(true)] out T value)
     {
-        return source.Select(kv => (kv.Key, kv.Value));
+#pragma warning disable CS8601
+        value = list.SingleOrDefault(predicate);
+#pragma warning restore CS8601
+        return value is not null;
+    }
+
+    public static IEnumerable<(T, T)> GetPermutations<T>(this IEnumerable<T> items)
+    {
+        return items.GetPermutations(tup => (tup.Item1, tup.Item2));
+    }
+
+    public static IEnumerable<TOut> GetPermutations<T, TOut>(this IEnumerable<T> items, Func<(T, T), TOut> selector)
+    {
+        items = items.ToList();
+        return items.SelectMany(m1 => items.Where(m2 => !m1?.Equals(m2) ?? false).Select(m2 => (m1, m2)))
+            .Select(selector);
     }
 }
 
-/// <summary>
-///     Generic error type for any NecoBowl-caused exception.
-/// </summary>
+/// <summary>Generic error type for any NecoBowl-caused exception.</summary>
 public class NecoBowlException : ApplicationException
 {
     public NecoBowlException()
-    { }
+    {
+    }
 
     public NecoBowlException(string message) : base(message)
-    { }
+    {
+    }
 
     public NecoBowlException(string message, Exception inner) : base(message, inner)
-    { }
+    {
+    }
 }

@@ -1,13 +1,11 @@
-using neco_soft.NecoBowlCore;
-using neco_soft.NecoBowlCore.Action;
-using neco_soft.NecoBowlCore.Model;
-using neco_soft.NecoBowlCore.Tags;
+using NecoBowl.Core;
+using NecoBowl.Core.Model;
+using NecoBowl.Core.Sport.Play;
+using NecoBowl.Core.Tags;
 
 namespace neco_soft.NecoBowlDefinitions.Unit;
 
-/// <summary>
-///     General-purpose defensive threat.
-/// </summary>
+/// <summary>General-purpose defensive threat.</summary>
 public class Goose : NecoUnitModel
 {
     public static readonly Goose Instance = new();
@@ -25,5 +23,6 @@ public class Goose : NecoUnitModel
     };
 
     public override string BehaviorDescription
-        => $"If carrying the ball, moves [b]Direction[/b]. Otherwise, moves {Arrow7}, {Arrow0}, or {Arrow1}, whichever brings it closer to the ball.";
+        =>
+            $"If carrying the ball, moves [b]Direction[/b]. Otherwise, moves {Arrow7}, {Arrow0}, or {Arrow1}, whichever brings it closer to the ball.";
 }
