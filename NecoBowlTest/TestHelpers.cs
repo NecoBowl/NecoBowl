@@ -1,5 +1,6 @@
 using NecoBowl.Core;
 using NecoBowl.Core.Input;
+using NecoBowl.Core.Machine;
 using NecoBowl.Core.Model;
 using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Sport.Tactics;

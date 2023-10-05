@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 
 namespace NecoBowl.Core.Machine.Reports;
 
-public class Play : BaseReport
+public record Play : BaseReport
 {
     private readonly ReadOnlyCollection<Step> Steps;
 

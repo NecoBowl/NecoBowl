@@ -7,7 +7,7 @@ namespace NecoBowl.Core.Machine;
 /// Note that this field is not immutable; changes made to the field from which the read-only field is derived will still
 /// appear when reading from the read-only field.
 /// </remarks>
-public sealed class ReadOnlyPlayfield
+internal sealed class ReadOnlyPlayfield
 {
     private readonly Playfield Field;
 

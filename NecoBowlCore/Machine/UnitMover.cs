@@ -281,7 +281,7 @@ internal class PlayfieldCollisionResolver
         else if (pair.Unit1.CanPickUp(pair.Unit2) && !pair.Unit2.CanPickUp(pair.Unit1)) {
             // ^ Don't use pair.PickupCanOccur because the pair order matters
             // Unit 1 can pick unit 2 up
-            MutationReceiver.BufferMutation(new UnitPicksUpItem(pair.Unit1.Id, pair.Unit2.Id, pair.Movement1));
+            MutationReceiver.BufferMutation(new UnitPicksUpItem(pair.Unit1.Id, pair.Unit2.Id));
             winner = pair.Movement1;
         }
         else {
@@ -679,7 +679,7 @@ internal class TransientPlayfield : ITransientSpaceContentsGetter
     }
 }
 
-public class SpaceImmigrantRemoval
+internal class SpaceImmigrantRemoval
 {
     public readonly TransientUnit Movement;
     public readonly SpaceImmigrantRemovalReason Reason;
@@ -691,7 +691,7 @@ public class SpaceImmigrantRemoval
     }
 }
 
-public abstract class SpaceImmigrantRemovalReason
+internal abstract class SpaceImmigrantRemovalReason
 {
     public sealed class Combat : SpaceImmigrantRemovalReason
     {

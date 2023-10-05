@@ -8,7 +8,7 @@ public abstract class Behavior
 
     public bool HasNext => Next is not null;
 
-    public BehaviorOutcome Result(NecoUnitId uid, ReadOnlyPlayfield field)
+    internal BehaviorOutcome Result(NecoUnitId uid, ReadOnlyPlayfield field)
     {
         try {
             return CallResult(uid, field);
@@ -18,7 +18,7 @@ public abstract class Behavior
         }
     }
 
-    protected abstract BehaviorOutcome CallResult(NecoUnitId uid, ReadOnlyPlayfield field);
+    internal abstract BehaviorOutcome CallResult(NecoUnitId uid, ReadOnlyPlayfield field);
 
     public Behavior Chain(Behavior other)
     {
@@ -97,4 +97,9 @@ public class BehaviorOutcome
     {
         public Nothing() : base("nothing", Kind.Success) { }
     }
+}
+
+public class BehaviorExecutionException : Exception
+{
+    public BehaviorExecutionException(string message) : base(message) { }
 }

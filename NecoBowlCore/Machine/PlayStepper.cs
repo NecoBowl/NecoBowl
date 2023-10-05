@@ -1,3 +1,4 @@
+using NecoBowl.Core.Machine.Reports;
 using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Tags;
 using NLog;
@@ -62,9 +63,6 @@ internal class PlayStepper : IMutationReceiver
             // This will consume all mutations, and enqueue mutations and movements created as a result.
             outputMutations.AddRange(PendingMutations);
             ProcessMutations();
-
-            // TempZone needs to be cleared when moving.
-            Field.TempUnitZone.Clear();
 
             // Perform movement.
             var mover = new UnitMover(this, Field, PendingMovements.Values);

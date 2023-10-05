@@ -1,3 +1,4 @@
+using System.Globalization;
 using NecoBowl.Core.Machine;
 using NecoBowl.Core.Model;
 using NecoBowl.Core.Sport.Play;
@@ -36,7 +37,7 @@ public class NecoFieldInformation
         return Field.GetUnitPosition(uid, includeInventories);
     }
 
-    public IReadOnlyList<Unit> GetGraveyard()
+    public IReadOnlyList<> GetGraveyard()
     {
         return Field.GetGraveyard();
     }

@@ -1,5 +1,6 @@
 namespace NecoBowl.Core.Machine.Reports;
 
-public record BaseReport
+public class Space
 {
+    
 }

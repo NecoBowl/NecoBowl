@@ -6,7 +6,7 @@ namespace NecoBowl.Core.Sport.Play;
 /// <summary>Tries to throw the ball to the farthest-away friendly unit.</summary>
 public class AutoThrowBall : Behavior
 {
-    protected override BehaviorOutcome CallResult(NecoUnitId uid, ReadOnlyPlayfield field)
+    internal override BehaviorOutcome CallResult(NecoUnitId uid, ReadOnlyPlayfield field)
     {
         var subjectUnit = field.GetUnit(uid, out var unitPos);
 

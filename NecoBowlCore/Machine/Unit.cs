@@ -1,11 +1,12 @@
 using System.Text.RegularExpressions;
 using NecoBowl.Core.Machine;
 using NecoBowl.Core.Model;
+using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Sport.Tactics;
 using NecoBowl.Core.Tags;
 using NLog;
 
-namespace NecoBowl.Core.Sport.Play;
+namespace NecoBowl.Core.Machine;
 
 public record NecoUnitId
 {
@@ -28,7 +29,7 @@ public record NecoUnitId
 }
 
 /// <summary>A unit as exists during a play.</summary>
-public sealed class Unit : IEquatable<Unit>
+internal sealed class Unit : IEquatable<Unit>
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
     public readonly Stack<Behavior> ActionStack;

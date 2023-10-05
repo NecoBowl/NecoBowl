@@ -1,19 +1,20 @@
 using System.Collections;
 using System.Collections.ObjectModel;
+using System.ComponentModel.Design;
 using NecoBowl.Core.Sport.Play;
 
 namespace NecoBowl.Core.Machine.Reports;
 
-public class Step : BaseReport, IEnumerable<SubstepContents>
+public record Step : BaseReport, IEnumerable<Reports.Substep>
 {
-    private readonly ReadOnlyCollection<SubstepContents> Substeps;
+    private readonly ReadOnlyCollection<Substep> Substeps;
 
     internal Step(IEnumerable<SubstepContents> substeps)
     {
-        Substeps = substeps.ToList().AsReadOnly();
+        Substeps = substeps.Select(s => new Reports.Substep(s)).ToList().AsReadOnly();
     }
 
-    public IEnumerator<SubstepContents> GetEnumerator()
+    public IEnumerator<Reports.Substep> GetEnumerator()
     {
         return Substeps.GetEnumerator();
     }
