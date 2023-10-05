@@ -12,7 +12,7 @@ public class ApplyMod : Behavior
         Mod = mod;
     }
 
-    protected override BehaviorOutcome CallResult(NecoUnitId uid, ReadOnlyPlayfield field)
+    internal override BehaviorOutcome CallResult(NecoUnitId uid, ReadOnlyPlayfield field)
     {
         return BehaviorOutcome.Success(new UnitGetsMod(uid, Mod));
     }

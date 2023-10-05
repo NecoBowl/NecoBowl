@@ -1,25 +1,25 @@
 namespace NecoBowl.Core.Machine.Reports;
 
-public class Playfield : BaseReport
+public record Playfield : BaseReport
 {
     private readonly ReadOnlyPlayfield Field;
 
-    internal NecoFieldInformation(ReadOnlyPlayfield field)
+    internal Playfield(ReadOnlyPlayfield field)
     {
         Field = field;
     }
 
-    public NecoSpaceInformation this[int x, int y] => this[(x, y)];
-    public NecoSpaceInformation this[(int, int) coords] => Contents(coords);
+    public Space this[int x, int y] => this[(x, y)];
+    public Space this[(int, int) coords] => Contents(coords);
 
     public NecoFieldParameters FieldParameters => Field.FieldParameters;
 
-    public NecoUnitInformation GetUnit(NecoUnitId uid)
+    public Unit GetUnit(NecoUnitId uid)
     {
         return new(Field.GetUnit(uid));
     }
 
-    public NecoUnitInformation? LookupUnit(string shortUid)
+    public Unit? LookupUnit(string shortUid)
     {
         var unit = Field.LookupUnit(shortUid);
         return unit is null ? null : new(unit);
@@ -30,14 +30,15 @@ public class Playfield : BaseReport
         return Field.GetUnitPosition(uid, includeInventories);
     }
 
-    public IReadOnlyList<Unit> GetGraveyard()
+    public IReadOnlyCollection<Unit> GetGraveyard()
     {
-        return Field.GetGraveyard();
+        return Field.GetGraveyard().Select(m => new Unit(m)).ToList().AsReadOnly();
     }
 
-    public NecoSpaceInformation Contents((int, int) coords)
+    public Space Contents(Vector2i coords)
     {
-        return new(Field[coords], coords, Field.FieldParameters.GetPlayerAffiliation(coords));
+        var unit = Field[coords.X, coords.Y].Unit;
+        return new(unit is null ? null : new Unit(unit));
     }
 
     public (int x, int y) GetBounds()

@@ -1,20 +1,19 @@
 using System.Collections;
 using System.Collections.ObjectModel;
-using System.ComponentModel.Design;
 using NecoBowl.Core.Sport.Play;
 
 namespace NecoBowl.Core.Machine.Reports;
 
-public record Step : BaseReport, IEnumerable<Reports.Substep>
+public record Step : BaseReport, IEnumerable<Substep>
 {
     private readonly ReadOnlyCollection<Substep> Substeps;
 
     internal Step(IEnumerable<SubstepContents> substeps)
     {
-        Substeps = substeps.Select(s => new Reports.Substep(s)).ToList().AsReadOnly();
+        Substeps = substeps.Select(s => new Substep(s.Mutations, s.Movements)).ToList().AsReadOnly();
     }
 
-    public IEnumerator<Reports.Substep> GetEnumerator()
+    public IEnumerator<Substep> GetEnumerator()
     {
         return Substeps.GetEnumerator();
     }
@@ -24,13 +23,13 @@ public record Step : BaseReport, IEnumerable<Reports.Substep>
         return GetEnumerator();
     }
 
-    internal IEnumerable<Mutation> GetAllMutations()
+    public IEnumerable<Mutation> GetAllMutations()
     {
         return Substeps.SelectMany(s => s.Mutations, (_, mut) => mut);
     }
 
-    internal IEnumerable<TransientUnit> GetAllMovements()
+    public IEnumerable<Movement> GetAllMovements()
     {
-        return Substeps.SelectMany(s => s.Movements, (_, m) => m);
+        return Substeps.SelectMany(s => s.Movements, (_, kv) => kv.Value);
     }
 }

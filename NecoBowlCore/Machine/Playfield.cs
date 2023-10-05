@@ -1,11 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Sport.Tactics;
 
 namespace NecoBowl.Core.Machine;
 
-public readonly record struct NecoSpaceContents(Unit? Unit, bool Fooabr = false);
+internal readonly record struct NecoSpaceContents(Unit? Unit, bool Fooabr = false);
 
 /// <summary>A two-dimensional grid of <see cref="NecoSpaceContents" />.</summary>
 /// <remarks>
@@ -77,7 +76,7 @@ internal class Playfield
 
     public IEnumerable<(Vector2i, Unit)> GetAllUnits(bool includeInventory = false)
     {
-        var spaceUnits = SpacePositions.Where(tuple => tuple.Item2.Unit is not null)
+        var spaceUnits = SpacePositions.Where(tuple => tuple.Item2.Unit is { })
             .Select(tuple => (tuple.Item1, tuple.Item2.Unit!)).ToList();
         var tempSpaceUnits = spaceUnits.ToList();
         if (includeInventory) {
@@ -102,10 +101,10 @@ internal class Playfield
         bool includeInventories = false)
     {
         foreach (var (p, u) in SpacePositions) {
-            if (u.Unit is not null) {
+            if (u.Unit is { }) {
                 if (includeInventories) {
                     var match = u.Unit.GetInventoryTree().SingleOrDefault(u => u.Id == uid);
-                    if (match is not null) {
+                    if (match is { }) {
                         unit = u.Unit;
                         pos = p;
                         return true;
@@ -172,7 +171,7 @@ internal class Playfield
     public bool TryGetUnit(Vector2i p, out Unit? unit)
     {
         var spaceUnit = this[p].Unit;
-        if (spaceUnit is not null) {
+        if (spaceUnit is { }) {
             unit = spaceUnit;
             return true;
         }
@@ -230,7 +229,7 @@ internal class Playfield
             sb.Append("|");
             for (var x = 0; x < GetBounds().x; x++) {
                 var space = this[x, y];
-                if (space.Unit is not null) {
+                if (space.Unit is { }) {
                     unitIcons[space.Unit] = (char)('A' + unitIcons.Count);
                 }
 

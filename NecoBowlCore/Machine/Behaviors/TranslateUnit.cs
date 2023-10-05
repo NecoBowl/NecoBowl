@@ -12,7 +12,7 @@ public class TranslateUnit : Behavior
         Direction = direction;
     }
 
-    protected override BehaviorOutcome CallResult(NecoUnitId uid, ReadOnlyPlayfield field)
+    internal override BehaviorOutcome CallResult(NecoUnitId uid, ReadOnlyPlayfield field)
     {
         var pos = field.GetUnitPosition(uid);
         var unit = field.GetUnit(pos);
@@ -25,7 +25,7 @@ public class TranslateUnit : Behavior
         var transient = new TransientUnit {
             NewPos = newPos,
             OldPos = pos,
-            Unit = unit
+            Unit = unit,
         };
 
         // TODO Collision check here? Or leave it to caller?
@@ -34,10 +34,5 @@ public class TranslateUnit : Behavior
         }
 
         return BehaviorOutcome.Success(transient);
-    }
-
-    public override Mutation CreateMutation()
-    {
-        return
     }
 }

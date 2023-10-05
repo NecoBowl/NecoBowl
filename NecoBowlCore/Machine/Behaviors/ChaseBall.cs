@@ -12,14 +12,14 @@ public class ChaseBall : Behavior
     public ChaseBall(RelativeDirection[] allowedDirections, RelativeDirection? fallback = null)
     {
         if (allowedDirections.Length == 0) {
-            throw new NecoUnitActionException("no directions provided");
+            throw new BehaviorExecutionException("no directions provided");
         }
 
         FallbackDirection = fallback ?? allowedDirections[0];
         AllowedDirections = allowedDirections;
     }
 
-    protected override BehaviorOutcome CallResult(NecoUnitId uid, ReadOnlyPlayfield field)
+    internal override BehaviorOutcome CallResult(NecoUnitId uid, ReadOnlyPlayfield field)
     {
         var unit = field.GetUnit(uid, out var pos);
         var (ballPos, ball)

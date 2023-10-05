@@ -63,7 +63,7 @@ internal class PlayMachine
                 Logger.Debug(mut);
             }
 
-            foreach (var movement in substep.Movements.Where(m => m.IsChange)) {
+            foreach (var movement in substep.Movements.Where(kv => kv.Value.IsChange)) {
                 Logger.Debug(movement);
             }
         }
@@ -101,7 +101,7 @@ internal class PlayMachine
 
         Field[Field.FieldParameters.BallSpawnPoint] = Field[Field.FieldParameters.BallSpawnPoint]
             with {
-                Unit = new(BuiltInDefinitions.Ball.Instance, default)
+                Unit = new(BuiltInDefinitions.Ball.Instance, default),
             };
     }
 

@@ -5,7 +5,7 @@ namespace NecoBowl.Core.Sport.Play;
 
 public class TranslateUnitCrabwalk : Behavior
 {
-    protected override BehaviorOutcome CallResult(NecoUnitId uid, ReadOnlyPlayfield field)
+    internal override BehaviorOutcome CallResult(NecoUnitId uid, ReadOnlyPlayfield field)
     {
         var pos = field.GetUnitPosition(uid);
         var unit = field.GetUnit(pos);
@@ -13,7 +13,7 @@ public class TranslateUnitCrabwalk : Behavior
         var (ballPos, ball)
             = field.GetAllUnits(true).SingleOrDefault(tup => tup.Item2.Tags.Contains(NecoUnitTag.TheBall));
         if (ball is null) {
-            throw new NecoUnitActionException("no ball found on field");
+            throw new BehaviorExecutionException("no ball found on field");
         }
 
         bool leftOn = false, rightOn = false;
@@ -38,6 +38,6 @@ public class TranslateUnitCrabwalk : Behavior
             return new TranslateUnit(RelativeDirection.Left).CallResult(uid, field);
         }
 
-        return BehaviorOutcome.Success(new NecoUnitActionOutcome.NothingHappened(uid));
+        return new BehaviorOutcome.Nothing();
     }
 }

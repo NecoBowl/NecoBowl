@@ -9,4 +9,6 @@ public record Movement : BaseReport
         OldPos = oldPos;
         NewPos = newPos;
     }
+
+    public bool IsChange => OldPos != NewPos;
 }
