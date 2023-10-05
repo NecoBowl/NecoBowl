@@ -14,12 +14,12 @@ public class Horse : NecoUnitModel
     public override int Health => 7;
     public override int Power => 4;
 
-    public override IEnumerable<NecoUnitAction> Actions => new[] {
-        new NecoUnitAction.TranslateUnit(RelativeDirection.Up),
-        new NecoUnitAction.TranslateUnit(RelativeDirection.Up)
-            .Chain(new NecoUnitAction.ApplyMod(new NecoUnitMod.Rotate(2))),
-        new NecoUnitAction.TranslateUnit(RelativeDirection.Up)
-            .Chain(new NecoUnitAction.ApplyMod(new NecoUnitMod.Rotate(-2)))
+    public override IEnumerable<Behavior> Actions => new[] {
+        new Behavior.TranslateUnit(RelativeDirection.Up),
+        new Behavior.TranslateUnit(RelativeDirection.Up)
+            .Chain(new ApplyMod(new NecoUnitMod.Rotate(2))),
+        new Behavior.TranslateUnit(RelativeDirection.Up)
+            .Chain(new ApplyMod(new NecoUnitMod.Rotate(-2)))
     };
 
     public override string BehaviorDescription

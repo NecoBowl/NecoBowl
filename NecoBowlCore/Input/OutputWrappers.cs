@@ -8,9 +8,9 @@ namespace NecoBowl.Core.Input;
 
 public class NecoFieldInformation
 {
-    private readonly ReadOnlyNecoField Field;
+    private readonly ReadOnlyPlayfield Field;
 
-    internal NecoFieldInformation(ReadOnlyNecoField field)
+    internal NecoFieldInformation(ReadOnlyPlayfield field)
     {
         Field = field;
     }
@@ -102,9 +102,9 @@ public class NecoUnitInformation
 
 public class NecoUnitActionInformation
 {
-    private readonly NecoUnitAction Action;
+    private readonly Behavior Action;
 
-    internal NecoUnitActionInformation(NecoUnitAction action)
+    internal NecoUnitActionInformation(Behavior action)
     {
         Action = action;
     }

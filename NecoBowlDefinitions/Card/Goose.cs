@@ -16,7 +16,7 @@ public class Goose : NecoUnitCardModel
         = new[] {
             new NecoCardOptionPermission.DirectionOptionPermission(
                 RelativeDirection.Up,
-                NecoUnitAction.ChaseBall.Option_FallbackDirecttion,
+                ChaseBall.Option_FallbackDirecttion,
                 new[] { RelativeDirection.Up, RelativeDirection.UpLeft, RelativeDirection.UpRight })
         };
 }

@@ -17,9 +17,8 @@ public class Goose : NecoUnitModel
 
     public override IEnumerable<NecoUnitTag> Tags => new[] { NecoUnitTag.Carrier };
 
-    public override IEnumerable<NecoUnitAction> Actions => new[] {
-        new NecoUnitAction.ChaseBall(
-            new[] { RelativeDirection.Up, RelativeDirection.UpLeft, RelativeDirection.UpRight })
+    public override IEnumerable<Behavior> Actions => new[] {
+        new ChaseBall(new[] { RelativeDirection.Up, RelativeDirection.UpLeft, RelativeDirection.UpRight })
     };
 
     public override string BehaviorDescription

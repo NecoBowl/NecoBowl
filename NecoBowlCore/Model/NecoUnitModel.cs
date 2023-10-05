@@ -1,3 +1,4 @@
+using NecoBowl.Core.Machine;
 using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Tags;
 
@@ -9,7 +10,7 @@ public abstract class NecoUnitModel
     public abstract string Name { get; }
     public abstract int Health { get; }
     public abstract int Power { get; }
-    public abstract IEnumerable<NecoUnitAction> Actions { get; }
+    public abstract IEnumerable<Behavior> Actions { get; }
     public abstract string BehaviorDescription { get; }
 
     public virtual IEnumerable<NecoUnitTag> Tags { get; } = Array.Empty<NecoUnitTag>();
@@ -32,9 +33,9 @@ public class ReactionDict : List<ReactionDict.Entry>
     }
 }
 
-public delegate IEnumerable<Mutation.BaseMutation> MutationReaction<in T>(
+public delegate IEnumerable<Mutation> MutationReaction<in T>(
     Unit unit,
-    ReadOnlyNecoField field,
+    ReadOnlyPlayfield field,
     T mutation);
 
 public class UnitReactionContext

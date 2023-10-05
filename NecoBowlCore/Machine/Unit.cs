@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using NecoBowl.Core.Machine;
 using NecoBowl.Core.Model;
 using NecoBowl.Core.Sport.Tactics;
 using NecoBowl.Core.Tags;
@@ -30,7 +31,7 @@ public record NecoUnitId
 public sealed class Unit : IEquatable<Unit>
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-    public readonly Stack<NecoUnitAction> ActionStack;
+    public readonly Stack<Behavior> ActionStack;
     public readonly string Discriminator;
 
     public readonly NecoUnitId Id;
@@ -89,7 +90,7 @@ public sealed class Unit : IEquatable<Unit>
         return other.OwnerId != default && OwnerId != other.OwnerId && !Tags.Contains(NecoUnitTag.Defender);
     }
 
-    internal NecoUnitAction PopAction()
+    internal Behavior PopAction()
     {
         if (!ActionStack.Any()) {
             throw new NecoBowlFieldException($"unit {this} has no actions");

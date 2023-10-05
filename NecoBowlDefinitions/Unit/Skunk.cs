@@ -16,7 +16,7 @@ public class Skunk : NecoUnitModel
 
     public override IEnumerable<NecoUnitTag> Tags => new[] { NecoUnitTag.UNIMPL_Smelly };
 
-    public override IEnumerable<NecoUnitAction> Actions => new[] { new NecoUnitAction.DoNothing() };
+    public override IEnumerable<Behavior> Actions => new[] { new DoNothing() };
 
     public override string BehaviorDescription
         => "Smelly with an imposing presence.";

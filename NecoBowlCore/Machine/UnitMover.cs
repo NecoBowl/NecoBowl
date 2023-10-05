@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.ObjectModel;
+using NecoBowl.Core.Machine;
 using NecoBowl.Core.Tags;
 using NLog;
 
@@ -9,13 +10,13 @@ internal class UnitMover
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-    private readonly Dictionary<Unit, NecoUnitMovement> MovementsList;
+    private readonly Dictionary<Unit, TransientUnit> MovementsList;
     private readonly IMutationReceiver MutationReceiver;
 
     private readonly Playfield Playfield;
 
     public UnitMover(
-        IMutationReceiver receiver, Playfield playfield, IEnumerable<NecoUnitMovement> movements)
+        IMutationReceiver receiver, Playfield playfield, IEnumerable<TransientUnit> movements)
     {
         MutationReceiver = receiver;
         Playfield = playfield;
@@ -28,7 +29,7 @@ internal class UnitMover
     }
 
     /// <summary>Calculate collisions and apply movements for each unit on the field.</summary>
-    public void MoveUnits(out IReadOnlyCollection<NecoUnitMovement> resultantMovements)
+    public void MoveUnits(out IReadOnlyCollection<TransientUnit> resultantMovements)
     {
         AddEntriesForStationaryUnits();
         FixOutOfBoundsMovements();
@@ -59,8 +60,7 @@ internal class UnitMover
     {
         foreach (var outOfBounds in MovementsList.Values.Where(m => !Playfield.IsInBounds(m.NewPos))) {
             MovementsList[outOfBounds.Unit] = outOfBounds.WithoutMovement();
-            MutationReceiver.BufferMutation(
-                new Mutation.UnitBumps(outOfBounds.UnitId, outOfBounds.AsDirection()));
+            MutationReceiver.BufferMutation(new UnitBumps(outOfBounds.UnitId, outOfBounds.AsDirection()));
         }
     }
 
@@ -82,8 +82,7 @@ internal class UnitMover
             // Create combat / bump events 
             switch (change.Reason) {
                 case SpaceImmigrantRemovalReason.Superseded superseded: {
-                    MutationReceiver.BufferMutation(
-                        new Mutation.UnitBumps(unit.Id, change.Movement.AsDirection()));
+                    MutationReceiver.BufferMutation(new UnitBumps(unit.Id, change.Movement.AsDirection()));
                     break;
                 }
 
@@ -94,8 +93,8 @@ internal class UnitMover
                 case SpaceImmigrantRemovalReason.Combat combat: {
                     foreach (var opponent in combat.Other) {
                         MutationReceiver.BufferMutation(
-                            new Mutation.UnitAttacks(
-                                unit.Id, opponent.Id, unit.Power, Mutation.UnitAttacks.Kind.SpaceConflict,
+                            new UnitAttacks(
+                                unit.Id, opponent.Id, unit.Power, UnitAttacks.Kind.SpaceConflict,
                                 change.Movement.NewPos));
                     }
 
@@ -246,17 +245,17 @@ internal class PlayfieldCollisionResolver
         Bounce = 0
     }
 
-    private readonly ReadOnlyNecoField Field;
+    private readonly ReadOnlyPlayfield Field;
     private readonly IMutationReceiver MutationReceiver;
 
-    public PlayfieldCollisionResolver(ReadOnlyNecoField field, IMutationReceiver mutationReceiver)
+    public PlayfieldCollisionResolver(ReadOnlyPlayfield field, IMutationReceiver mutationReceiver)
     {
         Field = field;
         MutationReceiver = mutationReceiver;
     }
 
     public void ResolveSpaceSwap(
-        UnitMovementPair pair, out NecoUnitMovement? winner)
+        UnitMovementPair pair, out TransientUnit? winner)
     {
         if (!pair.IsSpaceSwap()) {
             throw new UnitMover.PlayfieldMovementException();
@@ -266,16 +265,15 @@ internal class PlayfieldCollisionResolver
             // Opposing units
             if (pair.Movement1.Unit.CanAttackByMovement) {
                 MutationReceiver.BufferMutation(
-                    new Mutation.UnitAttacks(
+                    new UnitAttacks(
                         pair.Unit1.Id,
                         pair.Unit2.Id,
                         pair.Unit1.Power,
-                        Mutation.UnitAttacks.Kind.SpaceSwap,
+                        UnitAttacks.Kind.SpaceSwap,
                         null));
             }
             else {
-                MutationReceiver.BufferMutation(
-                    new Mutation.UnitBumps(pair.Unit1.Id, pair.Movement1.AsDirection()));
+                MutationReceiver.BufferMutation(new UnitBumps(pair.Unit1.Id, pair.Movement1.AsDirection()));
             }
 
             winner = null;
@@ -283,8 +281,7 @@ internal class PlayfieldCollisionResolver
         else if (pair.Unit1.CanPickUp(pair.Unit2) && !pair.Unit2.CanPickUp(pair.Unit1)) {
             // ^ Don't use pair.PickupCanOccur because the pair order matters
             // Unit 1 can pick unit 2 up
-            MutationReceiver.BufferMutation(
-                new Mutation.UnitPicksUpItem(pair.Unit1.Id, pair.Unit2.Id, pair.Movement1));
+            MutationReceiver.BufferMutation(new UnitPicksUpItem(pair.Unit1.Id, pair.Unit2.Id, pair.Movement1));
             winner = pair.Movement1;
         }
         else {
@@ -295,8 +292,7 @@ internal class PlayfieldCollisionResolver
                 return;
             }
 
-            MutationReceiver.BufferMutation(
-                new Mutation.UnitBumps(pair.Unit1.Id, pair.Movement1.AsDirection()));
+            MutationReceiver.BufferMutation(new UnitBumps(pair.Unit1.Id, pair.Movement1.AsDirection()));
             winner = null;
         }
     }
@@ -418,7 +414,7 @@ internal class PlayfieldCollisionResolver
     }
 #endif
 
-    public static IDictionary<NecoUnitMovement, CollisionVictoryReasonLevel> GetCollisionScores(
+    public static IDictionary<TransientUnit, CollisionVictoryReasonLevel> GetCollisionScores(
         UnitMovementPair unitPair)
     {
         if (unitPair.Collection.DistinctBy(u => u.NewPos).Count() > 1) {
@@ -495,17 +491,17 @@ internal class PlayfieldCollisionResolver
         // They both bounce off each other.
         return Create(unitPair.Movement1, CollisionVictoryReasonLevel.Bounce);
 
-        IDictionary<NecoUnitMovement, CollisionVictoryReasonLevel> Create(
-            NecoUnitMovement movement, CollisionVictoryReasonLevel level)
+        IDictionary<TransientUnit, CollisionVictoryReasonLevel> Create(
+            TransientUnit movement, CollisionVictoryReasonLevel level)
         {
-            return new Dictionary<NecoUnitMovement, CollisionVictoryReasonLevel> {
+            return new Dictionary<TransientUnit, CollisionVictoryReasonLevel> {
                 [movement] = level,
                 [unitPair.OtherMovement(movement)] = CollisionVictoryReasonLevel.Bounce
             };
         }
     }
 
-    public static IReadOnlyCollection<UnitMovementPair> GetPairCombinations(IEnumerable<NecoUnitMovement> movements)
+    public static IReadOnlyCollection<UnitMovementPair> GetPairCombinations(IEnumerable<TransientUnit> movements)
     {
         movements = movements.ToList();
 
@@ -532,7 +528,7 @@ internal class TransientPlayfield : ITransientSpaceContentsGetter
     private readonly ReadOnlyDictionary<Unit, SpaceImmigrantRemoval> ResetReasons;
     private readonly ReadOnlyDictionary<Vector2i, Space> Spaces;
 
-    public TransientPlayfield(ReadOnlyNecoField field, IEnumerable<NecoUnitMovement> movements)
+    public TransientPlayfield(ReadOnlyPlayfield field, IEnumerable<TransientUnit> movements)
     {
         movements = movements.ToList();
         var spaces = new Dictionary<Vector2i, Space>();
@@ -551,7 +547,7 @@ internal class TransientPlayfield : ITransientSpaceContentsGetter
         // It repeats until every space has no conflict.
         while (spaces.Select(kv => kv.Value).Any(space => space.HasConflict)) {
             // We will apply the changes suggested by GetRemovedImmigrants to this dict.
-            var unstableSpaces = spaces.ToDictionary(kv => kv.Key, _ => new List<NecoUnitMovement>());
+            var unstableSpaces = spaces.ToDictionary(kv => kv.Key, _ => new List<TransientUnit>());
 
             foreach (var (pos, space) in spaces) {
                 foreach (var removal in space.GetRemovedImmigrants()) {
@@ -577,7 +573,7 @@ internal class TransientPlayfield : ITransientSpaceContentsGetter
         ResetReasons = new(resetReasons);
     }
 
-    public IReadOnlyCollection<NecoUnitMovement> GetMovementsFrom(Vector2i pos)
+    public IReadOnlyCollection<TransientUnit> GetMovementsFrom(Vector2i pos)
     {
         return GetAllMovements().Where(m => m.OldPos == pos).ToList();
     }
@@ -587,7 +583,7 @@ internal class TransientPlayfield : ITransientSpaceContentsGetter
         return ResetReasons;
     }
 
-    private IEnumerable<NecoUnitMovement> GetAllMovements()
+    private IEnumerable<TransientUnit> GetAllMovements()
     {
         return Spaces.SelectMany(kv => kv.Value.GetAllImmigrants(), (kv, movement) => movement);
     }
@@ -598,12 +594,12 @@ internal class TransientPlayfield : ITransientSpaceContentsGetter
     /// </summary>
     private class Space
     {
-        private readonly IReadOnlyList<NecoUnitMovement> Immigrants;
+        private readonly IReadOnlyList<TransientUnit> Immigrants;
         private readonly ITransientSpaceContentsGetter Playfield;
         private readonly Vector2i Position;
 
         public Space(
-            Vector2i position, IEnumerable<NecoUnitMovement> immigrants, ITransientSpaceContentsGetter playfield)
+            Vector2i position, IEnumerable<TransientUnit> immigrants, ITransientSpaceContentsGetter playfield)
         {
             Immigrants = immigrants.ToList().AsReadOnly();
             Position = position;
@@ -616,12 +612,12 @@ internal class TransientPlayfield : ITransientSpaceContentsGetter
 
         public bool HasConflict => Immigrants.Count > 1;
 
-        public IReadOnlyCollection<NecoUnitMovement> GetAllImmigrants()
+        public IReadOnlyCollection<TransientUnit> GetAllImmigrants()
         {
             return Immigrants;
         }
 
-        public IReadOnlyCollection<NecoUnitMovement> GetRemainingImmigrants()
+        public IReadOnlyCollection<TransientUnit> GetRemainingImmigrants()
         {
             return Immigrants.Except(GetRemovedImmigrants().Select(removal => removal.Movement)).ToList();
         }
@@ -632,9 +628,9 @@ internal class TransientPlayfield : ITransientSpaceContentsGetter
         /// </summary>
         public IReadOnlyCollection<SpaceImmigrantRemoval> GetRemovedImmigrants()
         {
-            var combats = new Dictionary<NecoUnitMovement, List<NecoUnitMovement>>();
+            var combats = new Dictionary<TransientUnit, List<TransientUnit>>();
             var bestVictoryLevels =
-                new Dictionary<NecoUnitMovement, PlayfieldCollisionResolver.CollisionVictoryReasonLevel>();
+                new Dictionary<TransientUnit, PlayfieldCollisionResolver.CollisionVictoryReasonLevel>();
 
             var combinations = PlayfieldCollisionResolver.GetPairCombinations(Immigrants);
             foreach (var pair in combinations) {
@@ -685,10 +681,10 @@ internal class TransientPlayfield : ITransientSpaceContentsGetter
 
 public class SpaceImmigrantRemoval
 {
-    public readonly NecoUnitMovement Movement;
+    public readonly TransientUnit Movement;
     public readonly SpaceImmigrantRemovalReason Reason;
 
-    public SpaceImmigrantRemoval(NecoUnitMovement movement, SpaceImmigrantRemovalReason reason)
+    public SpaceImmigrantRemoval(TransientUnit movement, SpaceImmigrantRemovalReason reason)
     {
         Movement = movement;
         Reason = reason;
@@ -713,16 +709,16 @@ public abstract class SpaceImmigrantRemovalReason
 
 internal interface ITransientSpaceContentsGetter
 {
-    public IReadOnlyCollection<NecoUnitMovement> GetMovementsFrom(Vector2i pos);
+    public IReadOnlyCollection<TransientUnit> GetMovementsFrom(Vector2i pos);
 }
 
-internal class WinnerList : IEnumerable<NecoUnitMovement>
+internal class WinnerList : IEnumerable<TransientUnit>
 {
-    public readonly IReadOnlyCollection<NecoUnitMovement> AuxiliaryWinners;
+    public readonly IReadOnlyCollection<TransientUnit> AuxiliaryWinners;
 
-    public readonly NecoUnitMovement Winner;
+    public readonly TransientUnit Winner;
 
-    public WinnerList(IEnumerable<IGrouping<int, NecoUnitMovement>> collection)
+    public WinnerList(IEnumerable<IGrouping<int, TransientUnit>> collection)
     {
         collection = collection.ToList();
 
@@ -738,13 +734,13 @@ internal class WinnerList : IEnumerable<NecoUnitMovement>
             AuxiliaryWinners = secondGroup.ToList();
         }
         else {
-            AuxiliaryWinners = Array.Empty<NecoUnitMovement>();
+            AuxiliaryWinners = Array.Empty<TransientUnit>();
         }
     }
 
-    private IEnumerable<NecoUnitMovement> All => AuxiliaryWinners.Prepend(Winner);
+    private IEnumerable<TransientUnit> All => AuxiliaryWinners.Prepend(Winner);
 
-    public IEnumerator<NecoUnitMovement> GetEnumerator()
+    public IEnumerator<TransientUnit> GetEnumerator()
     {
         return AuxiliaryWinners.Prepend(Winner).GetEnumerator();
     }

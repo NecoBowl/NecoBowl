@@ -1,18 +1,19 @@
+using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Tags;
 using NLog;
 
-namespace NecoBowl.Core.Sport.Play;
+namespace NecoBowl.Core.Machine;
 
 internal interface IMutationReceiver
 {
     public void BufferMutation(Mutation mutation);
 }
 
-public record SubstepContents(
-    IReadOnlyCollection<Mutation.BaseMutation> Mutations,
-    IReadOnlyCollection<NecoUnitMovement> Movements);
+internal record SubstepContents(
+    IReadOnlyCollection<Mutation> Mutations,
+    IReadOnlyCollection<TransientUnit> Movements);
 
-internal class NecoPlayStepperNew : IMutationReceiver
+internal class PlayStepper : IMutationReceiver
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
@@ -20,11 +21,10 @@ internal class NecoPlayStepperNew : IMutationReceiver
 
     private readonly List<Mutation> MutationLog = new();
 
-    private readonly Dictionary<NecoUnitId, NecoUnitMovement> PendingMovements = new();
-    private readonly List<Mutation.BaseMutation> PendingMutations = new();
-    private int LastTurnMutationLogEndIndex;
+    private readonly Dictionary<NecoUnitId, TransientUnit> PendingMovements = new();
+    private readonly List<Mutation> PendingMutations = new();
 
-    public NecoPlayStepperNew(Playfield field)
+    public PlayStepper(Playfield field)
     {
         Field = field;
     }
@@ -34,13 +34,7 @@ internal class NecoPlayStepperNew : IMutationReceiver
 
     public void BufferMutation(Mutation mutation)
     {
-        switch (mutation) {
-            case Mutation.BaseMutation baseMutation:
-                PendingMutations.Add(baseMutation);
-                break;
-            default:
-                throw new ArgumentException($"unknown type: {mutation.GetType()}");
-        }
+        PendingMutations.Add(mutation);
     }
 
     /// <summary>Run the step, modifying this stepper's <see cref="Playfield" />.</summary>
@@ -55,8 +49,8 @@ internal class NecoPlayStepperNew : IMutationReceiver
 
         // Begin the substep loop
         while (MutationsRemaining) {
-            List<Mutation.BaseMutation> outputMutations = new();
-            List<NecoUnitMovement> outputMovements = new();
+            List<Mutation> outputMutations = new();
+            List<TransientUnit> outputMovements = new();
 
             // Perform early mutations.
             // For example, a unit getting pushed adds its movement here.
@@ -90,7 +84,7 @@ internal class NecoPlayStepperNew : IMutationReceiver
         return substeps;
     }
 
-    private void PopUnitActions(out Dictionary<NecoUnitId, NecoUnitAction?> chainedActions)
+    private void PopUnitActions(out Dictionary<NecoUnitId, Behavior?> chainedActions)
     {
         chainedActions = new();
         // Perform the actions of each unit to populate the lists
@@ -112,8 +106,7 @@ internal class NecoPlayStepperNew : IMutationReceiver
             var movement = PendingMovements[unit.Id];
             if (movement.IsChange) {
                 if (Field.TryGetUnit(movement.NewPos, out var targetUnit)) {
-                    PendingMutations.Add(
-                        new Mutation.UnitPushes(unit.Id, targetUnit!.Id, movement.AsDirection()));
+                    PendingMutations.Add(new UnitPushes(unit.Id, targetUnit!.Id, movement.AsDirection()));
                 }
             }
         }
@@ -147,7 +140,7 @@ internal class NecoPlayStepperNew : IMutationReceiver
             }
         }
 
-        var tempMutations = new List<Mutation.BaseMutation>();
+        var tempMutations = new List<Mutation>();
 
         foreach (var (pos, unit) in Field.GetAllUnits()) {
             foreach (var mutation in baseMutations) {
@@ -171,55 +164,36 @@ internal class NecoPlayStepperNew : IMutationReceiver
         }
     }
 
-    private void EnqueueMutationFromAction(NecoUnitId uid, NecoUnitActionResult result)
+    private void EnqueueMutationFromAction(NecoUnitId uid, BehaviorOutcome result)
     {
         switch (result) {
             // Cases where an error ocurred 
-            case { ResultKind: NecoUnitActionResult.Kind.Error }: {
+            case { ResultKind: BehaviorOutcome.Kind.Error }: {
                 var unit = Field.GetUnit(uid);
                 Logger.Error($"Error ocurred while processing action for {unit}:");
                 Logger.Error($"{result.Exception}\n{result.Exception!.StackTrace}");
                 break;
             }
 
-            // Cases where we reset movement
-            case {
-                ResultKind: NecoUnitActionResult.Kind.Failure,
-                StateChange: NecoUnitActionOutcome.UnitTranslated translation
-            }: {
-                var unit = Field.GetUnit(uid, out var pos);
-                PendingMovements[uid] = translation.Movement;
-                break;
-            }
-
             // Cases where things happen
-            case { StateChange: NecoUnitActionOutcome.UnitTranslated translation }: {
+            case BehaviorOutcome.Translate translation: {
                 PendingMovements[uid] = translation.Movement;
                 break;
             }
 
-            case { StateChange: NecoUnitActionOutcome.UnitChanged unitChanged }: {
-                PendingMutations.Add(new Mutation.UnitGetsMod(uid, unitChanged.Mod));
-                break;
-            }
-
-            case { StateChange: NecoUnitActionOutcome.ThrewItem threwItem }: {
-                PendingMutations.Add(
-                    new Mutation.UnitThrowsItem(uid, threwItem.Item.Id, threwItem.Destination));
-                break;
-            }
-
-            case { StateChange: NecoUnitActionOutcome.NothingHappened }: {
-                break;
-            }
-
-            case { ResultKind: NecoUnitActionResult.Kind.Failure }: {
+            // Note that we catch movements before checking for failure.
+            case { ResultKind: BehaviorOutcome.Kind.Failure }: {
                 Logger.Debug($"Action failed: {result.Message}");
                 break;
             }
 
+            case BehaviorOutcome.Mutate mutation: {
+                PendingMutations.Add(mutation.Mutation);
+                break;
+            }
+
             default: {
-                throw new ArgumentException($"Unhandled outcome type {result.StateChange}");
+                throw new ArgumentException($"Unhandled outcome type {result.GetType()}");
             }
         }
     }
@@ -227,7 +201,7 @@ internal class NecoPlayStepperNew : IMutationReceiver
 
 static file class Extension
 {
-    public static void RemoveUnitPair(this Dictionary<NecoUnitId, NecoUnitMovement> source, UnitMovementPair unitPair)
+    public static void RemoveUnitPair(this Dictionary<NecoUnitId, TransientUnit> source, UnitMovementPair unitPair)
     {
         source.Remove(unitPair.Movement1.UnitId);
         source.Remove(unitPair.Movement2.UnitId);

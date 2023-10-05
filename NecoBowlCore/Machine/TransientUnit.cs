@@ -7,7 +7,7 @@ using NLog;
 namespace NecoBowl.Core.Sport.Play;
 
 /// <summary>Represents a unit transitioning between spaces.</summary>
-public record NecoUnitMovement
+internal record TransientUnit
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
@@ -27,7 +27,7 @@ public record NecoUnitMovement
     public Vector2i Difference => NewPos - OldPos;
 
     /// <returns>A copy of this movement, but with <see cref="NewPos" /> equal to the current value of <see cref="OldPos" />.</returns>
-    public NecoUnitMovement WithoutMovement()
+    public TransientUnit WithoutMovement()
     {
         return new() {
             NewPos = OldPos,
@@ -43,7 +43,7 @@ public record NecoUnitMovement
         return Enum.GetValues<AbsoluteDirection>().Single(d => d.ToVector2i() == difference);
     }
 
-    public bool CanFlattenOthers(IEnumerable<NecoUnitMovement> others)
+    public bool CanFlattenOthers(IEnumerable<TransientUnit> others)
     {
         others = others.ToList();
         return others.Count() switch {
@@ -59,22 +59,22 @@ public record NecoUnitMovement
     }
 }
 
-internal record UnitMovementPair : IEnumerable<NecoUnitMovement>
+internal record UnitMovementPair : IEnumerable<TransientUnit>
 {
-    public readonly NecoUnitMovement Movement1, Movement2;
+    public readonly TransientUnit Movement1, Movement2;
 
-    public UnitMovementPair(NecoUnitMovement movement1, NecoUnitMovement movement2)
+    public UnitMovementPair(TransientUnit movement1, TransientUnit movement2)
     {
         Movement1 = movement1;
         Movement2 = movement2;
     }
 
-    public ReadOnlyCollection<NecoUnitMovement> Collection => new(new[] { Movement1, Movement2 });
+    public ReadOnlyCollection<TransientUnit> Collection => new(new[] { Movement1, Movement2 });
 
     public Unit Unit1 => Movement1.Unit;
     public Unit Unit2 => Movement2.Unit;
 
-    public IEnumerator<NecoUnitMovement> GetEnumerator()
+    public IEnumerator<TransientUnit> GetEnumerator()
     {
         return Collection.GetEnumerator();
     }
@@ -88,7 +88,7 @@ internal record UnitMovementPair : IEnumerable<NecoUnitMovement>
     /// <param name="tag">The tag to search for.</param>
     /// <param name="other">The unit in the pair that does not have the tag. Null if both units have the tag.</param>
     /// <returns>The first unit in the pair that has the tag, or null if neither unit has it.</returns>
-    public NecoUnitMovement? UnitWithTag(NecoUnitTag tag, out NecoUnitMovement? other)
+    public TransientUnit? UnitWithTag(NecoUnitTag tag, out TransientUnit? other)
     {
         other = Collection.LastOrDefault(u => !u.Unit.UnitModel.Tags.Contains(tag));
         return Collection.FirstOrDefault(u => u.Unit.UnitModel.Tags.Contains(tag));
@@ -101,7 +101,7 @@ internal record UnitMovementPair : IEnumerable<NecoUnitMovement>
     /// <param name="predicate">The condition to check for.</param>
     /// <param name="other">The unit of the pair that did not match the condition. Null if neither unit matches.</param>
     /// <returns>The unit in the pair that matches the condition. Null if neither unit matches.</returns>
-    public NecoUnitMovement? UnitWhereSingle(Func<NecoUnitMovement, bool> predicate, out NecoUnitMovement? other)
+    public TransientUnit? UnitWhereSingle(Func<TransientUnit, bool> predicate, out TransientUnit? other)
     {
         var movement = Collection.SingleOrDefault(predicate);
         other = movement is not null ? OtherMovement(movement) : null;
@@ -112,9 +112,9 @@ internal record UnitMovementPair : IEnumerable<NecoUnitMovement>
     /// <returns>False if neither unit matches the condition or if both match the condition. Otherwise, true.</returns>
     /// <seealso cref="UnitWhereSingle" />
     public bool TryUnitWhereSingle(
-        Func<NecoUnitMovement, bool> predicate,
-        [NotNullWhen(true)] out NecoUnitMovement? result,
-        [NotNullWhen(true)] out NecoUnitMovement? other)
+        Func<TransientUnit, bool> predicate,
+        [NotNullWhen(true)] out TransientUnit? result,
+        [NotNullWhen(true)] out TransientUnit? other)
     {
         try {
             result = UnitWhereSingle(predicate, out other);
@@ -128,10 +128,10 @@ internal record UnitMovementPair : IEnumerable<NecoUnitMovement>
     }
 
     public bool TryGetUnitsBy(
-        Func<NecoUnitMovement, bool> predicate1,
-        Func<NecoUnitMovement, bool> predicate2,
-        [NotNullWhen(true)] out NecoUnitMovement? result1,
-        [NotNullWhen(true)] out NecoUnitMovement? result2)
+        Func<TransientUnit, bool> predicate1,
+        Func<TransientUnit, bool> predicate2,
+        [NotNullWhen(true)] out TransientUnit? result1,
+        [NotNullWhen(true)] out TransientUnit? result2)
     {
         if (TryUnitWhereSingle(predicate1, out result1, out result2)) {
             if (predicate2(result2)) {
@@ -163,8 +163,8 @@ internal record UnitMovementPair : IEnumerable<NecoUnitMovement>
     }
 
     public bool PickupCanOccur(
-        [MaybeNullWhen(false)] out NecoUnitMovement carrier,
-        [MaybeNullWhen(false)] out NecoUnitMovement item)
+        [MaybeNullWhen(false)] out TransientUnit carrier,
+        [MaybeNullWhen(false)] out TransientUnit item)
     {
         if (UnitWithTag(NecoUnitTag.Carrier, out var itemUnit) is { } carrierUnit) {
             if (itemUnit is not null && itemUnit.Unit.Tags.Contains(NecoUnitTag.Item)) {
@@ -182,7 +182,7 @@ internal record UnitMovementPair : IEnumerable<NecoUnitMovement>
     /// <summary>Get the transition in the pair that is not the given one.</summary>
     /// <param name="movement">The transition of which to find the pair-mate.</param>
     /// <exception cref="NecoBowlException">The given movement is not in the pair.</exception>
-    public NecoUnitMovement OtherMovement(NecoUnitMovement movement)
+    public TransientUnit OtherMovement(TransientUnit movement)
     {
         if (Movement1 == movement && Movement2 != movement) {
             return Movement2;

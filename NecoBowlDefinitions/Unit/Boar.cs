@@ -17,8 +17,8 @@ public class Boar : NecoUnitModel
     public override IReadOnlyCollection<NecoUnitTag> Tags
         => new[] { NecoUnitTag.Pusher };
 
-    public override IEnumerable<NecoUnitAction> Actions
-        => new[] { new NecoUnitAction.TranslateUnit(RelativeDirection.Up) };
+    public override IEnumerable<Behavior> Actions
+        => new[] { new Behavior.TranslateUnit(RelativeDirection.Up) };
 
     public override string BehaviorDescription
         => $"Moves {Arrow0}.";

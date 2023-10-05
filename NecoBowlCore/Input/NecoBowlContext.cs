@@ -1,4 +1,4 @@
-using NecoBowl.Core.Sport.Play;
+using NecoBowl.Core.Machine;
 using NecoBowl.Core.Sport.Tactics;
 using NLog;
 

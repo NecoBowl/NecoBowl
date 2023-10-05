@@ -13,8 +13,8 @@ public class Cat : NecoUnitModel
     public override int Health => 4;
     public override int Power => 3;
 
-    public override IEnumerable<NecoUnitAction> Actions
-        => new NecoUnitAction[] { new NecoUnitAction.TranslateUnit(RelativeDirection.Up) };
+    public override IEnumerable<Behavior> Actions
+        => new Behavior[] { new Behavior.TranslateUnit(RelativeDirection.Up) };
 
     public override string BehaviorDescription
         => $"Moves {Arrow0}.";

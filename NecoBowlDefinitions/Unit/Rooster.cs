@@ -15,8 +15,8 @@ public class Rooster : NecoUnitModel
     public override int Health => 6;
     public override int Power => 2;
 
-    public override IEnumerable<NecoUnitAction> Actions
-        => new[] { new NecoUnitAction.TranslateUnit(RelativeDirection.Up) };
+    public override IEnumerable<Behavior> Actions
+        => new[] { new Behavior.TranslateUnit(RelativeDirection.Up) };
 
     public override string BehaviorDescription => "Moves forward.";
 

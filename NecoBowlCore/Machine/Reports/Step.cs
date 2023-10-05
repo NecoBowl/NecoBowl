@@ -4,11 +4,11 @@ using NecoBowl.Core.Sport.Play;
 
 namespace NecoBowl.Core.Machine.Reports;
 
-public class StepReport : IEnumerable<SubstepContents>
+public class Step : BaseReport, IEnumerable<SubstepContents>
 {
     private readonly ReadOnlyCollection<SubstepContents> Substeps;
 
-    internal StepReport(IEnumerable<SubstepContents> substeps)
+    internal Step(IEnumerable<SubstepContents> substeps)
     {
         Substeps = substeps.ToList().AsReadOnly();
     }
@@ -28,7 +28,7 @@ public class StepReport : IEnumerable<SubstepContents>
         return Substeps.SelectMany(s => s.Mutations, (_, mut) => mut);
     }
 
-    internal IEnumerable<NecoUnitMovement> GetAllMovements()
+    internal IEnumerable<TransientUnit> GetAllMovements()
     {
         return Substeps.SelectMany(s => s.Movements, (_, m) => m);
     }

@@ -17,13 +17,13 @@ public class Dog : NecoUnitModel
     public override string BehaviorDescription
         => "Walks forward. Turns around upon picking up the ball.";
 
-    public override IEnumerable<NecoUnitAction> Actions
-        => new NecoUnitAction[] { new NecoUnitAction.TranslateUnit(RelativeDirection.Up) };
+    public override IEnumerable<Behavior> Actions
+        => new Behavior[] { new Behavior.TranslateUnit(RelativeDirection.Up) };
 
     public override IEnumerable<NecoUnitTag> Tags => new[] { NecoUnitTag.Carrier };
 
     public override ReactionDict Reactions { get; } = new() {
-        new(typeof(Mutation.UnitPicksUpItem), (unit, field, mut) => OnPicksUp(unit, mut))
+        new(typeof(UnitPicksUpItem), (unit, field, mut) => OnPicksUp(unit, mut))
     };
 
     private static IEnumerable<Mutation.BaseMutation> OnPicksUp(
@@ -32,7 +32,7 @@ public class Dog : NecoUnitModel
             mutation)
     {
         if (unit.Id == mutation.Subject) {
-            yield return new Mutation.UnitGetsMod(unit.Id, new NecoUnitMod.Rotate(4));
+            yield return new UnitGetsMod(unit.Id, new NecoUnitMod.Rotate(4));
         }
     }
 }

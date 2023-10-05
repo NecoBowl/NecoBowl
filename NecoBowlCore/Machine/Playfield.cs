@@ -1,18 +1,19 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Sport.Tactics;
 
-namespace NecoBowl.Core.Sport.Play;
+namespace NecoBowl.Core.Machine;
 
 public readonly record struct NecoSpaceContents(Unit? Unit, bool Fooabr = false);
 
 /// <summary>A two-dimensional grid of <see cref="NecoSpaceContents" />.</summary>
 /// <remarks>
-/// The <see cref="Unit" /> in a <see cref="NecoSpaceContents" /> is a reference to a mutable unit. Therefore,
-/// attempting to copy a <c>NecoField</c> will result in that field having references to the units in the original field.
-/// If that original field is then mutated in some way, properties like the unit's health will change on BOTH the original
-/// and copy of the field. The contents of the copy are effectively garbage at that point. Basically, do not try to copy a
-/// field without careful consideration!
+/// The <see cref="Unit" /> in a <see cref="NecoSpaceContents" /> is a reference to a mutable unit. Therefore, attempting
+/// to copy a <c>Playfield</c> will result in that field having references to the units in the original field. If that
+/// original field is then mutated in some way, properties like the unit's health will change on BOTH the original and copy
+/// of the field. The contents of the copy are effectively garbage at that point. Basically, do not try to copy a field
+/// without careful consideration!
 /// </remarks>
 internal class Playfield
 {
@@ -20,7 +21,6 @@ internal class Playfield
     public readonly NecoFieldParameters FieldParameters;
 
     public readonly List<Unit> GraveyardZone = new();
-    public readonly List<Unit> TempUnitZone = new();
 
     public Playfield(NecoFieldParameters param)
     {
@@ -188,14 +188,8 @@ internal class Playfield
         return unit;
     }
 
-    public Unit GetAndRemoveUnit(NecoUnitId uid, bool includeTempZone = true)
+    public Unit GetAndRemoveUnit(NecoUnitId uid)
     {
-        var unit = TempUnitZone.FirstOrDefault(u => u.Id == uid);
-        if (unit is not null) {
-            TempUnitZone.Remove(unit);
-            return unit;
-        }
-
         return GetAndRemoveUnit(GetUnitPosition(uid));
     }
 
@@ -205,7 +199,7 @@ internal class Playfield
         return GetAndRemoveUnit(pos);
     }
 
-    public ReadOnlyNecoField AsReadOnly()
+    public ReadOnlyPlayfield AsReadOnly()
     {
         return new(this);
     }
@@ -267,95 +261,6 @@ public record class NecoFieldParameters((int X, int Y) Bounds, (int X, int Y) Ba
             : pos.y >= Bounds.Y - TeamSideSize && pos.y < Bounds.Y ? NecoPlayerRole.Defense
             : null;
     }
-}
-
-/// <summary>Wrapper around a <see cref="Playfield" /> that prevents modifications to the field.</summary>
-/// <remarks>
-/// Note that this field is not immutable; changes made to the field from which the read-only field is derived will still
-/// appear when reading from the read-only field.
-/// </remarks>
-public sealed class ReadOnlyNecoField
-{
-    private readonly Playfield Field;
-
-    internal ReadOnlyNecoField(Playfield field)
-    {
-        Field = field;
-    }
-
-    #region Wrapped methods - Field
-
-    public NecoSpaceContents this[int x, int y] => Field[x, y];
-    public NecoSpaceContents this[Vector2i pos] => Field[pos];
-
-    public NecoFieldParameters FieldParameters => Field.FieldParameters;
-
-    public IEnumerable<(Vector2i, Unit)> GetAllUnits(bool includeInventory = false)
-    {
-        return Field.GetAllUnits(includeInventory);
-    }
-
-    public IReadOnlyList<Unit> GetGraveyard()
-    {
-        return Field.GetGraveyard();
-    }
-
-    public Unit? LookupUnit(string shortUid)
-    {
-        return Field.LookupUnit(shortUid);
-    }
-
-    public Vector2i GetUnitPosition(NecoUnitId uid, bool includeInventories = false)
-    {
-        return Field.GetUnitPosition(uid, includeInventories);
-    }
-
-    public Unit GetUnit(NecoUnitId uid)
-    {
-        return Field.GetUnit(uid);
-    }
-
-    public Unit GetUnit(Vector2i p)
-    {
-        return Field.GetUnit(p);
-    }
-
-    public Unit GetUnit(NecoUnitId uid, out Vector2i pos)
-    {
-        return Field.GetUnit(uid, out pos);
-    }
-
-    public bool TryGetUnit(NecoUnitId uid, out Unit? unit)
-    {
-        return Field.TryGetUnit(uid, out unit);
-    }
-
-    public bool TryGetUnit(Vector2i p, out Unit? unit)
-    {
-        return Field.TryGetUnit(p, out unit);
-    }
-
-    public Vector2i GetBounds()
-    {
-        return Field.GetBounds();
-    }
-
-    public bool IsInBounds((int x, int y) pos)
-    {
-        return Field.IsInBounds(pos);
-    }
-
-    public string ToAscii(string prefix = "> ")
-    {
-        return Field.ToAscii(prefix);
-    }
-
-    public bool TryLookupUnit(NecoUnitId uid, out Unit? unit, out Vector2i? pos, bool includeInventories = false)
-    {
-        return Field.TryLookupUnit(uid, out unit, out pos, includeInventories);
-    }
-
-    #endregion
 }
 
 public class NecoBowlFieldException : Exception

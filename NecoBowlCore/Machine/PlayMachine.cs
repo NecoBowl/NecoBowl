@@ -1,5 +1,4 @@
 using NecoBowl.Core.Machine.Reports;
-using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Sport.Tactics;
 using NecoBowl.Core.Tags;
 using NLog;
@@ -14,7 +13,7 @@ internal class PlayMachine
     private readonly Playfield Field;
 
     private readonly bool LogFieldAscii;
-    private readonly NecoPlayStepperNew PlayStepper;
+    private readonly PlayStepper PlayStepper;
 
     public bool IsFinished;
 
@@ -38,12 +37,12 @@ internal class PlayMachine
 
     public bool CanEnd => IsFinished || StepCount >= 100;
 
-    public ReadOnlyNecoField GetField()
+    public ReadOnlyPlayfield GetField()
     {
         return Field.AsReadOnly();
     }
 
-    public StepReport Step()
+    public Step Step()
     {
         if (IsFinished) {
             throw new InvalidOperationException("cannot step a play that has finished");
@@ -53,7 +52,7 @@ internal class PlayMachine
             LogFieldToAscii();
         }
 
-        var result = new StepReport(PlayStepper.Process());
+        var result = new Step(PlayStepper.Process());
 
         foreach (var (substep, i) in result.Select((c, i) => (c, i))) {
             if (result.Count() > 1) {

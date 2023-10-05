@@ -24,4 +24,19 @@
     <Folder Include="Sport\"/>
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="Machine\ReadOnlyPlayfield.cs">
+      <DependentUpon>Playfield.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Machine\UnitMover.cs">
+      <DependentUpon>PlayMachine.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Machine\PlayStepper.cs">
+      <DependentUpon>PlayMachine.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Machine\TransientUnit.cs">
+      <DependentUpon>PlayMachine.cs</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
 </Project>

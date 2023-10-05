@@ -20,7 +20,7 @@ public class BuiltInDefinitions
         public override IReadOnlyCollection<NecoUnitTag> Tags
             => new[] { NecoUnitTag.TheBall, NecoUnitTag.Item };
 
-        public override IEnumerable<NecoUnitAction> Actions
-            => new[] { new NecoUnitAction.DoNothing() };
+        public override IEnumerable<Behavior> Actions
+            => new[] { new DoNothing() };
     }
 }

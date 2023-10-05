@@ -16,8 +16,8 @@ public class Crab : NecoUnitModel
     public override IReadOnlyCollection<NecoUnitTag> Tags
         => new[] { NecoUnitTag.Defender };
 
-    public override IEnumerable<NecoUnitAction> Actions
-        => new[] { new NecoUnitAction.TranslateUnitCrabwalk() };
+    public override IEnumerable<Behavior> Actions
+        => new[] { new TranslateUnitCrabwalk() };
 
     public override string BehaviorDescription
         => $"Moves {Arrow6} or {Arrow2}, whichever brings it closer to the ball.";

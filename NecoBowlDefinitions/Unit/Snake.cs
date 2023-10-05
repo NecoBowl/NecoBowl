@@ -14,11 +14,11 @@ public class Snake : NecoUnitModel
     public override int Health => 5;
     public override int Power => 2;
 
-    public override IEnumerable<NecoUnitAction> Actions => new[] {
-        new NecoUnitAction.TranslateUnit(RelativeDirection.Right),
-        new NecoUnitAction.TranslateUnit(RelativeDirection.Up),
-        new NecoUnitAction.TranslateUnit(RelativeDirection.Left),
-        new NecoUnitAction.TranslateUnit(RelativeDirection.Up)
+    public override IEnumerable<Behavior> Actions => new[] {
+        new Behavior.TranslateUnit(RelativeDirection.Right),
+        new Behavior.TranslateUnit(RelativeDirection.Up),
+        new Behavior.TranslateUnit(RelativeDirection.Left),
+        new Behavior.TranslateUnit(RelativeDirection.Up)
     };
 
     public override string BehaviorDescription => "Moves in an \"S\" motion, starting by moving right.";

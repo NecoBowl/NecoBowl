@@ -23,12 +23,12 @@ public class NewStepperTests
     private const int TestLevel_Mutation = 10;
     private const int TestLevel_Field = 20;
 
-    internal static NecoBowl.Core.Sport.Play.Playfield NewField()
+    internal static NecoBowl.Core.Machine.Playfield NewField()
     {
         return new(new((5, 5), (0, 0)));
     }
 
-    internal static NecoBowl.Core.Sport.Play.Playfield Field = null!;
+    internal static NecoBowl.Core.Machine.Playfield Field = null!;
     internal static PlayMachine PlayMachine = null!;
 
     private readonly NecoPlayer Player1 = new(), Player2 = new();
@@ -51,7 +51,7 @@ public class NewStepperTests
         var result = PlayMachine.Step();
         Assert.That(
             result, Has.EquivalentMovementsTo(
-                new NecoUnitMovement {
+                new TransientUnit {
                     Unit = unit,
                     OldPos = (0, 0),
                     NewPos = (0, 1)
@@ -70,14 +70,14 @@ public class NewStepperTests
         Assert.That(
             mutations,
             Has.EquivalentMutationsTo(
-                new Mutation.UnitBumps(unitWest.Id, AbsoluteDirection.West),
-                new Mutation.UnitAttacks(
+                new UnitBumps(unitWest.Id, AbsoluteDirection.West),
+                new UnitAttacks(
                     unitNorth.Id,
                     unitWest.Id,
                     unitNorth.Power,
-                    Mutation.UnitAttacks.Kind.SpaceConflict,
+                    UnitAttacks.Kind.SpaceConflict,
                     (0, 1)),
-                new Mutation.UnitTakesDamage(unitWest.Id, (uint)unitNorth.Power)));
+                new UnitTakesDamage(unitWest.Id, (uint)unitNorth.Power)));
     }
 #if false
     [Test]
@@ -482,7 +482,7 @@ public class FieldHasContentsConstraint : Constraint
 
     public override ConstraintResult ApplyTo<TActual>(TActual actual)
     {
-        if (actual is not NecoBowl.Core.Sport.Play.Playfield field) {
+        if (actual is not NecoBowl.Core.Machine.Playfield field) {
             return new(this, actual, ConstraintStatus.Error);
         }
 
@@ -604,9 +604,9 @@ public class StepHasEquivalentMutationsConstraint : Constraint
 
 public class StepHasEquivalentMovementsConstraint : Constraint
 {
-    private readonly ReadOnlyCollection<NecoUnitMovement> Movements;
+    private readonly ReadOnlyCollection<TransientUnit> Movements;
 
-    public StepHasEquivalentMovementsConstraint(IEnumerable<NecoUnitMovement> movements)
+    public StepHasEquivalentMovementsConstraint(IEnumerable<TransientUnit> movements)
     {
         Movements = movements.ToList().AsReadOnly();
     }
@@ -646,7 +646,7 @@ public abstract class Has : NUnit.Framework.Has
     }
 
     public static StepHasEquivalentMovementsConstraint EquivalentMovementsTo(
-        params NecoUnitMovement[] movements)
+        params TransientUnit[] movements)
     {
         return new(movements);
     }
@@ -681,7 +681,7 @@ public static class NUnitExt
 
     public static StepHasEquivalentMovementsConstraint EquivalentMovementsTo(
         this ConstraintExpression expr,
-        IEnumerable<NecoUnitMovement> expected)
+        IEnumerable<TransientUnit> expected)
     {
         var constraint = new StepHasEquivalentMovementsConstraint(expected);
         expr.Append(constraint);
