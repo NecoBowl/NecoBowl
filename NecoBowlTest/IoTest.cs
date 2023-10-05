@@ -28,7 +28,7 @@ public abstract class IoTest
         }
     }
 
-    private NecoUnitCard TestCard(int cost = 0)
+    private UnitCard TestCard(int cost = 0)
     {
         return new(NecoCardModelCustom.FromUnitModel(NecoUnitModelCustom_HealthEqualsPower.DoNothing(), cost));
     }

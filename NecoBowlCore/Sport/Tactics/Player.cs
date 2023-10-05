@@ -9,16 +9,16 @@ public readonly record struct NecoPlayerId()
     public bool IsNeutral => Value == default;
 }
 
-public class NecoPlayer
+public class Player
 {
-    public static readonly NecoPlayer NeutralPlayer = new(default);
+    public static readonly Player NeutralPlayer = new(default);
     public readonly NecoPlayerId Id = new();
 
-    public NecoPlayer()
+    public Player()
     {
     }
 
-    internal NecoPlayer(NecoPlayerId id)
+    internal Player(NecoPlayerId id)
     {
         Id = id;
     }
@@ -26,21 +26,21 @@ public class NecoPlayer
     public bool IsNeutral => Id.IsNeutral;
 }
 
-public record class NecoPlayerPair(NecoPlayer Offense, NecoPlayer Defense)
+public record class NecoPlayerPair(Player Offense, Player Defense)
 {
     public NecoPlayerPair()
         : this(new(), new())
     {
     }
 
-    public NecoPlayer this[NecoPlayerRole role] => FromRole(role);
+    public Player this[NecoPlayerRole role] => FromRole(role);
 
-    public IEnumerable<NecoPlayer> Enumerate()
+    public IEnumerable<Player> Enumerate()
     {
         return new[] { Offense, Defense };
     }
 
-    public NecoPlayer? PlayerByIdOrNull(NecoPlayerId playerId)
+    public Player? PlayerByIdOrNull(NecoPlayerId playerId)
     {
         return Enumerate().SingleOrDefault(p => p.Id == playerId);
     }
@@ -57,7 +57,7 @@ public record class NecoPlayerPair(NecoPlayer Offense, NecoPlayer Defense)
                         .Id == FromRole(v).Id);
     }
 
-    public NecoPlayer FromRole(NecoPlayerRole role)
+    public Player FromRole(NecoPlayerRole role)
     {
         return role switch {
             NecoPlayerRole.Offense => Offense,

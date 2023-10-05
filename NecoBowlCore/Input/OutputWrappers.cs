@@ -144,27 +144,27 @@ public class NecoPlayInformation
 
 public class NecoPlanInformation
 {
-    private readonly NecoPlan Plan;
+    private readonly Plan Plan;
 
-    internal NecoPlanInformation(NecoPlan plan)
+    internal NecoPlanInformation(Plan plan)
     {
         Plan = plan;
     }
 
-    public IEnumerable<NecoPlan.CardPlay> CardPlays
+    public IEnumerable<Plan.CardPlay> CardPlays
         => Plan.GetCardPlays();
 }
 
 public class NecoTurnInformation
 {
-    private readonly NecoTurn Turn;
+    private readonly Turn Turn;
 
-    internal NecoTurnInformation(NecoTurn turn)
+    internal NecoTurnInformation(Turn turn)
     {
         Turn = turn;
     }
 
-    public NecoPlan.CardPlay? CardPlayAt((int x, int y) coords)
+    public Plan.CardPlay? CardPlayAt((int x, int y) coords)
     {
         foreach (var role in Enum.GetValues<NecoPlayerRole>()) {
             var cardPlay = Turn.CardPlaysByRole[role].SingleOrDefault(p => p.Position == coords);

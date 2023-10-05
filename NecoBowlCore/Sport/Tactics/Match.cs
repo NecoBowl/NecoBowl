@@ -2,12 +2,12 @@ using NecoBowl.Core.Machine;
 
 namespace NecoBowl.Core.Sport.Tactics;
 
-internal class NecoMatch
+internal class Match
 {
     public readonly NecoPlayerPair Players;
-    public NecoPush CurrentPush;
+    public Push CurrentPush;
 
-    internal NecoMatch(NecoPlayerPair? players = null, NecoFieldParameters? fieldParams = null)
+    internal Match(NecoPlayerPair? players = null, NecoFieldParameters? fieldParams = null)
     {
         players ??= new(new(), new());
         fieldParams ??= new((7, 11), (3, 4));

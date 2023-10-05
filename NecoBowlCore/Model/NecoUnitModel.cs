@@ -35,7 +35,7 @@ public class ReactionDict : List<ReactionDict.Entry>
 
 public delegate IEnumerable<Mutation> MutationReaction<in T>(
     Unit unit,
-    ReadOnlyPlayfield field,
+    Playfield field,
     T mutation);
 
 public class UnitReactionContext

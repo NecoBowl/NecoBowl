@@ -11,7 +11,7 @@ namespace NecoBowl.Core.Tags;
 /// </remarks>
 public abstract class NecoUnitMod
 {
-    public virtual NecoUnitMod Update(Unit subject)
+    internal virtual NecoUnitMod Update(Unit subject)
     {
         return this;
     }
@@ -31,7 +31,7 @@ public abstract class NecoUnitMod
             Rotation = rotation % 8;
         }
 
-        public override NecoUnitMod Update(Unit subject)
+        internal override NecoUnitMod Update(Unit subject)
         {
             if (subject.GetMod<InvertRotation>().Enable) {
                 return new Rotate(-Rotation);
@@ -104,10 +104,6 @@ public abstract class NecoUnitMod
 
         private Dictionary<string, object> OptionValueCollector = new();
 
-        public OptionValues()
-        {
-        }
-
         public OptionValues(string key, object value)
         {
             Key = key;
@@ -171,7 +167,7 @@ public abstract class NecoCardOptionPermission
     public abstract Type ArgumentType { get; }
     public abstract string AllowedValueVisual(object o);
 
-    public abstract void ApplyToUnit(Unit unit, object val);
+    internal abstract void ApplyToUnit(Unit unit, object val);
 
     public IEnumerable<NecoCardOptionItem> GetOptionItems()
     {
@@ -190,7 +186,7 @@ public abstract class NecoCardOptionPermission
         {
         }
 
-        protected override void ApplyToUnit(Unit unit, RelativeDirection value)
+        internal override void ApplyToUnit(Unit unit, RelativeDirection value)
         {
             unit.AddMod(new NecoUnitMod.Rotate((int)value));
         }
@@ -203,7 +199,7 @@ public abstract class NecoCardOptionPermission
         {
         }
 
-        protected override void ApplyToUnit(Unit unit, bool value)
+        internal override void ApplyToUnit(Unit unit, bool value)
         {
             unit.AddMod(new NecoUnitMod.InvertRotation(value));
         }
@@ -219,7 +215,7 @@ public abstract class NecoCardOptionPermission
         public override object[] AllowedValues { get; } = new[] { false, true }.Cast<object>()
             .ToArray();
 
-        protected override void ApplyToUnit(Unit unit, bool value)
+        internal override void ApplyToUnit(Unit unit, bool value)
         {
             unit.AddMod(new NecoUnitMod.Flip(value, false));
         }
@@ -232,7 +228,7 @@ public abstract class NecoCardOptionPermission
         {
         }
 
-        protected override void ApplyToUnit(Unit unit, bool value)
+        internal override void ApplyToUnit(Unit unit, bool value)
         {
             unit.AddMod(new NecoUnitMod.Flip(false, value));
         }
@@ -288,12 +284,12 @@ public class NecoCardOptionPermission<T> : NecoCardOptionPermission
         return true;
     }
 
-    protected virtual void ApplyToUnit(Unit unit, T value)
+    internal virtual void ApplyToUnit(Unit unit, T value)
     {
         unit.AddMod(new NecoUnitMod.OptionValues(Identifier, value!));
     }
 
-    public sealed override void ApplyToUnit(Unit unit, object val)
+    internal sealed override void ApplyToUnit(Unit unit, object val)
     {
         ApplyToUnit(unit, (T)val);
     }

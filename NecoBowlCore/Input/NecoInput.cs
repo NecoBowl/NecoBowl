@@ -6,7 +6,7 @@ public abstract partial class NecoInput
 {
     public NecoPlayerId PlayerId;
 
-    public NecoInput(NecoPlayer player)
+    public NecoInput(Player player)
     {
         PlayerId = player.Id;
     }

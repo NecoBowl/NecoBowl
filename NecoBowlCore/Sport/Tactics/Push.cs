@@ -7,28 +7,28 @@ namespace NecoBowl.Core.Sport.Tactics;
 
 /// <summary>
 /// Game state container representing the state of the board as the offense pushes towards the defense. Stores a
-/// <see cref="NecoPlan" /> for each player that develop over the course of a number of turns (see <see cref="NecoTurn" />
+/// <see cref="Plan" /> for each player that develop over the course of a number of turns (see <see cref="Turn" />
 /// ). Pushes are used to create a <see cref="PlayMachine" /> to hand off to the Action of the game.
 /// </summary>
-internal class NecoPush : INecoPushInformation
+internal class Push : INecoPushInformation
 {
     private readonly Dictionary<NecoPlayerId, bool> EndPlayRequested = new();
     public readonly NecoFieldParameters FieldParameters;
 
-    /// <summary>Stores the <see cref="NecoPlan" /> of each player, indexed by the player role.</summary>
-    public readonly ImmutableDictionary<NecoPlayerRole, NecoPlan> Plans;
+    /// <summary>Stores the <see cref="Plan" /> of each player, indexed by the player role.</summary>
+    public readonly ImmutableDictionary<NecoPlayerRole, Plan> Plans;
 
     private bool _isPlayFinished;
 
-    public NecoTurn CurrentTurn;
+    public Turn CurrentTurn;
     private PlayMachine? TempPlay;
 
-    public NecoPush(NecoPlayerPair players, NecoFieldParameters fieldParameters)
+    public Push(NecoPlayerPair players, NecoFieldParameters fieldParameters)
     {
         FieldParameters = fieldParameters;
         CurrentTurn = new(0, players);
 
-        Plans = Enum.GetValues<NecoPlayerRole>().ToImmutableDictionary(r => r, r => new NecoPlan());
+        Plans = Enum.GetValues<NecoPlayerRole>().ToImmutableDictionary(r => r, r => new Plan());
         EndPlayRequested = Enum.GetValues<NecoPlayerRole>().ToDictionary(r => players[r].Id, _ => false);
     }
 
@@ -80,7 +80,7 @@ internal class NecoPush : INecoPushInformation
     /// <summary>Advances the state of this push to the next turn.</summary>
     /// <exception cref="InvalidOperationException">
     /// If the current turn has not been finished (see
-    /// <see cref="NecoTurn.Finished" />).
+    /// <see cref="Turn.Finished" />).
     /// </exception>
     public void AdvancePushStage()
     {

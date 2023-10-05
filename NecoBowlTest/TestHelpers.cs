@@ -10,7 +10,7 @@ namespace neco_soft.NecoBowlTest;
 
 public static class TestHelpers
 {
-    public static NecoUnitCard TestCard(int cost = 0)
+    public static UnitCard TestCard(int cost = 0)
     {
         return new(NecoCardModelCustom.FromUnitModel(NecoUnitModelCustom_HealthEqualsPower.DoNothing(), cost));
     }
@@ -18,12 +18,12 @@ public static class TestHelpers
     public static Unit UnitMover(
         RelativeDirection direction = RelativeDirection.Up,
         NecoUnitTag[]? tags = null,
-        NecoPlayer? player = null)
+        Player? player = null)
     {
         return new(NecoUnitModelCustom.Mover(direction: direction, tags: tags), player?.Id ?? new());
     }
 
-    public static Unit UnitThrower(NecoPlayer player)
+    public static Unit UnitThrower(Player player)
     {
         return new(NecoUnitModelCustom.Thrower(), player.Id);
     }
@@ -169,7 +169,7 @@ public class NecoUnitModelCustom : NecoUnitModel
     public override IReadOnlyCollection<NecoUnitTag> Tags { get; }
     public override IEnumerable<Behavior> Actions { get; }
 
-    public Unit ToUnit(NecoPlayer owner)
+    public Unit ToUnit(Player owner)
     {
         return new(this, owner.Id);
     }

@@ -5,14 +5,14 @@ using NLog;
 namespace NecoBowl.Core.Input;
 
 /// <summary>
-/// Wrapper around a <see cref="NecoMatch" /> for user interaction purposes. You can call <see cref="SendInput" /> to
+/// Wrapper around a <see cref="Sport.Tactics.Match" /> for user interaction purposes. You can call <see cref="SendInput" /> to
 /// interact with the match state.
 /// </summary>
 public class NecoBowlContext
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-    private readonly NecoMatch Match;
+    private readonly Match Match;
 
     public NecoBowlContext(NecoPlayerPair playerPair)
     {

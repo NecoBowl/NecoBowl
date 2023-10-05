@@ -31,7 +31,7 @@ public class NewStepperTests
     internal static NecoBowl.Core.Machine.Playfield Field = null!;
     internal static PlayMachine PlayMachine = null!;
 
-    private readonly NecoPlayer Player1 = new(), Player2 = new();
+    private readonly Player Player1 = new(), Player2 = new();
 
     private void SetUp_VerticalCollision(out Unit unitA1, out Unit unitA2)
     {

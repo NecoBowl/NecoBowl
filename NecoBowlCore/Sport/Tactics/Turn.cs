@@ -2,18 +2,18 @@ using NecoBowl.Core.Input;
 using NLog;
 using CardPlayMap
     = System.Collections.Generic.Dictionary<NecoBowl.Core.Sport.Tactics.NecoPlayerId,
-        System.Collections.Generic.List<NecoBowl.Core.Sport.Tactics.NecoPlan.CardPlay>>;
+        System.Collections.Generic.List<NecoBowl.Core.Sport.Tactics.Plan.CardPlay>>;
 
 namespace NecoBowl.Core.Sport.Tactics;
 
 /// <summary>
-/// Game state container that tracks cards placed by the players. This is consolidated into a <see cref="NecoPlan" /> once
+/// Game state container that tracks cards placed by the players. This is consolidated into a <see cref="Plan" /> once
 /// the inputs are done being received. Note that in an online scenario, it is probable that inputs from the client's
 /// opponent would only be received after the player has submitted their own. Therefore, the <see cref="CardPlays" />
 /// dictionary likely only contains populated data for one player until <see cref="Finished" /> is true. <p /> Turns are
-/// applied to a <see cref="NecoPush" />.
+/// applied to a <see cref="Push" />.
 /// </summary>
-internal class NecoTurn
+internal class Turn
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
@@ -24,7 +24,7 @@ internal class NecoTurn
 
     public readonly uint TurnIndex;
 
-    public NecoTurn(uint turnIndex, NecoPlayerPair playerPair)
+    public Turn(uint turnIndex, NecoPlayerPair playerPair)
     {
         TurnIndex = turnIndex;
         PlayerPair = playerPair;
@@ -35,7 +35,7 @@ internal class NecoTurn
         }
     }
 
-    private NecoTurn(uint turnIndex, NecoPlayerPair playerPair, CardPlayMap plays)
+    private Turn(uint turnIndex, NecoPlayerPair playerPair, CardPlayMap plays)
         : this(turnIndex, playerPair)
     {
         CardPlays = new(plays);
@@ -44,10 +44,10 @@ internal class NecoTurn
     public bool Finished { get; private set; }
     public uint BaseMoney => 10;
 
-    public IEnumerable<NecoPlan.CardPlay> AllCardPlays
+    public IEnumerable<Plan.CardPlay> AllCardPlays
         => CardPlays.Values.Aggregate((orig, next) => orig.Concat(next).ToList());
 
-    public IReadOnlyDictionary<NecoPlayerRole, List<NecoPlan.CardPlay>> CardPlaysByRole
+    public IReadOnlyDictionary<NecoPlayerRole, List<Plan.CardPlay>> CardPlaysByRole
         => CardPlays.ToDictionary(kv => PlayerPair.RoleOf(kv.Key), kv => kv.Value);
 
     public int RemainingMoney(NecoPlayerRole role)
@@ -64,7 +64,7 @@ internal class NecoTurn
     /// Gets the Turn object that would come after this one. Note that this does not check if this turn is Finished; that is up
     /// to the caller to check if this is being used to progress the game.
     /// </summary>
-    public NecoTurn NextTurn()
+    public Turn NextTurn()
     {
         return new(TurnIndex + 1, PlayerPair, CardPlays);
     }

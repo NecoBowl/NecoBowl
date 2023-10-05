@@ -6,13 +6,13 @@ using NecoBowl.Core.Tags;
 
 namespace NecoBowl.Core.Sport.Tactics;
 
-public class NecoCard
+public class Card
 {
     public readonly NecoCardModel CardModel;
     public readonly NecoCardOptions Options;
     public int Cost;
 
-    public NecoCard(NecoCardModel cardModel)
+    public Card(NecoCardModel cardModel)
     {
         CardModel = cardModel;
         Cost = CardModel.Cost;
@@ -26,10 +26,10 @@ public class NecoCard
         return CardModel is NecoUnitCardModel;
     }
 
-    public bool IsUnitCard(out NecoUnitCard? unitCard)
+    public bool IsUnitCard(out UnitCard? unitCard)
     {
         if (IsUnitCard()) {
-            unitCard = (NecoUnitCard)this;
+            unitCard = (UnitCard)this;
             return true;
         }
 
@@ -38,16 +38,16 @@ public class NecoCard
     }
 }
 
-public class NecoUnitCard : NecoCard
+public class UnitCard : Card
 {
-    public NecoUnitCard(NecoUnitCardModel cardModel) : base(cardModel)
+    public UnitCard(NecoUnitCardModel cardModel) : base(cardModel)
     {
     }
 
     public NecoUnitModel UnitModel
         => ((NecoUnitCardModel)CardModel).Model;
 
-    public Unit ToUnit(NecoPlayerId playerId)
+    internal Unit ToUnit(NecoPlayerId playerId)
     {
         var unit = new Unit(UnitModel, playerId);
         foreach (var planOption in CardModel.OptionPermissions) {
