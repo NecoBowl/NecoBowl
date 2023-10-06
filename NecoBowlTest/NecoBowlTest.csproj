@@ -9,7 +9,7 @@
 
     <RootNamespace>neco_soft.NecoBowlTest</RootNamespace>
 
-    <LangVersion>11</LangVersion>
+    <LangVersion>10</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

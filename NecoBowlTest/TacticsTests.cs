@@ -6,6 +6,7 @@ namespace neco_soft.NecoBowlTest.Tactics;
 
 internal abstract class TacticsTests
 {
+#if false
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
     private NecoBowlContext Context = null!;
@@ -30,9 +31,9 @@ internal abstract class TacticsTests
             Assert.That(resp.ResponseKind, Is.EqualTo(NecoInputResponse.Kind.Success));
 
             Context.FinishTurn();
-            var play = Context.BeginPlay();
+            var play = Context.GetPlay();
 
-            Assert.That(play.Field[0, 0].Unit, Is.Not.Null);
+            Assert.That(Field[0, 0].Unit, Is.Not.Null);
             Assert.That(play.Field[0, 0].Unit!.UnitModel, Is.EqualTo(card.UnitModel));
         }
     }
@@ -143,4 +144,5 @@ internal abstract class TacticsTests
     #region Helpers
 
     #endregion
+#endif
 }

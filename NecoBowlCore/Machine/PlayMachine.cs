@@ -5,7 +5,8 @@ using NLog;
 
 namespace NecoBowl.Core.Machine;
 
-/// <summary>Tracks the state of a <see cref="Playfield" /> as the units perform their actions each step.</summary>
+/// <summary>The starting point of a play. Takes a reference to a field as input, and modifies that field based
+/// on the actions of the units within.</summary>
 internal class PlayMachine
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();

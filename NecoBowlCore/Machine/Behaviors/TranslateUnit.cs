@@ -22,11 +22,7 @@ public class TranslateUnit : Behavior
         var movementDirection = unit.Facing.RotatedBy(flippedDirection);
         var newPos = pos + movementDirection.ToVector2i();
 
-        var transient = new TransientUnit {
-            NewPos = newPos,
-            OldPos = pos,
-            Unit = unit,
-        };
+        var transient = new TransientUnit(newPos, pos, unit);
 
         // TODO Collision check here? Or leave it to caller?
         if (!field.IsInBounds(newPos)) {

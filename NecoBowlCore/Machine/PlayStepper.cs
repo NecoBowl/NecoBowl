@@ -189,6 +189,10 @@ internal class PlayStepper : IMutationReceiver
                 break;
             }
 
+            case BehaviorOutcome.Nothing nothing: {
+                break;
+            }
+
             default: {
                 throw new ArgumentException($"Unhandled outcome type {result.GetType()}");
             }
@@ -196,7 +200,7 @@ internal class PlayStepper : IMutationReceiver
     }
 }
 
-static file class Extension
+static class Extension
 {
     public static void RemoveUnitPair(this Dictionary<NecoUnitId, TransientUnit> source, UnitMovementPair unitPair)
     {

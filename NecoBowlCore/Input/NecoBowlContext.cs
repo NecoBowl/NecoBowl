@@ -2,6 +2,7 @@ using NecoBowl.Core.Machine;
 using NecoBowl.Core.Reports;
 using NecoBowl.Core.Sport.Tactics;
 using NLog;
+using Plan = NecoBowl.Core.Sport.Tactics.Plan;
 
 namespace NecoBowl.Core.Input;
 
@@ -38,7 +39,7 @@ public class NecoBowlContext
         return Match.CurrentPush.SendInput(input);
     }
 
-    public Plan GetPlan(NecoPlayerRole role)
+    public Reports.Plan GetPlan(NecoPlayerRole role)
     {
         return new(Match.CurrentPush.Plans[role]);
     }

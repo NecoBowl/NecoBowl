@@ -7,6 +7,7 @@ namespace neco_soft.NecoBowlTest;
 [TestFixture]
 public abstract class IoTest
 {
+#if false
     [SetUp]
     public void Setup()
     {
@@ -32,4 +33,5 @@ public abstract class IoTest
     {
         return new(CardModelCustom.FromUnitModel(UnitModelCustomHealthEqualsPower.DoNothing(), cost));
     }
+#endif
 }

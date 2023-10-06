@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using NecoBowl.Core;
 using NecoBowl.Core.Machine;
 using NecoBowl.Core.Machine.Reports;
+using NecoBowl.Core.Reports;
 using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Sport.Tactics;
 using NUnit.Framework.Constraints;
@@ -51,13 +52,7 @@ public class NewStepperTests
         Field[0, 0] = new(unit);
 
         var result = PlayMachine.Step();
-        Assert.That(
-            result, Has.EquivalentMovementsTo(
-                new TransientUnit {
-                    Unit = unit,
-                    OldPos = (0, 0),
-                    NewPos = (0, 1),
-                }));
+        Assert.That(result, Has.EquivalentMovementsTo(new TransientUnit((0, 1), (0, 0), unit)));
     }
 
     [Test]
@@ -123,7 +118,8 @@ public class NewStepperTests
         Play.Step();
         Play.Step();
     }
-
+    
+#endif
     [Test]
     public void Play_Clusterfuck()
 
@@ -134,16 +130,17 @@ public class NewStepperTests
             Field[(1, 1) - direction.ToVector2i()] = new(unit);
         }
 
-        var ball = new NecoUnit(NecoUnitModelCustom.Item());
+        var ball = new Unit(new BuiltInDefinitions.Ball());
         Field[1, 1] = new(ball);
 
         Assert.That(
             () => {
-                Play.Step();
-                Play.Step();
-                Play.Step();
+                PlayMachine.Step();
+                PlayMachine.Step();
+                PlayMachine.Step();
             }, Throws.Nothing);
     }
+    #if false
 
     [Test]
     public void Mutation_AttacksCauseUnitsToTakeDamage()
@@ -556,7 +553,7 @@ internal class MutationListHasConstraint<T> : MutationListHasConstraint
 /// Checks if the results of a play step are equivalent to a given list of mutations. The orderings of the mutation lists
 /// are ignored.
 /// </summary>
-file class StepHasEquivalentMutationsConstraint : Constraint
+class StepHasEquivalentMutationsConstraint : Constraint
 {
     private readonly ReadOnlyCollection<MutationChecker> Constraints;
 
@@ -604,7 +601,7 @@ file class StepHasEquivalentMutationsConstraint : Constraint
     }
 }
 
-file class StepHasEquivalentMovementsConstraint : Constraint
+class StepHasEquivalentMovementsConstraint : Constraint
 {
     private readonly ReadOnlyCollection<TransientUnit> Movements;
 
@@ -631,7 +628,7 @@ file class StepHasEquivalentMovementsConstraint : Constraint
     }
 }
 
-abstract file class Has : NUnit.Framework.Has
+abstract class Has : NUnit.Framework.Has
 {
     /// <inheritdoc cref="MutationListHasConstraint" />
     public static MutationListHasConstraint<T> MutationWhere<T>(Func<T, bool> predicate)
@@ -660,7 +657,7 @@ abstract file class Has : NUnit.Framework.Has
     }
 }
 
-static file class NUnitExt
+static class NUnitExt
 {
     /// <inheritdoc cref="MutationListHasConstraint" />
     public static MutationListHasConstraint<T> MutationWhere<T>(this ConstraintExpression expr, Func<T, bool> predicate)

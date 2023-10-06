@@ -25,11 +25,7 @@ public class UnitPushes : Mutation
         var receiver = field.GetUnit(Receiver, out var receiverPos);
         if (field.IsInBounds(receiverPos + Direction.ToVector2i())) {
             substepContext.AddEntry(
-                receiver.Id, new() {
-                    NewPos = receiverPos + Direction.ToVector2i(),
-                    OldPos = receiverPos,
-                    Unit = receiver
-                });
+                receiver.Id, new(receiverPos + Direction.ToVector2i(), receiverPos, receiver));
         }
     }
 }

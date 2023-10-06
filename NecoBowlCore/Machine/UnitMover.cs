@@ -110,11 +110,7 @@ internal class UnitMover
     {
         foreach (var (pos, unit) in Playfield.GetAllUnits()) {
             if (MovementsList.Keys.All(m => m != unit)) {
-                MovementsList[unit] = new() {
-                    NewPos = pos,
-                    OldPos = pos,
-                    Unit = unit
-                };
+                MovementsList[unit] = new(pos, pos, unit);
             }
         }
     }
@@ -666,7 +662,7 @@ internal class TransientPlayfield : ITransientSpaceContentsGetter
                         removals.Add(
                             new(
                                 immigrant,
-                                new SpaceImmigrantRemovalReason.Combat { Other = targets.Select(m => m.Unit) }));
+                                new SpaceImmigrantRemovalReason.Combat(targets.Select(m => m.Unit))));
                     }
                     else {
                         removals.Add(new(immigrant, new SpaceImmigrantRemovalReason.Superseded()));
@@ -695,7 +691,12 @@ internal abstract class SpaceImmigrantRemovalReason
 {
     public sealed class Combat : SpaceImmigrantRemovalReason
     {
-        public required IEnumerable<Unit> Other { get; init; }
+        public readonly IEnumerable<Unit> Other;
+
+        public Combat(IEnumerable<Unit> other)
+        {
+            Other = other;
+        }
     }
 
     public sealed class Superseded : SpaceImmigrantRemovalReason
@@ -723,8 +724,12 @@ internal class WinnerList : IEnumerable<TransientUnit>
         collection = collection.ToList();
 
         // Validate.
-        if (!collection.Any() || collection.First().Count() != 1) {
-            throw new ArgumentException();
+        if (!collection.Any()) {
+            throw new ArgumentException("at least one grouping is required for a winner list");
+        }
+
+        if (collection.First().Count() != 1) {
+            throw new ArgumentException("first winner group can only have one unit");
         }
 
         Winner = collection.First().Single();

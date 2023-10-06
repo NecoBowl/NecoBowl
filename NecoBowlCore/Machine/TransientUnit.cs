@@ -12,14 +12,21 @@ internal record TransientUnit
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
+    public TransientUnit(Vector2i newPos, Vector2i oldPos, Unit unit)
+    {
+        NewPos = newPos;
+        OldPos = oldPos;
+        Unit = unit;
+    }
+
     /// <summary>The position of the unit after the transition.</summary>
-    public required Vector2i NewPos { get; init; }
+    public Vector2i NewPos { get; init; }
 
     /// <summary>The position of the unit before the transition.</summary>
-    public required Vector2i OldPos { get; init; }
+    public Vector2i OldPos { get; init; }
 
     /// <summary>The unit being moved.</summary>
-    public required Unit Unit { get; init; }
+    public Unit Unit { get; init; }
 
     public NecoUnitId UnitId => Unit.Id;
 
