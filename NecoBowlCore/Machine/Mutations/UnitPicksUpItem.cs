@@ -18,7 +18,7 @@ public class UnitPicksUpItem : Mutation
 
     internal override bool Prepare(NecoSubstepContext context, ReadOnlyPlayfield field)
     {
-        if (field.GetUnit(Subject).Carrier is not null) {
+        if (field.GetUnit(Subject).Carrier is { }) {
             throw new NecoBowlException("a unit with an inventory cannot be picked up");
         }
 
@@ -27,12 +27,12 @@ public class UnitPicksUpItem : Mutation
 
     internal override void Pass1Mutate(Playfield field)
     {
-        var itemUnit = field.TempUnitZone.Single(u => u.Id == Item);
+        var itemUnit = field.FlattenedMovementUnitBuffer.Single(u => u.Id == Item);
     }
 
     internal override void Pass3Mutate(Playfield field)
     {
-        var itemUnit = field.TempUnitZone.Single(u => u.Id == Item);
+        var itemUnit = field.FlattenedMovementUnitBuffer.Single(u => u.Id == Item);
         var subject = field.GetUnit(Subject);
         itemUnit!.Carrier = subject;
         subject.Inventory.Add(itemUnit!);

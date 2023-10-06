@@ -1,159 +1,15 @@
 using NecoBowl.Core.Machine;
-using NecoBowl.Core.Sport.Play;
 
 namespace NecoBowl.Core.Tags;
-
-/// <summary></summary>
-/// <remarks>
-/// Instances of these classes will be shared across a unit's mod list and a ModAdded EventHandler submission. For now I
-/// just try not to allow mutability in the class. I should probably mandate a copy constructor and just copy instances of
-/// these. I really wish these were structs...
-/// </remarks>
-public abstract class NecoUnitMod
-{
-    internal virtual NecoUnitMod Update(Unit subject)
-    {
-        return this;
-    }
-
-    public abstract NecoUnitMod Apply<T>(T original) where T : NecoUnitMod;
-
-    public sealed class Rotate : NecoUnitMod
-    {
-        public readonly int Rotation;
-
-        public Rotate()
-        {
-        }
-
-        public Rotate(int rotation)
-        {
-            Rotation = rotation % 8;
-        }
-
-        internal override NecoUnitMod Update(Unit subject)
-        {
-            if (subject.GetMod<InvertRotation>().Enable) {
-                return new Rotate(-Rotation);
-            }
-
-            return this;
-        }
-
-        public override NecoUnitMod Apply<T>(T original)
-        {
-            if (original is not Rotate rotate) {
-                throw new InvalidModException();
-            }
-
-            return new Rotate(Rotation + rotate.Rotation);
-        }
-    }
-
-    public sealed class Flip : NecoUnitMod
-    {
-        public readonly bool EnableX, EnableY;
-
-        public Flip()
-        {
-        }
-
-        public Flip(bool enableX, bool enableY)
-        {
-            EnableX = enableX;
-            EnableY = enableY;
-        }
-
-        public override NecoUnitMod Apply<T>(T original)
-        {
-            if (original is not Flip flip) {
-                throw new InvalidModException();
-            }
-
-            return new Flip(EnableX ^ flip.EnableX, EnableY ^ flip.EnableY);
-        }
-    }
-
-    public sealed class InvertRotation : NecoUnitMod
-    {
-        public readonly bool Enable;
-
-        public InvertRotation()
-        {
-        }
-
-        public InvertRotation(bool enable)
-        {
-            Enable = enable;
-        }
-
-        public override NecoUnitMod Apply<T>(T original)
-        {
-            if (original is not InvertRotation rot) {
-                throw new InvalidModException();
-            }
-
-            return new InvertRotation(Enable ^ rot.Enable);
-        }
-    }
-
-    public sealed class OptionValues : NecoUnitMod
-    {
-        private readonly string Key;
-        private readonly object Value;
-
-        private Dictionary<string, object> OptionValueCollector = new();
-
-        public OptionValues(string key, object value)
-        {
-            Key = key;
-            Value = value;
-        }
-
-        public override NecoUnitMod Apply<T>(T original)
-        {
-            if (original is not OptionValues optionValue) {
-                throw new InvalidModException();
-            }
-
-            OptionValueCollector = new(optionValue.OptionValueCollector) { [Key] = Value };
-            return this;
-        }
-
-        public object GetValue<T>(string key)
-        {
-            var value = GetValueOrNull<T>(key);
-            if (value is not T) {
-                throw new InvalidModException();
-            }
-
-            return value;
-        }
-
-        public object? GetValueOrNull<T>(string key)
-        {
-            var value = OptionValueCollector.GetValueOrDefault(key);
-            if (value is null) {
-                return null;
-            }
-
-            if (value is not T) {
-                throw new InvalidModException();
-            }
-
-            return value;
-        }
-    }
-}
 
 /// <summary>
 /// Definitions of a permission for a player-modifiable option on a card. Options are set by the player during Turns and
 /// are applied to units at the start of the play. <p /> There are two main types of option permission:
 /// <b>dictionary-type</b> (the default), and <b>apply-type</b>. Dictionary-type options simply add an entry in the
-/// <see cref="NecoUnitMod.OptionValues" /> mod of a unit, which is a dictionary accessible by calling
-/// <see cref="Unit.GetMod" /> with <see cref="NecoUnitMod.OptionValues" /> as the type. Apply-type options, on the
-/// other hand, provide a function that is called at play start. The function takes a unit as input and performs whatever
-/// manipulations it wants (typically, adding mods of a type other than <see cref="NecoUnitMod.OptionValues" />).
+/// <see cref="UnitMod.OptionValues" /> mod of a unit, which is a dictionary accessible by calling
+/// <see cref="Unit.GetMod" /> with <see cref="UnitMod.OptionValues" /> as the type. Apply-type options, on the other hand,
+/// provide a function that is called at play start. The function takes a unit as input and performs whatever manipulations
+/// it wants (typically, adding mods of a type other than <see cref="UnitMod.OptionValues" />).
 /// </summary>
 /// <remarks>There are two ways an option</remarks>
 public abstract class NecoCardOptionPermission
@@ -188,7 +44,7 @@ public abstract class NecoCardOptionPermission
 
         internal override void ApplyToUnit(Unit unit, RelativeDirection value)
         {
-            unit.AddMod(new NecoUnitMod.Rotate((int)value));
+            unit.AddMod(new UnitMod.Rotate((int)value));
         }
     }
 
@@ -201,7 +57,7 @@ public abstract class NecoCardOptionPermission
 
         internal override void ApplyToUnit(Unit unit, bool value)
         {
-            unit.AddMod(new NecoUnitMod.InvertRotation(value));
+            unit.AddMod(new UnitMod.InvertRotation(value));
         }
     }
 
@@ -217,7 +73,7 @@ public abstract class NecoCardOptionPermission
 
         internal override void ApplyToUnit(Unit unit, bool value)
         {
-            unit.AddMod(new NecoUnitMod.Flip(value, false));
+            unit.AddMod(new UnitMod.Flip(value, false));
         }
     }
 
@@ -230,7 +86,7 @@ public abstract class NecoCardOptionPermission
 
         internal override void ApplyToUnit(Unit unit, bool value)
         {
-            unit.AddMod(new NecoUnitMod.Flip(false, value));
+            unit.AddMod(new UnitMod.Flip(false, value));
         }
     }
 
@@ -286,7 +142,7 @@ public class NecoCardOptionPermission<T> : NecoCardOptionPermission
 
     internal virtual void ApplyToUnit(Unit unit, T value)
     {
-        unit.AddMod(new NecoUnitMod.OptionValues(Identifier, value!));
+        unit.AddMod(new UnitMod.OptionValues(Identifier, value!));
     }
 
     internal sealed override void ApplyToUnit(Unit unit, object val)

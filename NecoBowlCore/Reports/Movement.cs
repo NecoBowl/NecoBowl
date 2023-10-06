@@ -1,3 +1,5 @@
+using NecoBowl.Core.Sport.Play;
+
 namespace NecoBowl.Core.Machine.Reports;
 
 public record Movement : BaseReport
@@ -11,4 +13,9 @@ public record Movement : BaseReport
     }
 
     public bool IsChange => OldPos != NewPos;
+
+    internal static Movement From(TransientUnit unit)
+    {
+        return new(unit.OldPos, unit.NewPos);
+    }
 }

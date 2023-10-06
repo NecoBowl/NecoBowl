@@ -5,7 +5,7 @@ using NecoBowl.Core.Tags;
 
 namespace neco_soft.NecoBowlDefinitions.Unit;
 
-public class Chicken : NecoUnitModel
+public class Chicken : UnitModel
 {
     public static readonly Chicken Instance = new();
 
@@ -18,7 +18,7 @@ public class Chicken : NecoUnitModel
         => new NecoUnitTag[] { };
 
     public override IEnumerable<Behavior> Actions
-        => new[] { new Behavior.TranslateUnit(RelativeDirection.Up) };
+        => new[] { new TranslateUnit(RelativeDirection.Up) };
 
     public override string BehaviorDescription
         => "Walks forward.";

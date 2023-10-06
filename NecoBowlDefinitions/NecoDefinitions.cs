@@ -11,8 +11,8 @@ public static class NecoDefinitions
     private const string CardModelNamespace = "neco_soft.NecoBowlDefinitions.Card";
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-    public static readonly IReadOnlyList<NecoUnitModel> AllUnitModels;
-    public static readonly IReadOnlyList<NecoCardModel> AllCardModels;
+    public static readonly IReadOnlyList<UnitModel> AllUnitModels;
+    public static readonly IReadOnlyList<CardModel> AllCardModels;
 
     static NecoDefinitions()
     {
@@ -24,7 +24,7 @@ public static class NecoDefinitions
                     Logger.Info(t);
                     return t;
                 })
-            .Select(t => (NecoUnitModel)t.GetField("Instance")!.GetValue(null)!)
+            .Select(t => (UnitModel)t.GetField("Instance")!.GetValue(null)!)
             .Append(BuiltInDefinitions.Ball.Instance)
             .ToList();
 
@@ -32,7 +32,7 @@ public static class NecoDefinitions
         AllCardModels = Assembly.GetExecutingAssembly()
             .GetTypes()
             .Where(t => t.Namespace == CardModelNamespace)
-            .Select(t => (NecoCardModel)t.GetField("Instance")!.GetValue(null)!)
+            .Select(t => (CardModel)t.GetField("Instance")!.GetValue(null)!)
             .ToList();
     }
 }

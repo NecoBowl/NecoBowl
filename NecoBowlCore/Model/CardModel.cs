@@ -2,7 +2,7 @@ using NecoBowl.Core.Tags;
 
 namespace NecoBowl.Core.Model;
 
-public abstract class NecoCardModel
+public abstract class CardModel
 {
     public abstract string Name { get; }
     public abstract int Cost { get; }
@@ -11,16 +11,16 @@ public abstract class NecoCardModel
         = new List<NecoCardOptionPermission>();
 }
 
-public abstract class NecoUnitCardModel : NecoCardModel
+public abstract class UnitCardModel : CardModel
 {
-    public abstract NecoUnitModel Model { get; }
+    public abstract UnitModel Model { get; }
 
     public sealed override string Name => Model.Name;
 }
 
-public class NecoCardModelCustom : NecoCardModel
+public class CardModelCustom : CardModel
 {
-    public NecoCardModelCustom(string name, int cost)
+    public CardModelCustom(string name, int cost)
     {
         Name = name;
         Cost = cost;
@@ -33,20 +33,20 @@ public class NecoCardModelCustom : NecoCardModel
     /// Create a new anonymous CardModel from a UnitModel. This should only be used for testing purposes. Please refer to the
     /// <c>Instance</c> property of actual CardModel implementations for game purposes.
     /// </summary>
-    public static NecoUnitCardModel FromUnitModel(NecoUnitModel model, int cost = 0)
+    public static UnitCardModel FromUnitModel(UnitModel model, int cost = 0)
     {
-        return new NecoUnitCardModelCustom(model, cost);
+        return new UnitCardModelCustom(model, cost);
     }
 
-    private class NecoUnitCardModelCustom : NecoUnitCardModel
+    private class UnitCardModelCustom : UnitCardModel
     {
-        public NecoUnitCardModelCustom(NecoUnitModel model, int cost)
+        public UnitCardModelCustom(UnitModel model, int cost)
         {
             Model = model;
             Cost = cost;
         }
 
-        public override NecoUnitModel Model { get; }
+        public override UnitModel Model { get; }
         public override int Cost { get; }
     }
 }

@@ -1,4 +1,3 @@
-using NecoBowl.Core.Machine.Reports;
 using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Tags;
 using NLog;
@@ -71,7 +70,7 @@ internal class PlayStepper : IMutationReceiver
             PendingMovements.Clear();
 
             // Add movements/mutations from chain actions
-            foreach (var (id, action) in chainedActions.Where(kv => kv.Value is not null)) {
+            foreach (var (id, action) in chainedActions.Where(kv => kv.Value is { })) {
                 EnqueueMutationFromAction(id, action!.Result(id, Field.AsReadOnly()));
                 chainedActions[id] = action.Next;
             }
@@ -143,8 +142,8 @@ internal class PlayStepper : IMutationReceiver
         foreach (var (pos, unit) in Field.GetAllUnits()) {
             foreach (var mutation in baseMutations) {
                 var reaction = unit.Reactions.SingleOrDefault(r => r.MutationType == mutation.GetType());
-                if (reaction is not null) {
-                    tempMutations.AddRange(reaction.Reaction(unit, Field.AsReadOnly(), mutation));
+                if (reaction is { }) {
+                    tempMutations.AddRange(reaction.Reaction(new(unit), new(Field.AsReadOnly()), mutation));
                 }
             }
         }

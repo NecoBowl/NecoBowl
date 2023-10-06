@@ -1,18 +1,17 @@
 using System.Collections;
 using NecoBowl.Core.Machine;
 using NecoBowl.Core.Model;
-using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Tags;
 
 namespace NecoBowl.Core.Sport.Tactics;
 
 public class Card
 {
-    public readonly NecoCardModel CardModel;
+    public readonly CardModel CardModel;
     public readonly NecoCardOptions Options;
     public int Cost;
 
-    public Card(NecoCardModel cardModel)
+    public Card(CardModel cardModel)
     {
         CardModel = cardModel;
         Cost = CardModel.Cost;
@@ -23,7 +22,7 @@ public class Card
 
     public bool IsUnitCard()
     {
-        return CardModel is NecoUnitCardModel;
+        return CardModel is UnitCardModel;
     }
 
     public bool IsUnitCard(out UnitCard? unitCard)
@@ -40,12 +39,12 @@ public class Card
 
 public class UnitCard : Card
 {
-    public UnitCard(NecoUnitCardModel cardModel) : base(cardModel)
+    public UnitCard(UnitCardModel cardModel) : base(cardModel)
     {
     }
 
-    public NecoUnitModel UnitModel
-        => ((NecoUnitCardModel)CardModel).Model;
+    public UnitModel UnitModel
+        => ((UnitCardModel)CardModel).Model;
 
     internal Unit ToUnit(NecoPlayerId playerId)
     {
@@ -60,10 +59,10 @@ public class UnitCard : Card
 
 public class NecoCardOptions : IEnumerable<NecoCardOptionItem>
 {
-    private readonly NecoCardModel CardModel;
+    private readonly CardModel CardModel;
     private readonly Dictionary<string, object> Values;
 
-    public NecoCardOptions(NecoCardModel cardModel)
+    public NecoCardOptions(CardModel cardModel)
     {
         CardModel = cardModel;
         Values = cardModel.OptionPermissions.ToDictionary(p => p.Identifier, p => p.Default);

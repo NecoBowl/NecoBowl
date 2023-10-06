@@ -18,6 +18,7 @@ internal class Playfield
 {
     private readonly NecoSpaceContents[,] FieldContents;
     public readonly NecoFieldParameters FieldParameters;
+    public readonly List<Unit> FlattenedMovementUnitBuffer = new();
 
     public readonly List<Unit> GraveyardZone = new();
 

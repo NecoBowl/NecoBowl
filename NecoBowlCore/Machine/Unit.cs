@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using NecoBowl.Core.Machine;
 using NecoBowl.Core.Model;
 using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Sport.Tactics;
@@ -37,16 +36,16 @@ internal sealed class Unit : IEquatable<Unit>
 
     public readonly NecoUnitId Id;
     public readonly List<Unit> Inventory = new();
-    private readonly List<NecoUnitMod> Mods = new();
+    private readonly List<UnitMod> Mods = new();
 
     public readonly NecoPlayerId OwnerId;
     public readonly ReactionDict Reactions = new();
     public readonly List<NecoUnitTag> Tags = new();
-    public readonly NecoUnitModel UnitModel;
+    public readonly UnitModel UnitModel;
     public Unit? Carrier;
     public int DamageTaken;
 
-    public Unit(NecoUnitModel unitModel, string discriminator, NecoPlayerId ownerId)
+    public Unit(UnitModel unitModel, string discriminator, NecoPlayerId ownerId)
     {
         Id = new();
 
@@ -59,12 +58,12 @@ internal sealed class Unit : IEquatable<Unit>
         ActionStack = new(unitModel.Actions.Reverse());
     }
 
-    public Unit(NecoUnitModel unitModel, NecoPlayerId playerId)
+    public Unit(UnitModel unitModel, NecoPlayerId playerId)
         : this(unitModel, "", playerId)
     {
     }
 
-    internal Unit(NecoUnitModel unitModel)
+    internal Unit(UnitModel unitModel)
         : this(unitModel, "", new())
     {
     }
@@ -75,7 +74,7 @@ internal sealed class Unit : IEquatable<Unit>
     public int MaxHealth => UnitModel.Health;
     public int CurrentHealth => MaxHealth - DamageTaken;
 
-    public int Rotation => (int)(AbsoluteDirection)GetMod<NecoUnitMod.Rotate>().Rotation;
+    public int Rotation => (int)(AbsoluteDirection)GetMod<UnitMod.Rotate>().Rotation;
 
     public AbsoluteDirection Facing => (AbsoluteDirection)Rotation;
 
@@ -109,13 +108,13 @@ internal sealed class Unit : IEquatable<Unit>
         return value;
     }
 
-    public void AddMod(NecoUnitMod mod)
+    public void AddMod(UnitMod mod)
     {
         mod = mod.Update(this);
         Mods.Add(mod);
     }
 
-    public T GetMod<T>() where T : NecoUnitMod, new()
+    public T GetMod<T>() where T : UnitMod, new()
     {
         return Mods.OfType<T>().Any()
             ? (T)Mods.OfType<T>().Aggregate((orig, next) => (T)next.Apply(orig)).Apply(new T())

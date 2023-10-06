@@ -5,7 +5,7 @@ using NecoBowl.Core.Tags;
 
 namespace neco_soft.NecoBowlDefinitions.Unit;
 
-public class Snake : NecoUnitModel
+public class Snake : UnitModel
 {
     public static readonly Snake Instance = new();
 
@@ -15,10 +15,10 @@ public class Snake : NecoUnitModel
     public override int Power => 2;
 
     public override IEnumerable<Behavior> Actions => new[] {
-        new Behavior.TranslateUnit(RelativeDirection.Right),
-        new Behavior.TranslateUnit(RelativeDirection.Up),
-        new Behavior.TranslateUnit(RelativeDirection.Left),
-        new Behavior.TranslateUnit(RelativeDirection.Up)
+        new TranslateUnit(RelativeDirection.Right),
+        new TranslateUnit(RelativeDirection.Up),
+        new TranslateUnit(RelativeDirection.Left),
+        new TranslateUnit(RelativeDirection.Up),
     };
 
     public override string BehaviorDescription => "Moves in an \"S\" motion, starting by moving right.";

@@ -6,7 +6,7 @@ namespace NecoBowl.Core;
 
 public class BuiltInDefinitions
 {
-    public class Ball : NecoUnitModel
+    public class Ball : UnitModel
     {
         public static readonly Ball Instance = new();
 

@@ -5,7 +5,7 @@ using NecoBowl.Core.Tags;
 
 namespace neco_soft.NecoBowlDefinitions.Unit;
 
-public class Horse : NecoUnitModel
+public class Horse : UnitModel
 {
     public static readonly Horse Instance = new();
 
@@ -15,11 +15,11 @@ public class Horse : NecoUnitModel
     public override int Power => 4;
 
     public override IEnumerable<Behavior> Actions => new[] {
-        new Behavior.TranslateUnit(RelativeDirection.Up),
-        new Behavior.TranslateUnit(RelativeDirection.Up)
-            .Chain(new ApplyMod(new NecoUnitMod.Rotate(2))),
-        new Behavior.TranslateUnit(RelativeDirection.Up)
-            .Chain(new ApplyMod(new NecoUnitMod.Rotate(-2)))
+        new TranslateUnit(RelativeDirection.Up),
+        new TranslateUnit(RelativeDirection.Up)
+            .Chain(new ApplyMod(new UnitMod.Rotate(2))),
+        new TranslateUnit(RelativeDirection.Up)
+            .Chain(new ApplyMod(new UnitMod.Rotate(-2))),
     };
 
     public override string BehaviorDescription

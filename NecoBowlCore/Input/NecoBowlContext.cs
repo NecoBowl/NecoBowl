@@ -1,12 +1,13 @@
 using NecoBowl.Core.Machine;
+using NecoBowl.Core.Reports;
 using NecoBowl.Core.Sport.Tactics;
 using NLog;
 
 namespace NecoBowl.Core.Input;
 
 /// <summary>
-/// Wrapper around a <see cref="Sport.Tactics.Match" /> for user interaction purposes. You can call <see cref="SendInput" /> to
-/// interact with the match state.
+/// Wrapper around a <see cref="Sport.Tactics.Match" /> for user interaction purposes. You can call
+/// <see cref="SendInput" /> to interact with the match state.
 /// </summary>
 public class NecoBowlContext
 {
@@ -37,24 +38,14 @@ public class NecoBowlContext
         return Match.CurrentPush.SendInput(input);
     }
 
-    public NecoPlanInformation GetPlan(NecoPlayerRole role)
+    public Plan GetPlan(NecoPlayerRole role)
     {
         return new(Match.CurrentPush.Plans[role]);
     }
 
-    public NecoTurnInformation GetTurn()
+    public Play GetPlay()
     {
-        return new(Match.CurrentPush.CurrentTurn);
-    }
-
-    public NecoPlayInformation BeginPlay()
-    {
-        return new(Match.CurrentPush.CreatePlay(false, true));
-    }
-
-    public NecoPlayInformation GetPlayPreview()
-    {
-        return new(Match.CurrentPush.CreatePlay(true, true));
+        return new(Match.CurrentPush.CreatePlay(true));
     }
 
     public void FinishTurn()

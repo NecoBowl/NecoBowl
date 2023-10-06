@@ -4,7 +4,7 @@ using NecoBowl.Core.Tags;
 
 namespace neco_soft.NecoBowlDefinitions.Unit;
 
-public class Crab : NecoUnitModel
+public class Crab : UnitModel
 {
     public static readonly Crab Instance = new();
 

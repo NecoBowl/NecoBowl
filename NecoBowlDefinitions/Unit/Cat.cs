@@ -4,7 +4,7 @@ using NecoBowl.Core.Sport.Play;
 
 namespace neco_soft.NecoBowlDefinitions.Unit;
 
-public class Cat : NecoUnitModel
+public class Cat : UnitModel
 {
     public static readonly Cat Instance = new();
 
@@ -14,7 +14,7 @@ public class Cat : NecoUnitModel
     public override int Power => 3;
 
     public override IEnumerable<Behavior> Actions
-        => new Behavior[] { new Behavior.TranslateUnit(RelativeDirection.Up) };
+        => new Behavior[] { new TranslateUnit(RelativeDirection.Up) };
 
     public override string BehaviorDescription
         => $"Moves {Arrow0}.";

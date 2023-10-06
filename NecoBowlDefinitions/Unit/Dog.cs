@@ -5,7 +5,7 @@ using NecoBowl.Core.Tags;
 
 namespace neco_soft.NecoBowlDefinitions.Unit;
 
-public class Dog : NecoUnitModel
+public class Dog : UnitModel
 {
     public static readonly Dog Instance = new();
 
@@ -18,21 +18,20 @@ public class Dog : NecoUnitModel
         => "Walks forward. Turns around upon picking up the ball.";
 
     public override IEnumerable<Behavior> Actions
-        => new Behavior[] { new Behavior.TranslateUnit(RelativeDirection.Up) };
+        => new Behavior[] { new TranslateUnit(RelativeDirection.Up) };
 
     public override IEnumerable<NecoUnitTag> Tags => new[] { NecoUnitTag.Carrier };
 
     public override ReactionDict Reactions { get; } = new() {
-        new(typeof(UnitPicksUpItem), (unit, field, mut) => OnPicksUp(unit, mut))
+        new(typeof(UnitPicksUpItem), (unit, _, mut) => OnPicksUp(unit, mut)),
     };
 
-    private static IEnumerable<Mutation.BaseMutation> OnPicksUp(
-        NecoBowl.Core.Sport.Play.Unit unit,
-        Mutation.BaseMutation
-            mutation)
+    private static IEnumerable<Mutation> OnPicksUp(
+        NecoBowl.Core.Machine.Reports.Unit unit,
+        Mutation mutation)
     {
         if (unit.Id == mutation.Subject) {
-            yield return new UnitGetsMod(unit.Id, new NecoUnitMod.Rotate(4));
+            yield return new UnitGetsMod(unit.Id, new UnitMod.Rotate(4));
         }
     }
 }

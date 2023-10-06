@@ -95,7 +95,7 @@ internal class PlayMachine
     {
         foreach (var (pos, unit) in Field.GetAllUnits()) {
             if (Field.FieldParameters.GetPlayerAffiliation(pos) == NecoPlayerRole.Defense) {
-                unit.AddMod(new NecoUnitMod.Rotate(4));
+                unit.AddMod(new UnitMod.Rotate(4));
             }
         }
 

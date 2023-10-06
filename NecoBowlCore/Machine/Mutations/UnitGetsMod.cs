@@ -5,9 +5,9 @@ namespace NecoBowl.Core.Sport.Play;
 
 public class UnitGetsMod : Mutation
 {
-    public readonly NecoUnitMod Mod;
+    public readonly UnitMod Mod;
 
-    public UnitGetsMod(NecoUnitId subject, NecoUnitMod mod)
+    public UnitGetsMod(NecoUnitId subject, UnitMod mod)
         : base(subject)
     {
         Mod = mod;

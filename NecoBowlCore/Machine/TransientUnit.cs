@@ -30,11 +30,7 @@ internal record TransientUnit
     /// <returns>A copy of this movement, but with <see cref="NewPos" /> equal to the current value of <see cref="OldPos" />.</returns>
     public TransientUnit WithoutMovement()
     {
-        return new() {
-            NewPos = OldPos,
-            OldPos = OldPos,
-            Unit = Unit
-        };
+        return this with { NewPos = OldPos };
     }
 
     public AbsoluteDirection AsDirection()
@@ -50,7 +46,7 @@ internal record TransientUnit
         return others.Count() switch {
             0 => true,
             1 => Unit.CanPickUp(others.Single().Unit),
-            _ => false
+            _ => false,
         };
     }
 
@@ -105,7 +101,7 @@ internal record UnitMovementPair : IEnumerable<TransientUnit>
     public TransientUnit? UnitWhereSingle(Func<TransientUnit, bool> predicate, out TransientUnit? other)
     {
         var movement = Collection.SingleOrDefault(predicate);
-        other = movement is not null ? OtherMovement(movement) : null;
+        other = movement is { } ? OtherMovement(movement) : null;
         return movement;
     }
 
@@ -125,7 +121,7 @@ internal record UnitMovementPair : IEnumerable<TransientUnit>
             other = null;
         }
 
-        return result is not null;
+        return result is { };
     }
 
     public bool TryGetUnitsBy(
@@ -168,7 +164,7 @@ internal record UnitMovementPair : IEnumerable<TransientUnit>
         [MaybeNullWhen(false)] out TransientUnit item)
     {
         if (UnitWithTag(NecoUnitTag.Carrier, out var itemUnit) is { } carrierUnit) {
-            if (itemUnit is not null && itemUnit.Unit.Tags.Contains(NecoUnitTag.Item)) {
+            if (itemUnit is { } && itemUnit.Unit.Tags.Contains(NecoUnitTag.Item)) {
                 carrier = carrierUnit;
                 item = itemUnit;
                 return true;

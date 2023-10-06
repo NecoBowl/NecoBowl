@@ -5,9 +5,9 @@ namespace NecoBowl.Core.Sport.Play;
 
 public class ApplyMod : Behavior
 {
-    public readonly NecoUnitMod Mod;
+    public readonly UnitMod Mod;
 
-    public ApplyMod(NecoUnitMod mod)
+    public ApplyMod(UnitMod mod)
     {
         Mod = mod;
     }

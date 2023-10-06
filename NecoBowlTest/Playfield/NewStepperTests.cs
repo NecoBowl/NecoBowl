@@ -1,9 +1,11 @@
 using System.Collections.ObjectModel;
 using NecoBowl.Core;
 using NecoBowl.Core.Machine;
+using NecoBowl.Core.Machine.Reports;
 using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Sport.Tactics;
 using NUnit.Framework.Constraints;
+using Unit = NecoBowl.Core.Machine.Unit;
 
 // ReSharper disable AccessToStaticMemberViaDerivedType
 
@@ -35,8 +37,8 @@ public class NewStepperTests
 
     private void SetUp_VerticalCollision(out Unit unitA1, out Unit unitA2)
     {
-        unitA1 = NecoUnitModelCustom.Mover("MoverN", 5, 2).ToUnit(Player1);
-        unitA2 = NecoUnitModelCustom.Mover("MoverS", 5, 2, RelativeDirection.Down).ToUnit(Player2);
+        unitA1 = UnitModelCustom.Mover("MoverN", 5, 2).ToUnit(Player1);
+        unitA2 = UnitModelCustom.Mover("MoverS", 5, 2, RelativeDirection.Down).ToUnit(Player2);
         Field[0, 0] = new(unitA1);
         Field[0, 1] = new(unitA2);
     }
@@ -45,7 +47,7 @@ public class NewStepperTests
     [Test]
     public void Play_Action_TranslateUnit_MovesUnit()
     {
-        var unit = NecoUnitModelCustom.Mover("Mover", direction: RelativeDirection.Up).ToUnit(Player1);
+        var unit = UnitModelCustom.Mover("Mover", direction: RelativeDirection.Up).ToUnit(Player1);
         Field[0, 0] = new(unit);
 
         var result = PlayMachine.Step();
@@ -54,15 +56,15 @@ public class NewStepperTests
                 new TransientUnit {
                     Unit = unit,
                     OldPos = (0, 0),
-                    NewPos = (0, 1)
+                    NewPos = (0, 1),
                 }));
     }
 
     [Test]
     public void Play_UnitCanAttackUnitBumpingIntoWall()
     {
-        var unitNorth = NecoUnitModelCustom.Mover("MoverN", 5, 2).ToUnit(Player1);
-        var unitWest = NecoUnitModelCustom.Mover("MoverW", 5, 2, RelativeDirection.Left).ToUnit(Player2);
+        var unitNorth = UnitModelCustom.Mover("MoverN", 5, 2).ToUnit(Player1);
+        var unitWest = UnitModelCustom.Mover("MoverW", 5, 2, RelativeDirection.Left).ToUnit(Player2);
         Field[0, 0] = new(unitNorth);
         Field[0, 1] = new(unitWest);
 
@@ -195,8 +197,8 @@ public class NewStepperTests
     [Test]
     public void Movement_TrailingUnitsCanMove()
     {
-        var unit1 = NecoUnitModelCustom.Mover().ToUnit(Player1);
-        var unit2 = NecoUnitModelCustom.Mover().ToUnit(Player1);
+        var unit1 = UnitModelCustom.Mover().ToUnit(Player1);
+        var unit2 = UnitModelCustom.Mover().ToUnit(Player1);
 
         Field[0, 0] = new(unit1);
         Field[0, 1] = new(unit2);
@@ -469,9 +471,9 @@ public record MutationChecker
 
 /// <summary>
 /// Checks that each space coordinate in the given dictionary has its associated contents in a
-/// <see cref="Playfield" />.
+/// <see cref="NecoBowl.Core.Machine.Playfield" />.
 /// </summary>
-public class FieldHasContentsConstraint : Constraint
+internal class FieldHasContentsConstraint : Constraint
 {
     private readonly Dictionary<Vector2i, Unit> ExpectedContents;
 
@@ -502,7 +504,7 @@ public class FieldHasContentsConstraint : Constraint
 }
 
 /// <summary>Checks if a mutation list has a mutation that passes a given predicate.</summary>
-public class MutationListHasConstraint : Constraint
+internal class MutationListHasConstraint : Constraint
 {
     // jank
     private readonly Func<object, bool>? Predicate;
@@ -528,7 +530,7 @@ public class MutationListHasConstraint : Constraint
 
 /// <inheritdoc cref="MutationListHasConstraint" />
 /// <typeparam name="T">The type of the mutation.</typeparam>
-public class MutationListHasConstraint<T> : MutationListHasConstraint
+internal class MutationListHasConstraint<T> : MutationListHasConstraint
     where T : Mutation
 {
     private readonly Func<T, bool> Predicate;
@@ -554,7 +556,7 @@ public class MutationListHasConstraint<T> : MutationListHasConstraint
 /// Checks if the results of a play step are equivalent to a given list of mutations. The orderings of the mutation lists
 /// are ignored.
 /// </summary>
-public class StepHasEquivalentMutationsConstraint : Constraint
+file class StepHasEquivalentMutationsConstraint : Constraint
 {
     private readonly ReadOnlyCollection<MutationChecker> Constraints;
 
@@ -573,7 +575,7 @@ public class StepHasEquivalentMutationsConstraint : Constraint
 
     public override ConstraintResult ApplyTo<TActual>(TActual actual)
     {
-        if (actual is not PlayStepResult stepResult) {
+        if (actual is not Step stepResult) {
             throw new("wrong input type");
         }
 
@@ -602,7 +604,7 @@ public class StepHasEquivalentMutationsConstraint : Constraint
     }
 }
 
-public class StepHasEquivalentMovementsConstraint : Constraint
+file class StepHasEquivalentMovementsConstraint : Constraint
 {
     private readonly ReadOnlyCollection<TransientUnit> Movements;
 
@@ -615,13 +617,13 @@ public class StepHasEquivalentMovementsConstraint : Constraint
 
     public override ConstraintResult ApplyTo<TActual>(TActual actual)
     {
-        if (actual is not PlayStepResult stepResult) {
+        if (actual is not Step stepResult) {
             throw new("wrong input type");
         }
 
         var movements = stepResult.GetAllMovements().ToList();
 
-        if (!movements.ToHashSet().SetEquals(Movements.ToHashSet())) {
+        if (!movements.ToHashSet().SetEquals(Movements.Select(Movement.From).ToHashSet())) {
             return new(this, movements, ConstraintStatus.Failure);
         }
 
@@ -629,7 +631,7 @@ public class StepHasEquivalentMovementsConstraint : Constraint
     }
 }
 
-public abstract class Has : NUnit.Framework.Has
+abstract file class Has : NUnit.Framework.Has
 {
     /// <inheritdoc cref="MutationListHasConstraint" />
     public static MutationListHasConstraint<T> MutationWhere<T>(Func<T, bool> predicate)
@@ -658,7 +660,7 @@ public abstract class Has : NUnit.Framework.Has
     }
 }
 
-public static class NUnitExt
+static file class NUnitExt
 {
     /// <inheritdoc cref="MutationListHasConstraint" />
     public static MutationListHasConstraint<T> MutationWhere<T>(this ConstraintExpression expr, Func<T, bool> predicate)

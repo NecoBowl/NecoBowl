@@ -1,14 +1,13 @@
 using System.Collections.Immutable;
 using NecoBowl.Core.Input;
 using NecoBowl.Core.Machine;
-using NecoBowl.Core.Sport.Play;
 
 namespace NecoBowl.Core.Sport.Tactics;
 
 /// <summary>
 /// Game state container representing the state of the board as the offense pushes towards the defense. Stores a
-/// <see cref="Plan" /> for each player that develop over the course of a number of turns (see <see cref="Turn" />
-/// ). Pushes are used to create a <see cref="PlayMachine" /> to hand off to the Action of the game.
+/// <see cref="Plan" /> for each player that develop over the course of a number of turns (see <see cref="Turn" /> ).
+/// Pushes are used to create a <see cref="PlayMachine" /> to hand off to the Action of the game.
 /// </summary>
 internal class Push : INecoPushInformation
 {
@@ -35,7 +34,7 @@ internal class Push : INecoPushInformation
     public bool IsTurnFinished => CurrentTurn.Finished;
 
     public bool IsPlayFinished {
-        get => TempPlay is not null && _isPlayFinished;
+        get => TempPlay is { } && _isPlayFinished;
         set {
             if (TempPlay is null) {
                 throw new InvalidOperationException("cannot change play state without an active play");
@@ -79,8 +78,8 @@ internal class Push : INecoPushInformation
 
     /// <summary>Advances the state of this push to the next turn.</summary>
     /// <exception cref="InvalidOperationException">
-    /// If the current turn has not been finished (see
-    /// <see cref="Turn.Finished" />).
+    /// If the current turn has not been finished (see <see cref="Turn.Finished" />
+    /// ).
     /// </exception>
     public void AdvancePushStage()
     {
@@ -99,44 +98,31 @@ internal class Push : INecoPushInformation
         CurrentTurn = CurrentTurn.NextTurn();
     }
 
-    /// <summary>
-    /// Creates a new Play from the cards played during this push. The Play object is self-contained and has no direct effect
-    /// on the state of the match.
-    /// </summary>
+    /// <summary></summary>
     /// <seealso cref="CreateField" />
-    public PlayMachine CreatePlay(bool isPreview = false, bool preprocessUnits = false)
+    public PlayMachine CreatePlay(bool preprocessUnits = false)
     {
-        var field = CreateField(isPreview);
+        var field = CreateField();
         var play = new PlayMachine(field, preprocessUnits: preprocessUnits);
-        if (!isPreview) {
-            if (!IsTurnFinished) {
-                throw new InvalidOperationException("cannot run real play before finishing turn");
-            }
-
-            TempPlay = play;
-        }
-
         return play;
     }
 
     /// <summary>Creates a Field that represents the field state at the start of the play.</summary>
     /// <returns>A Field with its spaces populated with contents corresponding to the cards played in this push.</returns>
-    public Playfield CreateField(bool isPreview)
+    public Playfield CreateField()
     {
         var field = new Playfield(FieldParameters);
 
         foreach (var (role, plan) in Plans) {
             var plays = plan.GetCardPlays().ToList();
 
-            if (isPreview) {
-                // Add the cards from the turn in progress
-                plays.AddRange(CurrentTurn.CardPlaysByRole[role]);
-            }
+            // Add the cards from the turn in progress
+            plays.AddRange(CurrentTurn.CardPlaysByRole[role]);
 
             foreach (var cardPlay in plays) {
                 if (cardPlay.Card.IsUnitCard(out var unitCard)) {
                     field[cardPlay.Position] = field[cardPlay.Position] with {
-                        Unit = unitCard!.ToUnit(cardPlay.Player)
+                        Unit = unitCard!.ToUnit(cardPlay.Player),
                     };
                 }
             }

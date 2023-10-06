@@ -2,10 +2,10 @@ using NecoBowl.Core.Model;
 
 namespace neco_soft.NecoBowlDefinitions.Card;
 
-public class Rooster : NecoUnitCardModel
+public class Rooster : UnitCardModel
 {
     public static readonly Rooster Instance = new();
 
     public override int Cost => 3;
-    public override NecoUnitModel Model => Unit.Rooster.Instance;
+    public override UnitModel Model => Unit.Rooster.Instance;
 }

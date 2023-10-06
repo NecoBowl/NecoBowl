@@ -5,7 +5,7 @@ using NecoBowl.Core.Tags;
 
 namespace neco_soft.NecoBowlDefinitions.Unit;
 
-public class Boar : NecoUnitModel
+public class Boar : UnitModel
 {
     public static readonly Boar Instance = new();
 
@@ -18,7 +18,7 @@ public class Boar : NecoUnitModel
         => new[] { NecoUnitTag.Pusher };
 
     public override IEnumerable<Behavior> Actions
-        => new[] { new Behavior.TranslateUnit(RelativeDirection.Up) };
+        => new[] { new TranslateUnit(RelativeDirection.Up) };
 
     public override string BehaviorDescription
         => $"Moves {Arrow0}.";

@@ -32,7 +32,7 @@ public class ChaseBall : Behavior
             .MinBy(tuple => tuple.lengthSquared);
         var originalDistance = (pos - ballPos).LengthSquared;
 
-        var fallbackDirection = (RelativeDirection)(unit.GetMod<NecoUnitMod.OptionValues>()
+        var fallbackDirection = (RelativeDirection)(unit.GetMod<UnitMod.OptionValues>()
             .GetValueOrNull<RelativeDirection>(Option_FallbackDirecttion) ?? FallbackDirection);
         var direction = minDistanceAfterMove > originalDistance ? fallbackDirection : minDistanceDirection;
         return new TranslateUnit(direction).CallResult(uid, field);

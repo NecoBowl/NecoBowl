@@ -5,7 +5,7 @@ using NecoBowl.Core.Tags;
 namespace neco_soft.NecoBowlDefinitions.Unit;
 
 /// <summary>High-commitment, high-coverage control unit.</summary>
-public class Skunk : NecoUnitModel
+public class Skunk : UnitModel
 {
     public static readonly Skunk Instance = new();
 

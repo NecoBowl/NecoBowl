@@ -5,7 +5,7 @@ using NecoBowl.Core.Tags;
 
 namespace neco_soft.NecoBowlDefinitions.Unit;
 
-public class Rooster : NecoUnitModel
+public class Rooster : UnitModel
 {
     public static readonly Rooster Instance = new();
 
@@ -16,7 +16,7 @@ public class Rooster : NecoUnitModel
     public override int Power => 2;
 
     public override IEnumerable<Behavior> Actions
-        => new[] { new Behavior.TranslateUnit(RelativeDirection.Up) };
+        => new[] { new TranslateUnit(RelativeDirection.Up) };
 
     public override string BehaviorDescription => "Moves forward.";
 

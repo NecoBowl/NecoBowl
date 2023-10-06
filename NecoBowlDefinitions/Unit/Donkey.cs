@@ -5,7 +5,7 @@ using NecoBowl.Core.Tags;
 
 namespace neco_soft.NecoBowlDefinitions.Unit;
 
-public class Donkey : NecoUnitModel
+public class Donkey : UnitModel
 {
     public static readonly Donkey Instance = new();
 
@@ -15,8 +15,8 @@ public class Donkey : NecoUnitModel
     public override int Power => 2;
 
     public override IEnumerable<Behavior> Actions => new[] {
-        new Behavior.TranslateUnit(RelativeDirection.Up).Chain(new ApplyMod(new NecoUnitMod.Rotate(2))),
-        new Behavior.TranslateUnit(RelativeDirection.Up).Chain(new ApplyMod(new NecoUnitMod.Rotate(-2)))
+        new TranslateUnit(RelativeDirection.Up).Chain(new ApplyMod(new UnitMod.Rotate(2))),
+        new TranslateUnit(RelativeDirection.Up).Chain(new ApplyMod(new UnitMod.Rotate(-2))),
     };
 
     public override string BehaviorDescription

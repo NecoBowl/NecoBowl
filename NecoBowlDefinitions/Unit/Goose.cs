@@ -6,7 +6,7 @@ using NecoBowl.Core.Tags;
 namespace neco_soft.NecoBowlDefinitions.Unit;
 
 /// <summary>General-purpose defensive threat.</summary>
-public class Goose : NecoUnitModel
+public class Goose : UnitModel
 {
     public static readonly Goose Instance = new();
 
@@ -18,7 +18,7 @@ public class Goose : NecoUnitModel
     public override IEnumerable<NecoUnitTag> Tags => new[] { NecoUnitTag.Carrier };
 
     public override IEnumerable<Behavior> Actions => new[] {
-        new ChaseBall(new[] { RelativeDirection.Up, RelativeDirection.UpLeft, RelativeDirection.UpRight })
+        new ChaseBall(new[] { RelativeDirection.Up, RelativeDirection.UpLeft, RelativeDirection.UpRight }),
     };
 
     public override string BehaviorDescription

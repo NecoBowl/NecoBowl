@@ -1,10 +1,10 @@
-using NecoBowl.Core.Machine;
+using NecoBowl.Core.Machine.Reports;
 using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Tags;
 
 namespace NecoBowl.Core.Model;
 
-public abstract class NecoUnitModel
+public abstract class UnitModel
 {
     public abstract string InternalName { get; }
     public abstract string Name { get; }
@@ -37,7 +37,3 @@ public delegate IEnumerable<Mutation> MutationReaction<in T>(
     Unit unit,
     Playfield field,
     T mutation);
-
-public class UnitReactionContext
-{
-}

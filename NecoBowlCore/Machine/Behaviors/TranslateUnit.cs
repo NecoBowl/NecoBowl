@@ -17,8 +17,8 @@ public class TranslateUnit : Behavior
         var pos = field.GetUnitPosition(uid);
         var unit = field.GetUnit(pos);
         var flippedDirection = Direction.Mirror(
-            unit.GetMod<NecoUnitMod.Flip>().EnableX,
-            unit.GetMod<NecoUnitMod.Flip>().EnableY);
+            unit.GetMod<UnitMod.Flip>().EnableX,
+            unit.GetMod<UnitMod.Flip>().EnableY);
         var movementDirection = unit.Facing.RotatedBy(flippedDirection);
         var newPos = pos + movementDirection.ToVector2i();
 
