@@ -1,14 +1,14 @@
-using NecoBowl.Core.Machine;
+using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Tags;
 
-namespace NecoBowl.Core.Sport.Play;
+namespace NecoBowl.Core.Machine.Mutations;
 
 public class UnitGetsMod : Mutation
 {
     public readonly UnitMod Mod;
 
-    public UnitGetsMod(NecoUnitId subject, UnitMod mod)
-        : base(subject)
+    public UnitGetsMod(Core.Reports.Unit subject, UnitMod mod)
+        : base(subject.Id)
     {
         Mod = mod;
     }

@@ -1,43 +1,26 @@
-using NecoBowl.Core.Machine;
+using NecoBowl.Core.Sport.Play;
 
-namespace NecoBowl.Core.Sport.Play;
+namespace NecoBowl.Core.Machine.Mutations;
 
 public class UnitAttacks : Mutation
 {
-    public enum Kind
-    {
-        SpaceSwap, SpaceConflict
-    }
-
     public readonly NecoUnitId Attacker, Receiver;
-    public readonly Kind AttackKind;
-    public readonly Vector2i? ConflictPosition;
-
-    public readonly int Damage;
 
     public UnitAttacks(
-        NecoUnitId attacker,
-        NecoUnitId receiver,
-        int attackDamage,
-        Kind attackKind,
-        Vector2i? conflictPosition)
-        : base(attacker)
+        Core.Reports.Unit attacker,
+        Core.Reports.Unit receiver)
+        : base(attacker.Id)
     {
-        Attacker = attacker;
-        Receiver = receiver;
-        AttackKind = attackKind;
-        ConflictPosition = conflictPosition;
-        Damage = attackDamage;
-
-        if (AttackKind == Kind.SpaceConflict && conflictPosition is null) {
-            throw new("conflictPosition is required");
-        }
+        Attacker = attacker.Id;
+        Receiver = receiver.Id;
     }
 
-    public override string Description => $"{Attacker} attacks {Receiver} for {Damage} damage";
+    public override string Description => $"{Attacker} attacks {Receiver}";
 
     internal override IEnumerable<Mutation> GetResultantMutations(ReadOnlyPlayfield field)
     {
-        yield return new UnitTakesDamage(Receiver, (uint)Damage);
+        var unit = field.GetUnit(Attacker);
+        var damage = Math.Max(unit.Power, 0);
+        yield return new UnitTakesDamage(field.GetUnit(Receiver).ToReport(), (uint)damage);
     }
 }

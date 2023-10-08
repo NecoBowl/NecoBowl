@@ -87,7 +87,11 @@ internal sealed class Unit : IEquatable<Unit>
 
     public bool CanAttackOther(Unit other)
     {
-        return other.OwnerId != default && OwnerId != other.OwnerId && !Tags.Contains(NecoUnitTag.Defender);
+        return other.OwnerId != default
+            && OwnerId != other.OwnerId
+            && !Tags.Contains(NecoUnitTag.Defender)
+            && !other.Tags.Contains(NecoUnitTag.TheBall)
+            && !Tags.Contains(NecoUnitTag.Item);
     }
 
     internal Behavior PopAction()
@@ -143,5 +147,15 @@ internal sealed class Unit : IEquatable<Unit>
     public Unit? HandoffItem()
     {
         return Inventory.Any() ? Inventory.FirstOrDefault() : null;
+    }
+
+    public Core.Reports.Unit ToReport()
+    {
+        return new(this);
+    }
+
+    public static implicit operator Core.Reports.Unit(Unit @this)
+    {
+        return @this.ToReport();
     }
 }

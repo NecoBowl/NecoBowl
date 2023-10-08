@@ -10,18 +10,20 @@ namespace NecoBowl.Core.Sport.Play;
 /// <item>Other mutations.</item>
 /// </list>
 /// </summary>
+/// <remarks>
+/// Mutations are assumed to be immutable and stateless. They should not contain reference types as members; instead, use
+/// the associated <c>Id</c> type for that object. Constructors should take <see cref="Reports.Unit">Reports.Unit</see> as
+/// parameters so that they can be made public and can be called from within reactions of unit models.
+/// </remarks>
 public abstract class Mutation
 {
     internal static readonly Action<Mutation, NecoSubstepContext, Playfield>[] ExecutionOrder = {
-        (m, s, f) => m.Prepare(s, f.AsReadOnly()),
-        (m, s, f) => m.Pass1Mutate(f),
-        (m, s, f) => m.Pass2Mutate(f),
-        (m, s, f) => m.Pass3Mutate(f)
+        (m, s, f) => m.Pass1Mutate(f), (m, s, f) => m.Pass2Mutate(f), (m, s, f) => m.Pass3Mutate(f),
     };
 
     public readonly NecoUnitId Subject;
 
-    protected Mutation(NecoUnitId subject)
+    protected internal Mutation(NecoUnitId subject)
     {
         Subject = subject;
     }
@@ -84,8 +86,8 @@ internal class NecoSubstepContext
 
     public bool HasEntryOfType(NecoUnitId uid, Type type, object? exclusion = null)
     {
-        var mut = Mutations.SingleOrDefault(m => m.Subject == uid && m.GetType() == type && m != exclusion);
-        return mut is not null;
+        var mut = Mutations.FirstOrDefault(m => m.Subject == uid && m.GetType() == type && m != exclusion);
+        return mut is { };
     }
 }
 

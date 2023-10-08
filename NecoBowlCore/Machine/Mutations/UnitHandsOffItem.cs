@@ -8,10 +8,10 @@ public class UnitHandsOffItem : Mutation
     public readonly NecoUnitId Receiver;
     private Unit? TempUnitItem;
 
-    public UnitHandsOffItem(NecoUnitId subject, NecoUnitId receiver, NecoUnitId item) : base(subject)
+    public UnitHandsOffItem(Reports.Unit subject, Reports.Unit receiver, Reports.Unit item) : base(subject.Id)
     {
-        Receiver = receiver;
-        Item = item;
+        Receiver = receiver.Id;
+        Item = item.Id;
     }
 
     public override string Description => $"{Subject} hands off {Item} to {Receiver}";

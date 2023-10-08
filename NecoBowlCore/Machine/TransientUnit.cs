@@ -1,11 +1,10 @@
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
-using NecoBowl.Core.Machine;
 using NecoBowl.Core.Tags;
 using NLog;
 
-namespace NecoBowl.Core.Sport.Play;
+namespace NecoBowl.Core.Machine;
 
 /// <summary>Represents a unit transitioning between spaces.</summary>
 internal record TransientUnit

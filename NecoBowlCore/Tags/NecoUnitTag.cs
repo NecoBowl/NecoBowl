@@ -32,6 +32,9 @@ public enum NecoUnitTag
     /// </summary>
     Pusher,
 
+    /// <summary>Cannot take damage.</summary>
+    Invincible,
+
     /// <summary>Like <see cref="Pusher" />, but the push receiver does not get to execute its action afterward.</summary>
     UNIMPL_Shover,
 
@@ -47,5 +50,5 @@ public enum NecoUnitTag
     /// <summary>Units cannot be placed next to this unit. Cannot place this unit next to others.</summary>
     UNIMPL_Smelly,
 
-    Test
+    Test,
 }

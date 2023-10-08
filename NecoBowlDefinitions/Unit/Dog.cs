@@ -1,4 +1,5 @@
 using NecoBowl.Core;
+using NecoBowl.Core.Machine.Mutations;
 using NecoBowl.Core.Model;
 using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Tags;
@@ -27,11 +28,11 @@ public class Dog : UnitModel
     };
 
     private static IEnumerable<Mutation> OnPicksUp(
-        NecoBowl.Core.Machine.Reports.Unit unit,
+        NecoBowl.Core.Reports.Unit unit,
         Mutation mutation)
     {
         if (unit.Id == mutation.Subject) {
-            yield return new UnitGetsMod(unit.Id, new UnitMod.Rotate(4));
+            yield return new UnitGetsMod(unit, new UnitMod.Rotate(4));
         }
     }
 }

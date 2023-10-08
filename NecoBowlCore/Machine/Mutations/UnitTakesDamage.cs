@@ -1,4 +1,6 @@
 using NecoBowl.Core.Machine;
+using NecoBowl.Core.Tags;
+using Unit = NecoBowl.Core.Reports.Unit;
 
 namespace NecoBowl.Core.Sport.Play;
 
@@ -6,10 +8,10 @@ public class UnitTakesDamage : Mutation
 {
     public readonly uint DamageAmount;
 
-    public UnitTakesDamage(NecoUnitId subject, uint damageAmount)
-        : base(subject)
+    public UnitTakesDamage(Unit subject, uint damageAmount)
+        : base(subject.Id)
     {
-        DamageAmount = damageAmount;
+        DamageAmount = subject.Tags.Contains(NecoUnitTag.Invincible) ? 0 : damageAmount;
     }
 
     public override string Description => $"{Subject} takes {DamageAmount} damage";
@@ -24,7 +26,7 @@ public class UnitTakesDamage : Mutation
     {
         var unit = field.GetUnit(Subject);
         if (unit.CurrentHealth <= 0) {
-            yield return new UnitDies(Subject);
+            yield return new UnitDies(unit.ToReport());
         }
     }
 }

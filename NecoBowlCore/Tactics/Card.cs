@@ -5,6 +5,10 @@ using NecoBowl.Core.Tags;
 
 namespace NecoBowl.Core.Sport.Tactics;
 
+/// <summary>
+/// A game object that can be placed on the field by a player. Typically, a selection of these are presented to players in
+/// a "hand" of cards.
+/// </summary>
 public class Card
 {
     public readonly CardModel CardModel;

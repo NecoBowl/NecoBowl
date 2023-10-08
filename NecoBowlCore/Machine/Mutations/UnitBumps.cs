@@ -1,4 +1,4 @@
-using NecoBowl.Core.Machine;
+using NecoBowl.Core.Reports;
 
 namespace NecoBowl.Core.Sport.Play;
 
@@ -6,8 +6,8 @@ public class UnitBumps : Mutation
 {
     public readonly AbsoluteDirection Direction;
 
-    public UnitBumps(NecoUnitId subject, AbsoluteDirection direction)
-        : base(subject)
+    internal UnitBumps(Unit subject, AbsoluteDirection direction)
+        : base(subject.Id)
     {
         Direction = direction;
     }

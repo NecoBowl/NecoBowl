@@ -18,7 +18,7 @@ public class BuiltInDefinitions
         public override string BehaviorDescription => "Does nothing.";
 
         public override IReadOnlyCollection<NecoUnitTag> Tags
-            => new[] { NecoUnitTag.TheBall, NecoUnitTag.Item };
+            => new[] { NecoUnitTag.TheBall, NecoUnitTag.Item, NecoUnitTag.Invincible };
 
         public override IEnumerable<Behavior> Actions
             => new[] { new DoNothing() };

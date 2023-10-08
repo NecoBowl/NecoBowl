@@ -1,12 +1,12 @@
 using System.Collections.ObjectModel;
 using NecoBowl.Core;
 using NecoBowl.Core.Machine;
+using NecoBowl.Core.Machine.Mutations;
 using NecoBowl.Core.Machine.Reports;
-using NecoBowl.Core.Reports;
 using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Sport.Tactics;
+using NecoBowl.Core.Tags;
 using NUnit.Framework.Constraints;
-using Unit = NecoBowl.Core.Machine.Unit;
 
 // ReSharper disable AccessToStaticMemberViaDerivedType
 
@@ -67,41 +67,32 @@ public class NewStepperTests
         Assert.That(
             mutations,
             Has.EquivalentMutationsTo(
-                new UnitBumps(unitWest.Id, AbsoluteDirection.West),
+                new UnitBumps(unitWest.ToReport(), AbsoluteDirection.West),
                 new UnitAttacks(
-                    unitNorth.Id,
-                    unitWest.Id,
-                    unitNorth.Power,
-                    UnitAttacks.Kind.SpaceConflict,
-                    (0, 1)),
-                new UnitTakesDamage(unitWest.Id, (uint)unitNorth.Power)));
+                    unitNorth.ToReport(),
+                    unitWest.ToReport()),
+                new UnitTakesDamage(unitWest.ToReport(), (uint)unitNorth.Power)));
     }
-#if false
+
     [Test]
     public void Play_UnitCanAttackUnitOnSpaceSwap()
     {
         SetUp_VerticalCollision(out var unitA1, out var unitA2);
 
-        var mutations = new Queue<NecoPlayfieldMutation>(Play.Step());
+        var mutations = PlayMachine.Step();
         Assert.That(
             mutations,
             Has.EquivalentMutationsTo(
-                new NecoPlayfieldMutation.UnitAttacks(
-                    unitA1.Id,
-                    unitA2.Id,
-                    unitA1.Power,
-                    NecoPlayfieldMutation.UnitAttacks.Kind.SpaceSwap,
-                    null),
-                new NecoPlayfieldMutation.UnitAttacks(
-                    unitA2.Id,
-                    unitA1.Id,
-                    unitA2.Power,
-                    NecoPlayfieldMutation.UnitAttacks.Kind.SpaceSwap,
-                    null),
-                new NecoPlayfieldMutation.UnitTakesDamage(unitA1.Id, (uint)unitA2.Power),
-                new NecoPlayfieldMutation.UnitTakesDamage(unitA2.Id, (uint)unitA1.Power)));
+                new UnitAttacks(
+                    unitA1,
+                    unitA2),
+                new UnitAttacks(
+                    unitA2,
+                    unitA1),
+                new UnitTakesDamage(unitA1, (uint)unitA2.Power),
+                new UnitTakesDamage(unitA2, (uint)unitA1.Power)));
     }
-
+#if false
     [Test]
     public void Play_UnitCanThrowBall()
     {
@@ -118,11 +109,10 @@ public class NewStepperTests
         Play.Step();
         Play.Step();
     }
-    
+
 #endif
     [Test]
     public void Play_Clusterfuck()
-
     {
         var players = new[] { Player1, Player2 };
         foreach (var direction in Enum.GetValues<RelativeDirection>()) {
@@ -140,8 +130,7 @@ public class NewStepperTests
                 PlayMachine.Step();
             }, Throws.Nothing);
     }
-    #if false
-
+#if false
     [Test]
     public void Mutation_AttacksCauseUnitsToTakeDamage()
     {
@@ -362,32 +351,27 @@ public class NewStepperTests
         Assert.That(mutations, Has.MutationWhere<NecoPlayfieldMutation.UnitAttacks>(m => m.Attacker == other.Id));
         Assert.That(mutations, Has.No.MutationWhere<NecoPlayfieldMutation.UnitAttacks>(m => m.Attacker == defender.Id));
     }
+#endif
 
     [Test]
     public void Tag_Carrier_PickupOccursWhenMoveOntoItem()
     {
-        var pickupper = new NecoUnit(
-            NecoUnitModelCustom.Mover(
+        var pickupper = new Unit(
+            UnitModelCustom.Mover(
                 "CarrierN",
                 5,
                 2,
                 RelativeDirection.Up,
                 new[] { NecoUnitTag.Carrier }),
             Player1.Id);
-        var item = new NecoUnit(NecoUnitModelCustom.Item(), NecoPlayer.NeutralPlayer.Id);
+        var item = new Unit(UnitModelCustom.Item(), Player.NeutralPlayer.Id);
         Field[0, 0] = new(pickupper);
         Field[0, 1] = new(item);
 
-        var mutations = Play.Step().ToList();
-
-        var movement = new NecoUnitMovement(pickupper, (0, 1), (0, 0));
-        Assert.That(
-            mutations,
-            Has.EquivalentMutationsTo(
-                new NecoPlayfieldMutation.MovementMutation(movement),
-                new NecoPlayfieldMutation.UnitPicksUpItem(pickupper.Id, item.Id, movement)));
+        var mutations = PlayMachine.Step().ToList();
     }
 
+#if false
     [Test]
     public void Tag_Bossy_UnitTakesTopPriority()
     {
@@ -553,7 +537,7 @@ internal class MutationListHasConstraint<T> : MutationListHasConstraint
 /// Checks if the results of a play step are equivalent to a given list of mutations. The orderings of the mutation lists
 /// are ignored.
 /// </summary>
-class StepHasEquivalentMutationsConstraint : Constraint
+internal class StepHasEquivalentMutationsConstraint : Constraint
 {
     private readonly ReadOnlyCollection<MutationChecker> Constraints;
 
@@ -580,7 +564,7 @@ class StepHasEquivalentMutationsConstraint : Constraint
 
         // Ensure matching sizes
         if (mutations.Count() != Constraints.Count) {
-            return new(this, actual, ConstraintStatus.Failure);
+            return new(this, mutations, ConstraintStatus.Failure);
         }
 
         // Track items already matched against
@@ -601,7 +585,7 @@ class StepHasEquivalentMutationsConstraint : Constraint
     }
 }
 
-class StepHasEquivalentMovementsConstraint : Constraint
+internal class StepHasEquivalentMovementsConstraint : Constraint
 {
     private readonly ReadOnlyCollection<TransientUnit> Movements;
 
@@ -628,7 +612,7 @@ class StepHasEquivalentMovementsConstraint : Constraint
     }
 }
 
-abstract class Has : NUnit.Framework.Has
+internal abstract class Has : NUnit.Framework.Has
 {
     /// <inheritdoc cref="MutationListHasConstraint" />
     public static MutationListHasConstraint<T> MutationWhere<T>(Func<T, bool> predicate)
@@ -657,7 +641,7 @@ abstract class Has : NUnit.Framework.Has
     }
 }
 
-static class NUnitExt
+internal static class NUnitExt
 {
     /// <inheritdoc cref="MutationListHasConstraint" />
     public static MutationListHasConstraint<T> MutationWhere<T>(this ConstraintExpression expr, Func<T, bool> predicate)

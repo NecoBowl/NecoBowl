@@ -18,9 +18,16 @@ internal class Playfield
 {
     private readonly NecoSpaceContents[,] FieldContents;
     public readonly NecoFieldParameters FieldParameters;
+
+    /// <summary>
+    /// Destination for units that are temporarily removed from the field during the flattening process of unit movement. This
+    /// occurs during an item pickup, as the picker-up is already the resident of the item's space by the time mutations are
+    /// run.
+    /// </summary>
     public readonly List<Unit> FlattenedMovementUnitBuffer = new();
 
     public readonly List<Unit> GraveyardZone = new();
+    public readonly List<Unit> UnitBuffer = new();
 
     public Playfield(NecoFieldParameters param)
     {

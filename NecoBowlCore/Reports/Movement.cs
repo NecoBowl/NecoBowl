@@ -18,4 +18,9 @@ public record Movement : BaseReport
     {
         return new(unit.OldPos, unit.NewPos);
     }
+
+    public override string ToString()
+    {
+        return $"{OldPos} -> {NewPos}";
+    }
 }

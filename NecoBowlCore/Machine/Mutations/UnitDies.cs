@@ -1,11 +1,12 @@
 using NecoBowl.Core.Machine;
+using Unit = NecoBowl.Core.Reports.Unit;
 
 namespace NecoBowl.Core.Sport.Play;
 
 public class UnitDies : Mutation
 {
-    public UnitDies(NecoUnitId subject)
-        : base(subject)
+    internal UnitDies(Unit subject)
+        : base(subject.Id)
     {
     }
 

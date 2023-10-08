@@ -3,15 +3,14 @@ using NecoBowl.Core.Machine;
 namespace NecoBowl.Core.Tags;
 
 /// <summary>
-/// Definitions of a permission for a player-modifiable option on a card. Options are set by the player during Turns and
-/// are applied to units at the start of the play. <p /> There are two main types of option permission:
-/// <b>dictionary-type</b> (the default), and <b>apply-type</b>. Dictionary-type options simply add an entry in the
+/// Definition of a permission for a player-modifiable option on a card. Options are set by the player during Turns and are
+/// applied to units at the start of the play. <p /> There are two main types of option permission: <b>dictionary-type</b>
+/// (the default), and <b>apply-type</b>. Dictionary-type options simply add an entry in the
 /// <see cref="UnitMod.OptionValues" /> mod of a unit, which is a dictionary accessible by calling
 /// <see cref="Unit.GetMod" /> with <see cref="UnitMod.OptionValues" /> as the type. Apply-type options, on the other hand,
 /// provide a function that is called at play start. The function takes a unit as input and performs whatever manipulations
 /// it wants (typically, adding mods of a type other than <see cref="UnitMod.OptionValues" />).
 /// </summary>
-/// <remarks>There are two ways an option</remarks>
 public abstract class NecoCardOptionPermission
 {
     public abstract string Identifier { get; }

@@ -7,6 +7,13 @@ namespace NecoBowl.Core.Machine;
 internal interface IMutationReceiver
 {
     public void BufferMutation(Mutation mutation);
+
+    public void BufferMutations(IEnumerable<Mutation> mutations)
+    {
+        foreach (var m in mutations) {
+            BufferMutation(m);
+        }
+    }
 }
 
 internal record SubstepContents(
@@ -157,7 +164,6 @@ internal class PlayStepper : IMutationReceiver
 
         foreach (var mutation in tempMutations) {
             PendingMutations.Add(mutation);
-            break;
         }
     }
 
@@ -200,7 +206,7 @@ internal class PlayStepper : IMutationReceiver
     }
 }
 
-static class Extension
+internal static class Extension
 {
     public static void RemoveUnitPair(this Dictionary<NecoUnitId, TransientUnit> source, UnitMovementPair unitPair)
     {

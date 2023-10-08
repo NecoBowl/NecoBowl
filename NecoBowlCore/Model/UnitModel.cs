@@ -1,4 +1,5 @@
 using NecoBowl.Core.Machine.Reports;
+using NecoBowl.Core.Reports;
 using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Tags;
 
