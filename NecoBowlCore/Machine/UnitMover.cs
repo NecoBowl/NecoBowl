@@ -89,7 +89,8 @@ internal class UnitMover
 
                 case SpaceImmigrantRemovalReason.Removed removal: {
                     // don't put this in MovementsList
-                    MovementsList.Remove(change.Movement.Unit);
+                    MovementsList.Remove(unit);
+                    Playfield.FlattenedMovementUnitBuffer.Add(unit);
                     continue;
                 }
 
@@ -107,9 +108,6 @@ internal class UnitMover
 
         // Transfer buffer over
         MutationReceiver.BufferMutations(transientField.Mutations);
-        foreach (var flattening in transientField.FlattenedUnitBuffer) {
-            Playfield.FlattenedMovementUnitBuffer.Add(flattening);
-        }
     }
 
     private void AddEntriesForStationaryUnits()
@@ -169,50 +167,11 @@ internal class PlayfieldCollisionResolver
         MutationReceiver = mutationReceiver;
     }
 
-    public void ResolveSpaceSwap(
-        UnitMovementPair pair, out TransientUnit? winner)
-    {
-        if (!pair.IsSpaceSwap()) {
-            throw new UnitMover.PlayfieldMovementException();
-        }
-
-        if (pair.UnitsAreEnemies()) {
-            // Opposing units
-            if (pair.Movement1.Unit.CanAttackByMovement) {
-                MutationReceiver.BufferMutation(
-                    new UnitAttacks(
-                        pair.Unit1.ToReport(),
-                        pair.Unit2.ToReport()));
-            }
-            else {
-                MutationReceiver.BufferMutation(new UnitBumps(pair.Unit1.ToReport(), pair.Movement1.AsDirection()));
-            }
-
-            winner = null;
-        }
-        else if (pair.Unit1.CanPickUp(pair.Unit2) && !pair.Unit2.CanPickUp(pair.Unit1)) {
-            // ^ Don't use pair.PickupCanOccur because the pair order matters
-            // Unit 1 can pick unit 2 up
-            MutationReceiver.BufferMutation(new UnitPicksUpItem(pair.Unit1.Id, pair.Unit2.Id));
-            winner = pair.Movement1;
-        }
-        else {
-            // Friendly or neutral units 
-            if (pair.PickupCanOccur(out var carrierUnit, out var itemUnit)) {
-                // Cancel because this unit1 is getting picked up
-                winner = carrierUnit;
-                return;
-            }
-
-            MutationReceiver.BufferMutation(new UnitBumps(pair.Unit1.ToReport(), pair.Movement1.AsDirection()));
-            winner = null;
-        }
-    }
-
     public static IDictionary<TransientUnit, CollisionVictoryReasonLevel> GetCollisionScores(
         UnitMovementPair unitPair)
     {
-        if (unitPair.Collection.DistinctBy(u => u.NewPos).Count() > 1) {
+        if (unitPair.Collection.DistinctBy(u => u.NewPos).Count() > 1
+            && !unitPair.IsSpaceSwap()) {
             throw new NecoBowlException("units are not colliding");
         }
 
@@ -319,29 +278,30 @@ internal class TransientPlayfield : ITransientSpaceContentsGetter
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-    public readonly IImmutableList<Unit> FlattenedUnitBuffer;
     public readonly IImmutableList<Mutation> Mutations;
     public readonly IImmutableDictionary<Unit, SpaceImmigrantRemoval> ResetReasons;
     public readonly IImmutableDictionary<Vector2i, Space> Spaces;
 
-    public TransientPlayfield(ReadOnlyPlayfield field, IEnumerable<TransientUnit> movements)
+    public TransientPlayfield(ReadOnlyPlayfield field, IEnumerable<TransientUnit> movementsEnumerable)
     {
-        movements = movements.ToList();
+        var movements = movementsEnumerable.ToList();
         var spaces = new Dictionary<Vector2i, Space>();
         var resetReasons = new Dictionary<Unit, SpaceImmigrantRemoval>();
+        var mutations = new List<Mutation>();
 
         // Set up transient space array
         for (var i = 0; i < field.GetBounds().X; i++) {
             for (var j = 0; j < field.GetBounds().Y; j++) {
                 var pos = new Vector2i(i, j);
-                var movementsHere = movements.Where(m => m.NewPos == pos);
-                spaces[pos] = new(pos, movementsHere, this);
+                var movementsToHere = movements.Where(m => m.NewPos == pos);
+                var movementsFromHere = movements.SingleOrDefault(m => m.OldPos == pos && m.IsChange);
+                spaces[pos] = new(pos, movementsToHere, movementsFromHere);
             }
         }
 
         // Now we begin the space reassignment algorithm.
         // It repeats until every space has no conflict.
-        while (spaces.Select(kv => kv.Value).Any(space => space.HasConflict)) {
+        while (spaces.Values.Any(space => space.HasConflict)) {
             // We will apply the changes suggested by GetRemovedImmigrants to this dict.
             var unstableSpaces = spaces.ToDictionary(kv => kv.Key, _ => new List<TransientUnit>());
 
@@ -359,22 +319,31 @@ internal class TransientPlayfield : ITransientSpaceContentsGetter
                         continue;
                     }
 
+                    // Attempt to place the unit on the field.
                     unstableSpaces[movement.OldPos].Add(movement);
                 }
 
                 if (space.Winners is { }) {
                     unstableSpaces[pos].Add(space.Winners.Winner);
-                    FlattenedUnitBuffer.AddRange(space.Winners.AuxiliaryWinners.Select(u => u.Unit));
-                    Mutations.AddRange(space.Winners.FlatteningMutations);
+                    mutations.AddRange(space.Winners.FlatteningMutations);
                 }
             }
 
-            spaces = unstableSpaces.ToDictionary(kv => kv.Key, kv => new Space(kv.Key, unstableSpaces[kv.Key], this));
+            var unhandledEmigrants =
+                movements.Where(
+                    m => !unstableSpaces.Values.SelectMany(l => l, (l, u) => u).Contains(m) &&
+                        !resetReasons.ContainsKey(m.Unit));
+            spaces = unstableSpaces.ToDictionary(
+                kv => kv.Key,
+                kv => new Space(
+                    kv.Key, unstableSpaces[kv.Key],
+                    unhandledEmigrants.SingleOrDefault(m => m.OldPos == kv.Key && m.IsChange)));
         }
 
         // User can access the results via Spaces.
-        Spaces = new(spaces);
-        ResetReasons = new(resetReasons);
+        Spaces = spaces.ToImmutableDictionary();
+        ResetReasons = resetReasons.ToImmutableDictionary();
+        Mutations = mutations.ToImmutableList();
     }
 
     public IReadOnlyCollection<TransientUnit> GetMovementsFrom(Vector2i pos)
@@ -393,32 +362,45 @@ internal class TransientPlayfield : ITransientSpaceContentsGetter
     }
 
     /// <summary>
+    /// <p>
     /// A space during movement calculation. Stores multiple "immigrants", which are the units attempting to move onto this
-    /// space.
+    /// space. Upon creation, <see cref="Removals" /> is populated with a list of removal objects that denote the reason that
+    /// unit cannot win the space.
+    /// </p>
     /// </summary>
     public class Space
     {
+        private readonly TransientUnit? Emigrant;
         private readonly IReadOnlyList<TransientUnit> Immigrants;
-        private readonly ITransientSpaceContentsGetter Playfield;
         private readonly Vector2i Position;
         public readonly ImmutableList<SpaceImmigrantRemoval> Removals;
         public readonly WinnerList? Winners;
 
-        public Space(
-            Vector2i position, IEnumerable<TransientUnit> immigrants, ITransientSpaceContentsGetter playfield)
+
+        public Space(Vector2i position, IEnumerable<TransientUnit> immigrants, TransientUnit? emigrant)
         {
             Immigrants = immigrants.ToList().AsReadOnly();
+            Emigrant = emigrant;
             Position = position;
-            Playfield = playfield;
 
             if (Immigrants.Any(movement => movement.NewPos != Position)) {
                 throw new InvalidOperationException("movement destination differs from space position");
             }
 
+            if (Emigrant is { }) {
+                if (Emigrant.OldPos != Position) {
+                    throw new InvalidOperationException("emigrant source position differs from given position");
+                }
+
+                if (!Emigrant.IsChange) {
+                    throw new ArgumentException("emigrant must be moving");
+                }
+            }
+
             Removals = GetRemovedImmigrants(out Winners).ToImmutableList();
         }
 
-        public bool HasConflict => Immigrants.Count > 1;
+        public bool HasConflict => Immigrants.Count > 1 || Emigrant is { };
 
         public IReadOnlyCollection<TransientUnit> GetAllImmigrants()
         {
@@ -429,25 +411,51 @@ internal class TransientPlayfield : ITransientSpaceContentsGetter
         /// Get all the units that must be removed from this space before it can be turned back into a <see cref="Playfield" />
         /// space.
         /// </summary>
-        private IReadOnlyCollection<SpaceImmigrantRemoval> GetRemovedImmigrants(out WinnerList? winners)
+        private IReadOnlyCollection<SpaceImmigrantRemoval> GetRemovedImmigrants(
+            out WinnerList? winners)
         {
-            var combats = new Dictionary<TransientUnit, List<TransientUnit>>();
+            var immigrants = Immigrants.ToList();
+            var combats = new Dictionary<Unit, List<TransientUnit>>();
             var bestVictoryLevels =
                 new Dictionary<TransientUnit, PlayfieldCollisionResolver.CollisionVictoryReasonLevel>();
+            TransientUnit? emigrantSwapper = null;
 
-            var combinations = PlayfieldCollisionResolver.GetPairCombinations(Immigrants);
+            if (Emigrant is { }) {
+                // Perform space swap, and treat the emigrant as a stationary unit if it is placed back here as a reuslt
+                var swapper = immigrants.SingleOrDefault(m => new UnitMovementPair(m, Emigrant).IsSpaceSwap());
+                if (swapper is { }) {
+                    emigrantSwapper = swapper;
+                    var spaceSwapPair = new UnitMovementPair(Emigrant, swapper);
+                    if (swapper.Unit.CanAttackOther(Emigrant.Unit)) {
+                        combats[swapper.Unit] = new() { Emigrant };
+                    }
+                    else {
+                        immigrants.Add(Emigrant.WithoutMovement());
+                        bestVictoryLevels[Emigrant.WithoutMovement()] =
+                            PlayfieldCollisionResolver.CollisionVictoryReasonLevel.Bounce;
+                    }
+                }
+            }
+
+            // Iterate through all possible unit pairs and add combat or space victory entries.
+            var combinations = PlayfieldCollisionResolver.GetPairCombinations(immigrants).ToList();
+
             foreach (var pair in combinations) {
                 foreach (var movement in pair) {
                     if (movement.Unit.CanAttackOther(pair.OtherMovement(movement).Unit)) {
-                        if (!combats.ContainsKey(movement)) {
-                            combats[movement] = new();
+                        if (!combats.ContainsKey(movement.Unit)) {
+                            combats[movement.Unit] = new();
                         }
 
-                        combats[movement].Add(pair.OtherMovement(movement));
+                        combats[movement.Unit].Add(pair.OtherMovement(movement));
                     }
                 }
 
                 foreach (var (movement, level) in PlayfieldCollisionResolver.GetCollisionScores(pair)) {
+                    if (movement.NewPos != Position) {
+                        continue;
+                    }
+
                     if ((int)bestVictoryLevels.GetValueOrDefault(
                             movement, PlayfieldCollisionResolver.CollisionVictoryReasonLevel.Bounce) >= (int)level) {
                         bestVictoryLevels[movement] = level;
@@ -455,32 +463,40 @@ internal class TransientPlayfield : ITransientSpaceContentsGetter
                 }
             }
 
+            if (combinations.Count < 1 && Immigrants.Count > 0 && emigrantSwapper is null) {
+                // There is only one immigrant and it's not in a space swap
+                bestVictoryLevels[Immigrants.Single()] =
+                    PlayfieldCollisionResolver.CollisionVictoryReasonLevel.Stationary;
+            }
+
             winners = null;
             var removals = new List<SpaceImmigrantRemoval>();
 
-            if (combats.Any() || bestVictoryLevels.Any()) {
-                winners = bestVictoryLevels.Any()
-                    ? new WinnerList(
-                        bestVictoryLevels
-                            .GroupBy(kv => (int)kv.Value, kv => kv.Key)
-                            .OrderBy(g => g.Key))
-                    : null;
+            if (!combats.Any() && !bestVictoryLevels.Any()) {
+                return removals;
+            }
 
-                foreach (var immigrant in Immigrants) {
-                    if (immigrant == Winners?.Winner) {
-                        continue;
-                    }
+            winners = bestVictoryLevels.Any()
+                ? new WinnerList(
+                    bestVictoryLevels
+                        .GroupBy(kv => (int)kv.Value, kv => kv.Key)
+                        .OrderBy(g => g.Key))
+                : null;
 
-                    if (combats.TryGetValue(immigrant, out var targets)) {
-                        removals.Add(
-                            new(immigrant, new SpaceImmigrantRemovalReason.Combat(targets.Select(m => m.Unit))));
-                    }
-                    else if (winners?.AuxiliaryWinners.Contains(immigrant) ?? false) {
-                        removals.Add(new(immigrant, new SpaceImmigrantRemovalReason.Removed()));
-                    }
-                    else {
-                        removals.Add(new(immigrant, new SpaceImmigrantRemovalReason.Superseded()));
-                    }
+            // Create a removal reason for each unit not on the final space
+            foreach (var immigrant in immigrants) {
+                if (immigrant == Winners?.Winner && immigrant != emigrantSwapper) {
+                    continue;
+                }
+
+                if (combats.TryGetValue(immigrant.Unit, out var targets)) {
+                    removals.Add(new(immigrant, new SpaceImmigrantRemovalReason.Combat(targets.Select(m => m.Unit))));
+                }
+                else if (winners?.AuxiliaryWinners.Contains(immigrant) ?? false) {
+                    removals.Add(new(immigrant, new SpaceImmigrantRemovalReason.Removed(winners.Winner.Unit)));
+                }
+                else {
+                    removals.Add(new(immigrant, new SpaceImmigrantRemovalReason.Superseded()));
                 }
             }
 
@@ -550,7 +566,8 @@ internal class WinnerList : IEnumerable<TransientUnit>
             throw new ArgumentException("at least one grouping is required for a winner list");
         }
 
-        if (collection.First().Count() != 1) {
+        var firstLevel = collection.First().ToList();
+        if (firstLevel.Count != 1) {
             throw new ArgumentException("first winner group can only have one unit");
         }
 
