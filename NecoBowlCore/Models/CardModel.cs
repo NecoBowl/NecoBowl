@@ -7,8 +7,8 @@ public abstract class CardModel
     public abstract string Name { get; }
     public abstract int Cost { get; }
 
-    public virtual IEnumerable<NecoCardOptionPermission> OptionPermissions { get; }
-        = new List<NecoCardOptionPermission>();
+    public virtual IEnumerable<CardOptionPermission> OptionPermissions { get; }
+        = new List<CardOptionPermission>();
 }
 
 public abstract class UnitCardModel : CardModel

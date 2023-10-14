@@ -1,20 +1,21 @@
 using System.Collections.Immutable;
-using NecoBowl.Core.Sport.Play;
+using NecoBowl.Core.Machine;
 
-namespace NecoBowl.Core.Machine.Reports;
+namespace NecoBowl.Core.Reports;
 
 public class Substep
 {
-    public readonly IImmutableList<Mutation> Mutations;
-    public readonly IImmutableDictionary<NecoUnitId, Reports.Movement> Movements;
+    public readonly IImmutableDictionary<NecoUnitId, Movement> Movements;
+    public readonly IImmutableList<BaseMutation> Mutations;
 
-    public Substep(IEnumerable<Mutation> mutations, IDictionary<NecoUnitId, Reports.Movement> movements)
+    public Substep(IEnumerable<BaseMutation> mutations, IDictionary<NecoUnitId, Movement> movements)
     {
         Mutations = mutations.ToImmutableList();
         Movements = movements.ToImmutableDictionary();
     }
 
-    internal Substep(IEnumerable<Mutation> mutations, IEnumerable<TransientUnit> movements)
+    internal Substep(IEnumerable<BaseMutation> mutations, IEnumerable<TransientUnit> movements)
         : this(mutations, movements.ToDictionary(m => m.Unit.Id, m => new Movement(m.OldPos, m.NewPos)))
-    { }
+    {
+    }
 }

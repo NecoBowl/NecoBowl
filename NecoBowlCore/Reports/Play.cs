@@ -1,21 +1,28 @@
 using NecoBowl.Core.Machine;
-using NecoBowl.Core.Machine.Reports;
 
 namespace NecoBowl.Core.Reports;
 
 public record Play : BaseReport
 {
     private readonly PlayMachine Machine;
+    public uint StepCount => Machine.StepCount;
+    public bool IsFinished => Machine.IsFinished;
+    public Playfield GetPlayfield() => new(Machine.GetField());
 
     internal Play(PlayMachine machine)
     {
         Machine = machine;
     }
 
-    public IEnumerable<Step> GetSteps()
+    public Step Step()
     {
-        while (!Machine.CanEnd) {
-            yield return Machine.Step();
+        return Machine.Step();
+    }
+
+    public void Step(uint count)
+    {
+        foreach (var i in Enumerable.Range(0, (int)count)) {
+            Machine.Step();
         }
     }
 }

@@ -1,12 +1,14 @@
-using NecoBowl.Core.Machine.Reports;
+using NecoBowl.Core.Reports;
 using NecoBowl.Core.Sport.Tactics;
 using NecoBowl.Core.Tags;
 using NLog;
 
 namespace NecoBowl.Core.Machine;
 
-/// <summary>The starting point of a play. Takes a reference to a field as input, and modifies that field based
-/// on the actions of the units within.</summary>
+/// <summary>
+/// The starting point of a play. Takes a reference to a field as input, and modifies that field based on the actions of
+/// the units within.
+/// </summary>
 internal class PlayMachine
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();

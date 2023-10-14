@@ -1,8 +1,8 @@
 using System.Collections;
 using System.Collections.ObjectModel;
-using NecoBowl.Core.Sport.Play;
+using NecoBowl.Core.Machine;
 
-namespace NecoBowl.Core.Machine.Reports;
+namespace NecoBowl.Core.Reports;
 
 public record Step : BaseReport, IEnumerable<Substep>
 {
@@ -23,7 +23,7 @@ public record Step : BaseReport, IEnumerable<Substep>
         return GetEnumerator();
     }
 
-    public IEnumerable<Mutation> GetAllMutations()
+    public IEnumerable<BaseMutation> GetAllMutations()
     {
         return Substeps.SelectMany(s => s.Mutations, (_, mut) => mut);
     }

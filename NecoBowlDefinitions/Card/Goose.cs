@@ -12,9 +12,9 @@ public class Goose : UnitCardModel
     public override int Cost => 4;
     public override UnitModel Model => Unit.Goose.Instance;
 
-    public override IEnumerable<NecoCardOptionPermission> OptionPermissions { get; }
+    public override IEnumerable<CardOptionPermission> OptionPermissions { get; }
         = new[] {
-            new NecoCardOptionPermission.DirectionOptionPermission(
+            new CardOptionPermission.DirectionOptionPermission(
                 RelativeDirection.Up,
                 ChaseBall.Option_FallbackDirecttion,
                 new[] { RelativeDirection.Up, RelativeDirection.UpLeft, RelativeDirection.UpRight }),

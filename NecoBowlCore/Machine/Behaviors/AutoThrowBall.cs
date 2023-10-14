@@ -1,10 +1,10 @@
-using NecoBowl.Core.Machine;
+using NecoBowl.Core.Sport.Play;
 using TupleSplatter;
 
-namespace NecoBowl.Core.Sport.Play;
+namespace NecoBowl.Core.Machine.Behaviors;
 
 /// <summary>Tries to throw the ball to the farthest-away friendly unit.</summary>
-public class AutoThrowBall : Behavior
+public class AutoThrowBall : BaseBehavior
 {
     internal override BehaviorOutcome CallResult(NecoUnitId uid, ReadOnlyPlayfield field)
     {

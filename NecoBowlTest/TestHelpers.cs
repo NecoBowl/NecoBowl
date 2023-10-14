@@ -1,9 +1,11 @@
 using NecoBowl.Core;
 using NecoBowl.Core.Input;
 using NecoBowl.Core.Machine;
+using NecoBowl.Core.Machine.Behaviors;
 using NecoBowl.Core.Model;
 using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Sport.Tactics;
+using NecoBowl.Core.Tactics;
 using NecoBowl.Core.Tags;
 
 namespace neco_soft.NecoBowlTest;
@@ -50,10 +52,10 @@ internal class UnitModelCustom : UnitModel
         int health,
         int power,
         IReadOnlyCollection<NecoUnitTag>? tags = null,
-        IEnumerable<Behavior>? actions = null)
+        IEnumerable<BaseBehavior>? actions = null)
     {
         tags ??= new NecoUnitTag[] { };
-        actions ??= new Behavior[] { new DoNothing() };
+        actions ??= new BaseBehavior[] { new DoNothing() };
 
         Name = name;
         InternalName = name;
@@ -69,7 +71,7 @@ internal class UnitModelCustom : UnitModel
     public override int Power { get; }
     public override string BehaviorDescription { get; } = "";
     public override IReadOnlyCollection<NecoUnitTag> Tags { get; }
-    public override IEnumerable<Behavior> Actions { get; }
+    public override IEnumerable<BaseBehavior> Actions { get; }
 
     public Unit ToUnit(Player owner)
     {

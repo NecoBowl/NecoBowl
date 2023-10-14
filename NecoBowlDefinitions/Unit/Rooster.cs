@@ -1,4 +1,5 @@
 using NecoBowl.Core;
+using NecoBowl.Core.Machine;
 using NecoBowl.Core.Model;
 using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Tags;
@@ -15,7 +16,7 @@ public class Rooster : UnitModel
     public override int Health => 6;
     public override int Power => 2;
 
-    public override IEnumerable<Behavior> Actions
+    public override IEnumerable<BaseBehavior> Actions
         => new[] { new TranslateUnit(RelativeDirection.Up) };
 
     public override string BehaviorDescription => "Moves forward.";

@@ -1,3 +1,4 @@
+using NecoBowl.Core.Machine;
 using NecoBowl.Core.Model;
 using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Tags;
@@ -16,7 +17,7 @@ public class Skunk : UnitModel
 
     public override IEnumerable<NecoUnitTag> Tags => new[] { NecoUnitTag.UNIMPL_Smelly };
 
-    public override IEnumerable<Behavior> Actions => new[] { new DoNothing() };
+    public override IEnumerable<BaseBehavior> Actions => new[] { new DoNothing() };
 
     public override string BehaviorDescription
         => "Smelly with an imposing presence.";

@@ -2,7 +2,7 @@ using NecoBowl.Core.Machine;
 
 namespace NecoBowl.Core.Sport.Play;
 
-public class UnitPushes : Mutation
+public class UnitPushes : BaseMutation
 {
     public readonly AbsoluteDirection Direction;
     public readonly NecoUnitId Pusher;
@@ -24,8 +24,7 @@ public class UnitPushes : Mutation
         var pusher = field.GetUnit(Pusher);
         var receiver = field.GetUnit(Receiver, out var receiverPos);
         if (field.IsInBounds(receiverPos + Direction.ToVector2i())) {
-            substepContext.AddEntry(
-                receiver.Id, new(receiverPos + Direction.ToVector2i(), receiverPos, receiver));
+            substepContext.AddEntry(receiver.Id, new(receiverPos + Direction.ToVector2i(), receiverPos, receiver));
         }
     }
 }

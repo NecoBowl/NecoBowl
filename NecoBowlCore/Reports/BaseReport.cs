@@ -1,4 +1,4 @@
-namespace NecoBowl.Core.Machine.Reports;
+namespace NecoBowl.Core.Reports;
 
 public record BaseReport
 {

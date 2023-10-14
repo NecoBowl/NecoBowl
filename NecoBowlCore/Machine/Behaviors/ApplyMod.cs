@@ -1,10 +1,9 @@
 using NecoBowl.Core.Machine.Mutations;
-using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Tags;
 
 namespace NecoBowl.Core.Machine.Behaviors;
 
-public class ApplyMod : Behavior
+public class ApplyMod : BaseBehavior
 {
     public readonly UnitMod Mod;
 

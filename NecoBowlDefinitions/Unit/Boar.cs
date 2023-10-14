@@ -1,4 +1,5 @@
 using NecoBowl.Core;
+using NecoBowl.Core.Machine;
 using NecoBowl.Core.Model;
 using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Tags;
@@ -17,7 +18,7 @@ public class Boar : UnitModel
     public override IReadOnlyCollection<NecoUnitTag> Tags
         => new[] { NecoUnitTag.Pusher };
 
-    public override IEnumerable<Behavior> Actions
+    public override IEnumerable<BaseBehavior> Actions
         => new[] { new TranslateUnit(RelativeDirection.Up) };
 
     public override string BehaviorDescription

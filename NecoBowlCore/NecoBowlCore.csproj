@@ -37,6 +37,9 @@
     <Compile Update="Machine\TransientUnit.cs">
       <DependentUpon>PlayMachine.cs</DependentUpon>
     </Compile>
+    <Compile Update="Machine\TransientPlayfield.cs">
+      <DependentUpon>PlayMachine.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
 
 </Project>

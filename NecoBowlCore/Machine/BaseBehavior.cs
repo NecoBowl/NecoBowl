@@ -1,12 +1,10 @@
-using NecoBowl.Core.Machine;
+namespace NecoBowl.Core.Machine;
 
-namespace NecoBowl.Core.Sport.Play;
-
-public abstract class Behavior
+public abstract class BaseBehavior
 {
-    public Behavior? Next { get; private set; }
+    public BaseBehavior? Next { get; private set; }
 
-    public bool HasNext => Next is not null;
+    public bool HasNext => Next is { };
 
     internal BehaviorOutcome Result(NecoUnitId uid, ReadOnlyPlayfield field)
     {
@@ -20,7 +18,7 @@ public abstract class Behavior
 
     internal abstract BehaviorOutcome CallResult(NecoUnitId uid, ReadOnlyPlayfield field);
 
-    public Behavior Chain(Behavior other)
+    public BaseBehavior Chain(BaseBehavior other)
     {
         Next = other;
         return this;
@@ -33,7 +31,7 @@ public class BehaviorOutcome
     {
         Success,
         Failure,
-        Error
+        Error,
     }
 
     public readonly Exception? Exception;
@@ -51,7 +49,7 @@ public class BehaviorOutcome
         Exception = exception;
     }
 
-    internal static BehaviorOutcome Success(Mutation mutation)
+    internal static BehaviorOutcome Success(BaseMutation mutation)
     {
         return new Mutate(mutation);
     }
@@ -84,9 +82,9 @@ public class BehaviorOutcome
 
     internal class Mutate : BehaviorOutcome
     {
-        public readonly Mutation Mutation;
+        public readonly BaseMutation Mutation;
 
-        public Mutate(Mutation mutate)
+        public Mutate(BaseMutation mutate)
             : base(mutate.Description, Kind.Success)
         {
             Mutation = mutate;

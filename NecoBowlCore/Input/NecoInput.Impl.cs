@@ -1,4 +1,5 @@
 using NecoBowl.Core.Sport.Tactics;
+using NecoBowl.Core.Tactics;
 
 namespace NecoBowl.Core.Input;
 

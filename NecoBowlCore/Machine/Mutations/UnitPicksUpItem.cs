@@ -1,20 +1,21 @@
 using NecoBowl.Core.Machine;
+using Unit = NecoBowl.Core.Reports.Unit;
 
 namespace NecoBowl.Core.Sport.Play;
 
-public class UnitPicksUpItem : Mutation
+public class UnitPicksUpItem : BaseMutation
 {
-    public readonly NecoUnitId Item;
+    public readonly Unit Item;
 
-    public UnitPicksUpItem(NecoUnitId subject, NecoUnitId item)
-        : base(subject)
+    public UnitPicksUpItem(Unit subject, Unit item)
+        : base(subject.Id)
     {
         Item = item;
     }
 
     public override string Description => $"{Subject} picks up {Item}";
 
-    internal override NecoUnitId[] ExtractedUnits => new[] { Item };
+    internal override NecoUnitId[] ExtractedUnits => new[] { Item.Id };
 
     internal override bool Prepare(NecoSubstepContext context, ReadOnlyPlayfield field)
     {
@@ -25,14 +26,9 @@ public class UnitPicksUpItem : Mutation
         return false;
     }
 
-    internal override void Pass1Mutate(Playfield field)
-    {
-        var itemUnit = field.FlattenedMovementUnitBuffer.Single(u => u.Id == Item);
-    }
-
     internal override void Pass3Mutate(Playfield field)
     {
-        var itemUnit = field.FlattenedMovementUnitBuffer.Single(u => u.Id == Item);
+        var itemUnit = field.FlattenedMovementUnitBuffer.Single(u => u.Id == Item.Id);
         var subject = field.GetUnit(Subject);
         itemUnit!.Carrier = subject;
         subject.Inventory.Add(itemUnit!);

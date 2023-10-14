@@ -11,7 +11,7 @@ namespace NecoBowl.Core.Tags;
 /// provide a function that is called at play start. The function takes a unit as input and performs whatever manipulations
 /// it wants (typically, adding mods of a type other than <see cref="UnitMod.OptionValues" />).
 /// </summary>
-public abstract class NecoCardOptionPermission
+public abstract class CardOptionPermission
 {
     public abstract string Identifier { get; }
 
@@ -47,10 +47,10 @@ public abstract class NecoCardOptionPermission
         }
     }
 
-    public sealed class InvertRotations : NecoCardOptionPermission<bool>
+    public sealed class InvertRotations : BoolOptionPermission
     {
         public InvertRotations(string identifier = nameof(InvertRotations))
-            : base(false, identifier, new object[] { true, false })
+            : base(false, identifier)
         {
         }
 
@@ -66,9 +66,6 @@ public abstract class NecoCardOptionPermission
             : base(default, identifier)
         {
         }
-
-        public override object[] AllowedValues { get; } = new[] { false, true }.Cast<object>()
-            .ToArray();
 
         internal override void ApplyToUnit(Unit unit, bool value)
         {
@@ -89,15 +86,18 @@ public abstract class NecoCardOptionPermission
         }
     }
 
-    public class BoolOptionPermission : NecoCardOptionPermission<bool>
+    public class BoolOptionPermission : CardOptionPermission<bool>
     {
         protected BoolOptionPermission(bool defaultValue, string identifier)
             : base(defaultValue, identifier, new object[] { false, true })
         {
         }
+
+        public override object[] AllowedValues { get; } = new[] { false, true }.Cast<object>()
+            .ToArray();
     }
 
-    public class DirectionOptionPermission : NecoCardOptionPermission<RelativeDirection>
+    public class DirectionOptionPermission : CardOptionPermission<RelativeDirection>
     {
         public DirectionOptionPermission(
             RelativeDirection defaultvalue, string identifier, RelativeDirection[] allowedValues)
@@ -112,11 +112,11 @@ public abstract class NecoCardOptionPermission
     }
 }
 
-public class NecoCardOptionPermission<T> : NecoCardOptionPermission
+public class CardOptionPermission<T> : CardOptionPermission
 {
     public readonly T DefaultValue;
 
-    protected NecoCardOptionPermission(T defaultValue, string identifier, object[] allowedValues)
+    protected CardOptionPermission(T defaultValue, string identifier, object[] allowedValues)
     {
         Identifier = identifier;
         DefaultValue = defaultValue;

@@ -1,6 +1,6 @@
-using NecoBowl.Core.Sport.Play;
+using NecoBowl.Core.Machine;
 
-namespace NecoBowl.Core.Machine.Reports;
+namespace NecoBowl.Core.Reports;
 
 public record Movement : BaseReport
 {

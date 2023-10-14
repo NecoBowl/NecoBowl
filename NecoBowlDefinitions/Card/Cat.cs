@@ -11,9 +11,9 @@ public class Cat : UnitCardModel
     public override int Cost => 1;
     public override UnitModel Model => Unit.Cat.Instance;
 
-    public override IEnumerable<NecoCardOptionPermission> OptionPermissions { get; }
+    public override IEnumerable<CardOptionPermission> OptionPermissions { get; }
         = new[] {
-            new NecoCardOptionPermission.Rotate(
+            new CardOptionPermission.Rotate(
                 new[] {
                     RelativeDirection.UpLeft,
                     RelativeDirection.UpRight,

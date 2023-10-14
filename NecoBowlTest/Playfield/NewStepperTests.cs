@@ -2,11 +2,12 @@ using System.Collections.ObjectModel;
 using NecoBowl.Core;
 using NecoBowl.Core.Machine;
 using NecoBowl.Core.Machine.Mutations;
-using NecoBowl.Core.Machine.Reports;
+using NecoBowl.Core.Reports;
 using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Sport.Tactics;
 using NecoBowl.Core.Tags;
 using NUnit.Framework.Constraints;
+using Unit = NecoBowl.Core.Machine.Unit;
 
 // ReSharper disable AccessToStaticMemberViaDerivedType
 
@@ -141,20 +142,21 @@ public class NewStepperTests
         Assert.That(unit1.CurrentHealth, Is.EqualTo(unit1.MaxHealth - unit2.Power));
     }
 
+#endif
     [Test]
-    public void Field_HandoffHappensOnConcedingSpaceToAlly()
+    public void Play_HandoffHappensOnConcedingSpaceToAlly()
     {
-        var pickupper = new NecoUnit(
-            NecoUnitModelCustom.Mover(
+        var pickupper = new Unit(
+            UnitModelCustom.Mover(
                 "CarrierW",
                 5,
                 2,
                 RelativeDirection.Left,
                 new[] { NecoUnitTag.Carrier }),
             Player1.Id);
-        var item = new NecoUnit(NecoUnitModelCustom.Item(), NecoPlayer.NeutralPlayer.Id);
-        var bossy = new NecoUnit(
-            NecoUnitModelCustom.Mover(
+        var item = new Unit(UnitModelCustom.Item(), Player.NeutralPlayer.Id);
+        var bossy = new Unit(
+            UnitModelCustom.Mover(
                 "Bossy",
                 5,
                 2,
@@ -166,19 +168,15 @@ public class NewStepperTests
         Field[0, 0] = new(bossy);
 
         // Main unit picks up ball
-        Play.Step();
+        PlayMachine.Step();
 
         // Handoff happens
-        var mutations = Play.Step();
+        var mutations = PlayMachine.Step();
         Assert.That(
             mutations, Has.EquivalentMutationsTo(
-                new NecoPlayfieldMutation.MovementMutation(new(bossy, (0, 2), (0, 1))),
-                new NecoPlayfieldMutation.UnitBumps(pickupper.Id, AbsoluteDirection.West),
-                new NecoPlayfieldMutation.UnitHandsOffItem(pickupper.Id, bossy.Id, item.Id)));
-
-        Play.Step();
+                new UnitBumps(pickupper, AbsoluteDirection.West),
+                new UnitHandsOffItem(pickupper, bossy, item)));
     }
-#endif
 
     [Test]
     public void Movement_TrailingUnitsCanMove()
@@ -191,36 +189,33 @@ public class NewStepperTests
 
         var muts = PlayMachine.Step();
 
-#if false
         Assert.That(
             muts,
-            Has.EquivalentMutationsTo(
-                new NecoPlayfieldMutation.MovementMutation(new(unit1, (0, 1), (0, 0))),
-                new NecoPlayfieldMutation.MovementMutation(new(unit2, (0, 2), (0, 1)))));
-#endif
+            Has.EquivalentMovementsTo(
+                new TransientUnit((0, 2), (0, 1), unit2),
+                new TransientUnit((0, 1), (0, 0), unit1)));
     }
 
-#if false
     [Test]
     public void Movement_ItemPushedOntoConflictSpaceGetsPickedUp()
     {
-        var carrier = NecoUnitModelCustom.Mover(
+        var carrier = UnitModelCustom.Mover(
                 "Carrier",
                 direction: RelativeDirection.Up,
                 tags: new[] { NecoUnitTag.Carrier })
             .ToUnit(Player1);
-        var pusher = NecoUnitModelCustom.Mover(
+        var pusher = UnitModelCustom.Mover(
                 "Pusher",
                 direction: RelativeDirection.Right,
                 tags: new[] { NecoUnitTag.Pusher })
             .ToUnit(Player1);
-        var item = new NecoUnit(NecoUnitModelCustom.Item(), Player1.Id);
+        var item = new Unit(UnitModelCustom.Item(), Player1.Id);
 
         Field[0, 2] = new(pusher);
         Field[2, 1] = new(carrier);
         Field[1, 2] = new(item);
 
-        var mutations = Play.Step().ToList();
+        var mutations = PlayMachine.Step().ToList();
 
         Assert.Multiple(
             () => {
@@ -228,7 +223,7 @@ public class NewStepperTests
                     Field, Has.FieldContents(
                         new() {
                             [(1, 2)] = pusher,
-                            [(2, 2)] = carrier
+                            [(2, 2)] = carrier,
                         }));
                 Assert.That(carrier.Inventory, Contains.Item(item));
             });
@@ -241,23 +236,23 @@ public class NewStepperTests
     [Test]
     public void Movement_BallPushedOntoConflictSpaceGetsPickedUp()
     {
-        var carrier = NecoUnitModelCustom.Mover(
+        var carrier = UnitModelCustom.Mover(
                 "Carrier",
                 direction: RelativeDirection.Up,
                 tags: new[] { NecoUnitTag.Carrier })
             .ToUnit(Player1);
-        var pusher = NecoUnitModelCustom.Mover(
+        var pusher = UnitModelCustom.Mover(
                 "Pusher",
                 direction: RelativeDirection.Right,
                 tags: new[] { NecoUnitTag.Pusher })
             .ToUnit(Player1);
-        var item = new NecoUnit(BuiltInDefinitions.Ball.Instance, Player1.Id);
+        var item = new Unit(BuiltInDefinitions.Ball.Instance, Player1.Id);
 
         Field[0, 2] = new(pusher);
         Field[2, 1] = new(carrier);
         Field[1, 2] = new(item);
 
-        var mutations = Play.Step().ToList();
+        var mutations = PlayMachine.Step().ToList();
 
         Assert.Multiple(
             () => {
@@ -265,7 +260,7 @@ public class NewStepperTests
                     Field, Has.FieldContents(
                         new() {
                             [(1, 2)] = pusher,
-                            [(2, 2)] = carrier
+                            [(2, 2)] = carrier,
                         }));
                 Assert.That(carrier.Inventory, Contains.Item(item));
             });
@@ -274,9 +269,9 @@ public class NewStepperTests
     [Test]
     public void Tag_Pusher_PushesUnitWhenCollidingPreemptively()
     {
-        var unitA1 = new NecoUnit(NecoUnitModelCustom.Mover("MoverS", 5, 2, RelativeDirection.Down), Player1.Id);
-        var unitA2 = new NecoUnit(
-            NecoUnitModelCustom.Mover(
+        var unitA1 = new Unit(UnitModelCustom.Mover("MoverS", 5, 2, RelativeDirection.Down), Player1.Id);
+        var unitA2 = new Unit(
+            UnitModelCustom.Mover(
                 "MoverN",
                 5,
                 2,
@@ -285,27 +280,41 @@ public class NewStepperTests
         Field[0, 1] = new(unitA1);
         Field[0, 0] = new(unitA2);
 
-        Play.Step();
+        PlayMachine.Step();
 
         Assert.That(
             Field,
             Has.FieldContents(
                 new() {
                     { (0, 2), unitA1 },
-                    { (0, 1), unitA2 }
+                    { (0, 1), unitA2 },
                 }));
 
-        Play.Step();
+        PlayMachine.Step();
 
         Assert.That(
             Field,
             Has.FieldContents(
                 new() {
                     { (0, 3), unitA1 },
-                    { (0, 2), unitA2 }
+                    { (0, 2), unitA2 },
                 }));
     }
 
+    [Test]
+    public void Play_UnitCanGetRejectedFromOriginalSpaceOfSwapper()
+    {
+        var unit1 = new Unit(UnitModelCustom.Mover(direction: RelativeDirection.Up), Player1.Id);
+        var unit2 = new Unit(UnitModelCustom.Mover(direction: RelativeDirection.Down), Player1.Id);
+        var unit3 = new Unit(UnitModelCustom.Mover(direction: RelativeDirection.Left), Player1.Id);
+
+        Field[0, 0] = new(unit1);
+        Field[0, 1] = new(unit2);
+        Field[1, 0] = new(unit3);
+
+        PlayMachine.Step();
+    }
+#if false
     [Test]
     public void Tag_Defender_DoesNotAttackWhenMovingIntoSpaceSwap()
     {
@@ -425,14 +434,14 @@ public class NewStepperTests
 
 public record MutationChecker
 {
-    public readonly Mutation Mutation;
+    public readonly BaseMutation Mutation;
 
-    public MutationChecker(Mutation mutation)
+    public MutationChecker(BaseMutation mutation)
     {
         Mutation = mutation;
     }
 
-    public bool EqualsMutation(Mutation mutation)
+    public bool EqualsMutation(BaseMutation mutation)
     {
         if (Mutation.GetType() != mutation.GetType()) {
             return false;
@@ -501,7 +510,7 @@ internal class MutationListHasConstraint : Constraint
 
     public override ConstraintResult ApplyTo<TActual>(TActual actual)
     {
-        if (actual is IEnumerable<Mutation> mutationList) {
+        if (actual is IEnumerable<BaseMutation> mutationList) {
             return new(this, actual, mutationList.Any(Predicate!));
         }
 
@@ -512,7 +521,7 @@ internal class MutationListHasConstraint : Constraint
 /// <inheritdoc cref="MutationListHasConstraint" />
 /// <typeparam name="T">The type of the mutation.</typeparam>
 internal class MutationListHasConstraint<T> : MutationListHasConstraint
-    where T : Mutation
+    where T : BaseMutation
 {
     private readonly Func<T, bool> Predicate;
 
@@ -525,7 +534,7 @@ internal class MutationListHasConstraint<T> : MutationListHasConstraint
 
     public override ConstraintResult ApplyTo<TActual>(TActual actual)
     {
-        if (actual is IEnumerable<Mutation> mutationList) {
+        if (actual is IEnumerable<BaseMutation> mutationList) {
             return new(this, actual, mutationList.OfType<T>().Any(Predicate));
         }
 
@@ -541,7 +550,7 @@ internal class StepHasEquivalentMutationsConstraint : Constraint
 {
     private readonly ReadOnlyCollection<MutationChecker> Constraints;
 
-    public StepHasEquivalentMutationsConstraint(IEnumerable<Mutation> constraints)
+    public StepHasEquivalentMutationsConstraint(IEnumerable<BaseMutation> constraints)
     {
         Constraints = constraints.Select(mut => new MutationChecker(mut)).ToList().AsReadOnly();
     }
@@ -568,7 +577,7 @@ internal class StepHasEquivalentMutationsConstraint : Constraint
         }
 
         // Track items already matched against
-        var matchedMutations = new List<Mutation>();
+        var matchedMutations = new List<BaseMutation>();
 
         foreach (var constraint in Constraints) {
             var result = mutations
@@ -616,14 +625,14 @@ internal abstract class Has : NUnit.Framework.Has
 {
     /// <inheritdoc cref="MutationListHasConstraint" />
     public static MutationListHasConstraint<T> MutationWhere<T>(Func<T, bool> predicate)
-        where T : Mutation
+        where T : BaseMutation
     {
         return new(predicate);
     }
 
     /// <inheritdoc cref="StepHasEquivalentMutationsConstraint" />
     public static StepHasEquivalentMutationsConstraint EquivalentMutationsTo(
-        params Mutation[] mutationCheckers)
+        params BaseMutation[] mutationCheckers)
     {
         return new(mutationCheckers);
     }
@@ -645,7 +654,7 @@ internal static class NUnitExt
 {
     /// <inheritdoc cref="MutationListHasConstraint" />
     public static MutationListHasConstraint<T> MutationWhere<T>(this ConstraintExpression expr, Func<T, bool> predicate)
-        where T : Mutation
+        where T : BaseMutation
     {
         var constraint = new MutationListHasConstraint<T>(predicate);
         expr.Append(constraint);
@@ -655,7 +664,7 @@ internal static class NUnitExt
     /// <inheritdoc cref="StepHasEquivalentMutationsConstraint" />
     public static StepHasEquivalentMutationsConstraint EquivalentMutationsTo(
         this ConstraintExpression expr,
-        IEnumerable<Mutation> mutationCheckers)
+        IEnumerable<BaseMutation> mutationCheckers)
     {
         var constraint = new StepHasEquivalentMutationsConstraint(mutationCheckers);
         expr.Append(constraint);

@@ -10,6 +10,6 @@ public class Donkey : UnitCardModel
     public override int Cost => 2;
     public override UnitModel Model => Unit.Donkey.Instance;
 
-    public override IEnumerable<NecoCardOptionPermission> OptionPermissions
-        => new[] { new NecoCardOptionPermission.InvertRotations() };
+    public override IEnumerable<CardOptionPermission> OptionPermissions
+        => new[] { new CardOptionPermission.InvertRotations() };
 }

@@ -1,3 +1,4 @@
+using NecoBowl.Core.Machine;
 using NecoBowl.Core.Model;
 using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Tags;
@@ -16,7 +17,7 @@ public class Crab : UnitModel
     public override IReadOnlyCollection<NecoUnitTag> Tags
         => new[] { NecoUnitTag.Defender };
 
-    public override IEnumerable<Behavior> Actions
+    public override IEnumerable<BaseBehavior> Actions
         => new[] { new TranslateUnitCrabwalk() };
 
     public override string BehaviorDescription

@@ -1,10 +1,11 @@
+using NecoBowl.Core.Input;
 using NecoBowl.Core.Machine;
 using NecoBowl.Core.Reports;
 using NecoBowl.Core.Sport.Tactics;
 using NLog;
-using Plan = NecoBowl.Core.Sport.Tactics.Plan;
+using Plan = NecoBowl.Core.Reports.Plan;
 
-namespace NecoBowl.Core.Input;
+namespace NecoBowl.Core;
 
 /// <summary>
 /// Wrapper around a <see cref="Sport.Tactics.Match" /> for user interaction purposes. You can call
@@ -39,7 +40,7 @@ public class NecoBowlContext
         return Match.CurrentPush.SendInput(input);
     }
 
-    public Reports.Plan GetPlan(NecoPlayerRole role)
+    public Plan GetPlan(NecoPlayerRole role)
     {
         return new(Match.CurrentPush.Plans[role]);
     }

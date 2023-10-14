@@ -1,14 +1,31 @@
 using System.Collections.Immutable;
-using NecoBowl.Core.Sport.Tactics;
+using NecoBowl.Core.Tactics;
 
 namespace NecoBowl.Core.Reports;
 
-public class Plan
+public record Plan : BaseReport
 {
-    public readonly IImmutableList<Sport.Tactics.Plan.CardPlay> CardPlays;
+    private readonly IImmutableList<CardPlay> CardPlays;
 
-    public Plan(Sport.Tactics.Plan realPlan)
+    public CardPlay? CardPlayAt(Vector2i pos)
     {
-        CardPlays = realPlan.GetCardPlays().ToImmutableList();
+        return CardPlays.SingleOrDefault(p => p.Position == pos);
+    }
+
+    internal Plan(Sport.Tactics.Plan realPlan)
+    {
+        CardPlays = realPlan.GetCardPlays().Select(p => p.ToReport()).ToImmutableList();
+    }
+
+    public record CardPlay
+    {
+        public readonly Card Card;
+        public readonly Vector2i Position;
+
+        public CardPlay(Vector2i position, Card card)
+        {
+            Position = position;
+            Card = card;
+        }
     }
 }

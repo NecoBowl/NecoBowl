@@ -3,7 +3,7 @@ using NecoBowl.Core.Tags;
 
 namespace NecoBowl.Core.Sport.Play;
 
-public class ChaseBall : Behavior
+public class ChaseBall : BaseBehavior
 {
     public const string Option_FallbackDirecttion = "FallbackDirection";
     private readonly RelativeDirection[] AllowedDirections;

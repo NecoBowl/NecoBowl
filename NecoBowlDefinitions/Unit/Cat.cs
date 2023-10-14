@@ -1,4 +1,5 @@
 using NecoBowl.Core;
+using NecoBowl.Core.Machine;
 using NecoBowl.Core.Model;
 using NecoBowl.Core.Sport.Play;
 
@@ -13,8 +14,8 @@ public class Cat : UnitModel
     public override int Health => 4;
     public override int Power => 3;
 
-    public override IEnumerable<Behavior> Actions
-        => new Behavior[] { new TranslateUnit(RelativeDirection.Up) };
+    public override IEnumerable<BaseBehavior> Actions
+        => new BaseBehavior[] { new TranslateUnit(RelativeDirection.Up) };
 
     public override string BehaviorDescription
         => $"Moves {Arrow0}.";

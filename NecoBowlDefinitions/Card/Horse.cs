@@ -10,6 +10,6 @@ public class Horse : UnitCardModel
     public override int Cost => 3;
     public override UnitModel Model => Unit.Horse.Instance;
 
-    public override IEnumerable<NecoCardOptionPermission> OptionPermissions { get; }
-        = new[] { new NecoCardOptionPermission.InvertRotations() };
+    public override IEnumerable<CardOptionPermission> OptionPermissions { get; }
+        = new[] { new CardOptionPermission.InvertRotations() };
 }

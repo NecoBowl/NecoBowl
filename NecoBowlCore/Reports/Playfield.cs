@@ -1,4 +1,6 @@
-namespace NecoBowl.Core.Machine.Reports;
+using NecoBowl.Core.Machine;
+
+namespace NecoBowl.Core.Reports;
 
 public record Playfield : BaseReport
 {
@@ -14,12 +16,12 @@ public record Playfield : BaseReport
 
     public NecoFieldParameters FieldParameters => Field.FieldParameters;
 
-    public Core.Reports.Unit GetUnit(NecoUnitId uid)
+    public Unit GetUnit(NecoUnitId uid)
     {
         return new(Field.GetUnit(uid));
     }
 
-    public Core.Reports.Unit? LookupUnit(string shortUid)
+    public Unit? LookupUnit(string shortUid)
     {
         var unit = Field.LookupUnit(shortUid);
         return unit is null ? null : new(unit);
@@ -30,15 +32,15 @@ public record Playfield : BaseReport
         return Field.GetUnitPosition(uid, includeInventories);
     }
 
-    public IReadOnlyCollection<Core.Reports.Unit> GetGraveyard()
+    public IReadOnlyCollection<Unit> GetGraveyard()
     {
-        return Field.GetGraveyard().Select(m => new Core.Reports.Unit(m)).ToList().AsReadOnly();
+        return Field.GetGraveyard().Select(m => new Unit(m)).ToList().AsReadOnly();
     }
 
     public Space Contents(Vector2i coords)
     {
         var unit = Field[coords.X, coords.Y].Unit;
-        return new(unit is null ? null : new Core.Reports.Unit(unit));
+        return new(unit is null ? null : new Unit(unit));
     }
 
     public (int x, int y) GetBounds()

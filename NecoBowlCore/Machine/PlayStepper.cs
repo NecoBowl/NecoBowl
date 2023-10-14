@@ -6,9 +6,9 @@ namespace NecoBowl.Core.Machine;
 
 internal interface IMutationReceiver
 {
-    public void BufferMutation(Mutation mutation);
+    public void BufferMutation(BaseMutation mutation);
 
-    public void BufferMutations(IEnumerable<Mutation> mutations)
+    public void BufferMutations(IEnumerable<BaseMutation> mutations)
     {
         foreach (var m in mutations) {
             BufferMutation(m);
@@ -17,7 +17,7 @@ internal interface IMutationReceiver
 }
 
 internal record SubstepContents(
-    IReadOnlyCollection<Mutation> Mutations,
+    IReadOnlyCollection<BaseMutation> Mutations,
     IReadOnlyCollection<TransientUnit> Movements);
 
 internal class PlayStepper : IMutationReceiver
@@ -26,10 +26,10 @@ internal class PlayStepper : IMutationReceiver
 
     private readonly Playfield Field;
 
-    private readonly List<Mutation> MutationLog = new();
+    private readonly List<BaseMutation> MutationLog = new();
 
     private readonly Dictionary<NecoUnitId, TransientUnit> PendingMovements = new();
-    private readonly List<Mutation> PendingMutations = new();
+    private readonly List<BaseMutation> PendingMutations = new();
 
     public PlayStepper(Playfield field)
     {
@@ -39,7 +39,7 @@ internal class PlayStepper : IMutationReceiver
     private bool MutationsRemaining
         => PendingMovements.Values.Any() || PendingMutations.Any();
 
-    public void BufferMutation(Mutation mutation)
+    public void BufferMutation(BaseMutation mutation)
     {
         PendingMutations.Add(mutation);
     }
@@ -56,7 +56,7 @@ internal class PlayStepper : IMutationReceiver
 
         // Begin the substep loop
         while (MutationsRemaining) {
-            List<Mutation> outputMutations = new();
+            List<BaseMutation> outputMutations = new();
             List<TransientUnit> outputMovements = new();
 
             // Perform early mutations.
@@ -88,7 +88,7 @@ internal class PlayStepper : IMutationReceiver
         return substeps;
     }
 
-    private void PopUnitActions(out Dictionary<NecoUnitId, Behavior?> chainedActions)
+    private void PopUnitActions(out Dictionary<NecoUnitId, BaseBehavior?> chainedActions)
     {
         chainedActions = new();
         // Perform the actions of each unit to populate the lists
@@ -138,13 +138,13 @@ internal class PlayStepper : IMutationReceiver
         }
 
         // Then run the mutate passes
-        foreach (var func in Mutation.ExecutionOrder) {
+        foreach (var func in BaseMutation.ExecutionOrder) {
             foreach (var mutation in baseMutations) {
                 func.Invoke(mutation, substepContext, Field);
             }
         }
 
-        var tempMutations = new List<Mutation>();
+        var tempMutations = new List<BaseMutation>();
 
         foreach (var (pos, unit) in Field.GetAllUnits()) {
             foreach (var mutation in baseMutations) {

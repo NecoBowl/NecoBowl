@@ -1,4 +1,5 @@
 using NecoBowl.Core;
+using NecoBowl.Core.Machine;
 using NecoBowl.Core.Model;
 using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Tags;
@@ -14,7 +15,7 @@ public class Snake : UnitModel
     public override int Health => 5;
     public override int Power => 2;
 
-    public override IEnumerable<Behavior> Actions => new[] {
+    public override IEnumerable<BaseBehavior> Actions => new[] {
         new TranslateUnit(RelativeDirection.Right),
         new TranslateUnit(RelativeDirection.Up),
         new TranslateUnit(RelativeDirection.Left),

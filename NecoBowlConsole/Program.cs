@@ -1,6 +1,7 @@
 using neco_soft.NecoBowlDefinitions.Card;
+using NecoBowl.Core;
 using NecoBowl.Core.Input;
-using NecoBowl.Core.Sport.Tactics;
+using NecoBowl.Core.Tactics;
 using NecoBowl.Core.Tags;
 
 var context = new NecoBowlContext(new());
@@ -23,7 +24,7 @@ void StuffB()
         new NecoInput.SetPlanMod(
             context.Players.Offense,
             boarCard,
-            NecoCardOptionPermission.Rotate.StaticIdentifier,
+            CardOptionPermission.Rotate.StaticIdentifier,
             2));
 
     context.SendInput(new NecoInput.PlaceCard(context.Players.Offense, new UnitCard(Chicken.Instance), (2, 1)));

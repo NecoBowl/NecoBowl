@@ -10,6 +10,6 @@ public class Snake : UnitCardModel
     public override int Cost => 2;
     public override UnitModel Model => Unit.Snake.Instance;
 
-    public override IEnumerable<NecoCardOptionPermission> OptionPermissions { get; }
-        = new[] { new NecoCardOptionPermission.FlipX() };
+    public override IEnumerable<CardOptionPermission> OptionPermissions { get; }
+        = new[] { new CardOptionPermission.FlipX() };
 }

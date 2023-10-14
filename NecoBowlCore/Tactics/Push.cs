@@ -120,9 +120,9 @@ internal class Push : INecoPushInformation
             plays.AddRange(CurrentTurn.CardPlaysByRole[role]);
 
             foreach (var cardPlay in plays) {
-                if (cardPlay.Card.IsUnitCard(out var unitCard)) {
+                if (cardPlay.Card.IsUnitCard()) {
                     field[cardPlay.Position] = field[cardPlay.Position] with {
-                        Unit = unitCard!.ToUnit(cardPlay.Player),
+                        Unit = new Unit unitCard!.ToUnit(cardPlay.Player),
                     };
                 }
             }

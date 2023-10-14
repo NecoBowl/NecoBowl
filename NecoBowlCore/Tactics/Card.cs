@@ -1,9 +1,10 @@
 using System.Collections;
 using NecoBowl.Core.Machine;
 using NecoBowl.Core.Model;
+using NecoBowl.Core.Sport.Tactics;
 using NecoBowl.Core.Tags;
 
-namespace NecoBowl.Core.Sport.Tactics;
+namespace NecoBowl.Core.Tactics;
 
 /// <summary>
 /// A game object that can be placed on the field by a player. Typically, a selection of these are presented to players in
@@ -12,8 +13,8 @@ namespace NecoBowl.Core.Sport.Tactics;
 public class Card
 {
     public readonly CardModel CardModel;
+    public readonly int Cost;
     public readonly NecoCardOptions Options;
-    public int Cost;
 
     public Card(CardModel cardModel)
     {
@@ -27,17 +28,6 @@ public class Card
     public bool IsUnitCard()
     {
         return CardModel is UnitCardModel;
-    }
-
-    public bool IsUnitCard(out UnitCard? unitCard)
-    {
-        if (IsUnitCard()) {
-            unitCard = (UnitCard)this;
-            return true;
-        }
-
-        unitCard = null;
-        return false;
     }
 }
 

@@ -1,4 +1,5 @@
 using NecoBowl.Core;
+using NecoBowl.Core.Machine;
 using NecoBowl.Core.Machine.Mutations;
 using NecoBowl.Core.Model;
 using NecoBowl.Core.Sport.Play;
@@ -18,8 +19,8 @@ public class Dog : UnitModel
     public override string BehaviorDescription
         => "Walks forward. Turns around upon picking up the ball.";
 
-    public override IEnumerable<Behavior> Actions
-        => new Behavior[] { new TranslateUnit(RelativeDirection.Up) };
+    public override IEnumerable<BaseBehavior> Actions
+        => new BaseBehavior[] { new TranslateUnit(RelativeDirection.Up) };
 
     public override IEnumerable<NecoUnitTag> Tags => new[] { NecoUnitTag.Carrier };
 
@@ -27,9 +28,9 @@ public class Dog : UnitModel
         new(typeof(UnitPicksUpItem), (unit, _, mut) => OnPicksUp(unit, mut)),
     };
 
-    private static IEnumerable<Mutation> OnPicksUp(
+    private static IEnumerable<BaseMutation> OnPicksUp(
         NecoBowl.Core.Reports.Unit unit,
-        Mutation mutation)
+        BaseMutation mutation)
     {
         if (unit.Id == mutation.Subject) {
             yield return new UnitGetsMod(unit, new UnitMod.Rotate(4));

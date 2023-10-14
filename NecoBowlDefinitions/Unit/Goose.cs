@@ -1,4 +1,5 @@
 using NecoBowl.Core;
+using NecoBowl.Core.Machine;
 using NecoBowl.Core.Model;
 using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Tags;
@@ -17,7 +18,7 @@ public class Goose : UnitModel
 
     public override IEnumerable<NecoUnitTag> Tags => new[] { NecoUnitTag.Carrier };
 
-    public override IEnumerable<Behavior> Actions => new[] {
+    public override IEnumerable<BaseBehavior> Actions => new[] {
         new ChaseBall(new[] { RelativeDirection.Up, RelativeDirection.UpLeft, RelativeDirection.UpRight }),
     };
 

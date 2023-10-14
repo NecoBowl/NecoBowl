@@ -11,9 +11,9 @@ public class Pebble : UnitCardModel
     public override int Cost => 3;
     public override UnitModel Model => Unit.Pebble.Instance;
 
-    public override IEnumerable<NecoCardOptionPermission> OptionPermissions { get; }
+    public override IEnumerable<CardOptionPermission> OptionPermissions { get; }
         = new[] {
-            new NecoCardOptionPermission.Rotate(
+            new CardOptionPermission.Rotate(
                 new[] {
                     RelativeDirection.UpLeft,
                     RelativeDirection.UpRight,

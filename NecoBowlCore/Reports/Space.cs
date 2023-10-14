@@ -1,13 +1,13 @@
 using NecoBowl.Core.Sport.Tactics;
 
-namespace NecoBowl.Core.Machine.Reports;
+namespace NecoBowl.Core.Reports;
 
 public class Space
 {
-    public readonly Core.Reports.Unit? Unit;
+    public readonly Unit? Unit;
     public NecoPlayerRole Role;
 
-    public Space(Core.Reports.Unit? unit)
+    public Space(Unit? unit)
     {
         Unit = unit;
     }

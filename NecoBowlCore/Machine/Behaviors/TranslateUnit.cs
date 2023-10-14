@@ -3,7 +3,7 @@ using NecoBowl.Core.Tags;
 
 namespace NecoBowl.Core.Sport.Play;
 
-public class TranslateUnit : Behavior
+public class TranslateUnit : BaseBehavior
 {
     private readonly RelativeDirection Direction;
 

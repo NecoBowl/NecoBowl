@@ -1,29 +1,28 @@
-using NecoBowl.Core.Machine;
-
-namespace NecoBowl.Core.Sport.Play;
+namespace NecoBowl.Core.Machine;
 
 /// <summary>
 /// Represents an event that causes a change in the board state. Mutations can be created from anywhere, but they mainly
 /// come from two sources:
 /// <list type="number">
-/// <item>Instances of <see cref="Behavior" />, which are created and run at the beginning of a step.</item>
+/// <item>Instances of <see cref="BaseBehavior" />, which are created and run at the beginning of a step.</item>
 /// <item>Other mutations.</item>
 /// </list>
 /// </summary>
 /// <remarks>
 /// Mutations are assumed to be immutable and stateless. They should not contain reference types as members; instead, use
-/// the associated <c>Id</c> type for that object. Constructors should take <see cref="Reports.Unit">Reports.Unit</see> as
-/// parameters so that they can be made public and can be called from within reactions of unit models.
+/// the associated <c>Id</c> type for that object. Constructors should take
+/// <see cref="Core.Reports.Unit">Reports.Unit</see> as parameters so that they can be made public and can be called from
+/// within reactions of unit models.
 /// </remarks>
-public abstract class Mutation
+public abstract class BaseMutation
 {
-    internal static readonly Action<Mutation, NecoSubstepContext, Playfield>[] ExecutionOrder = {
+    internal static readonly Action<BaseMutation, NecoSubstepContext, Playfield>[] ExecutionOrder = {
         (m, s, f) => m.Pass1Mutate(f), (m, s, f) => m.Pass2Mutate(f), (m, s, f) => m.Pass3Mutate(f),
     };
 
     public readonly NecoUnitId Subject;
 
-    protected internal Mutation(NecoUnitId subject)
+    protected internal BaseMutation(NecoUnitId subject)
     {
         Subject = subject;
     }
@@ -60,7 +59,7 @@ public abstract class Mutation
     {
     }
 
-    internal virtual IEnumerable<Mutation> GetResultantMutations(ReadOnlyPlayfield field)
+    internal virtual IEnumerable<BaseMutation> GetResultantMutations(ReadOnlyPlayfield field)
     {
         yield break;
     }
@@ -69,11 +68,11 @@ public abstract class Mutation
 internal class NecoSubstepContext
 {
     private readonly Dictionary<NecoUnitId, TransientUnit> Dict;
-    private readonly List<Mutation> Mutations;
+    private readonly List<BaseMutation> Mutations;
 
     public NecoSubstepContext(
         Dictionary<NecoUnitId, TransientUnit> dict,
-        List<Mutation> mutations)
+        List<BaseMutation> mutations)
     {
         Dict = dict;
         Mutations = mutations;

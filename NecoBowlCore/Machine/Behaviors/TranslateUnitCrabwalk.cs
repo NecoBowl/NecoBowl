@@ -3,7 +3,7 @@ using NecoBowl.Core.Tags;
 
 namespace NecoBowl.Core.Sport.Play;
 
-public class TranslateUnitCrabwalk : Behavior
+public class TranslateUnitCrabwalk : BaseBehavior
 {
     internal override BehaviorOutcome CallResult(NecoUnitId uid, ReadOnlyPlayfield field)
     {

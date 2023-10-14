@@ -1,4 +1,5 @@
 using NecoBowl.Core;
+using NecoBowl.Core.Machine;
 using NecoBowl.Core.Machine.Behaviors;
 using NecoBowl.Core.Model;
 using NecoBowl.Core.Sport.Play;
@@ -15,7 +16,7 @@ public class Donkey : UnitModel
     public override int Health => 4;
     public override int Power => 2;
 
-    public override IEnumerable<Behavior> Actions => new[] {
+    public override IEnumerable<BaseBehavior> Actions => new[] {
         new TranslateUnit(RelativeDirection.Up).Chain(new ApplyMod(new UnitMod.Rotate(2))),
         new TranslateUnit(RelativeDirection.Up).Chain(new ApplyMod(new UnitMod.Rotate(-2))),
     };

@@ -2,7 +2,7 @@ using NecoBowl.Core.Machine;
 
 namespace NecoBowl.Core.Sport.Play;
 
-public class UnitThrowsItem : Mutation
+public class UnitThrowsItem : BaseMutation
 {
     public readonly Vector2i Destination;
     public readonly NecoUnitId Item;
