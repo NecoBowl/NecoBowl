@@ -14,9 +14,10 @@ public class UnitDies : BaseMutation
 
     internal override NecoUnitId[] ExtractedUnits => new[] { Subject };
 
-    internal override bool Prepare(NecoSubstepContext context, ReadOnlyPlayfield field)
+    internal override bool Prepare(
+        IPlayfieldChangeReceiver context, ReadOnlyPlayfield field)
     {
-        if (context.HasEntryOfType(Subject, typeof(UnitDies), this)) {
+        if (context.MutationIsBuffered<UnitDies>(Subject) is { } existing && existing != this) {
             return true;
         }
 

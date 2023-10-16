@@ -4,10 +4,12 @@ namespace NecoBowl.Core.Reports;
 
 public record Movement : BaseReport
 {
+    public readonly NecoUnitId UnitId;
     public readonly Vector2i OldPos, NewPos;
 
-    public Movement(Vector2i oldPos, Vector2i newPos)
+    internal Movement(Unit unit, Vector2i oldPos, Vector2i newPos)
     {
+        UnitId = unit.Id;
         OldPos = oldPos;
         NewPos = newPos;
     }
@@ -16,7 +18,7 @@ public record Movement : BaseReport
 
     internal static Movement From(TransientUnit unit)
     {
-        return new(unit.OldPos, unit.NewPos);
+        return new(unit.Unit, unit.OldPos, unit.NewPos);
     }
 
     public override string ToString()

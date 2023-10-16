@@ -1,32 +1,41 @@
+using AnyOfTypes;
 using NecoBowl.Core.Sport.Play;
 using NecoBowl.Core.Tags;
 using NLog;
 
 namespace NecoBowl.Core.Machine;
 
-internal interface IMutationReceiver
+internal interface IPlayfieldChangeReceiver
 {
+    public void BufferMovement(TransientUnit movement);
     public void BufferMutation(BaseMutation mutation);
 
-    public void BufferMutations(IEnumerable<BaseMutation> mutations)
+    public sealed void EnqueuePlayfieldChange(AnyOf<BaseMutation, TransientUnit> change)
     {
-        foreach (var m in mutations) {
-            BufferMutation(m);
+        if (change.IsFirst) {
+            BufferMutation(change.First);
+        }
+        else if (change.IsSecond) {
+            BufferMovement(change.Second);
         }
     }
+
+    public BaseMutation? MutationIsBuffered<T>(NecoUnitId subject)
+        where T : BaseMutation;
 }
 
 internal record SubstepContents(
     IReadOnlyCollection<BaseMutation> Mutations,
     IReadOnlyCollection<TransientUnit> Movements);
 
-internal class PlayStepper : IMutationReceiver
+internal class PlayStepper : IPlayfieldChangeReceiver
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
     private readonly Playfield Field;
 
     private readonly List<BaseMutation> MutationLog = new();
+    private readonly List<BaseMutation> OldMutationBuffer = new();
 
     private readonly Dictionary<NecoUnitId, TransientUnit> PendingMovements = new();
     private readonly List<BaseMutation> PendingMutations = new();
@@ -39,9 +48,20 @@ internal class PlayStepper : IMutationReceiver
     private bool MutationsRemaining
         => PendingMovements.Values.Any() || PendingMutations.Any();
 
+    public void BufferMovement(TransientUnit movement)
+    {
+        Logger.Trace($"{nameof(BufferMovement)} <- {movement}");
+        PendingMovements[movement.UnitId] = movement;
+    }
+
     public void BufferMutation(BaseMutation mutation)
     {
         PendingMutations.Add(mutation);
+    }
+
+    public BaseMutation? MutationIsBuffered<T>(NecoUnitId subject) where T : BaseMutation
+    {
+        return OldMutationBuffer.FirstOrDefault(mut => mut is T && mut.Subject == subject);
     }
 
     /// <summary>Run the step, modifying this stepper's <see cref="Playfield" />.</summary>
@@ -62,13 +82,16 @@ internal class PlayStepper : IMutationReceiver
             // Perform early mutations.
             // For example, a unit getting pushed adds its movement here.
             foreach (var mutation in PendingMutations) {
-                mutation.EarlyMutate(Field, new(PendingMovements, PendingMutations));
+                mutation.EarlyMutate(Field, this);
             }
 
             // Perform regular mutation, since they might affect movement.
             // This will consume all mutations, and enqueue mutations and movements created as a result.
-            outputMutations.AddRange(PendingMutations);
-            ProcessMutations();
+            OldMutationBuffer.AddRange(PendingMutations.ToList());
+            PendingMutations.Clear();
+            outputMutations.AddRange(OldMutationBuffer);
+            new FieldMutator(this, Field, OldMutationBuffer).MutateField();
+            OldMutationBuffer.Clear();
 
             // Perform movement.
             var mover = new UnitMover(this, Field, PendingMovements.Values);
@@ -121,52 +144,6 @@ internal class PlayStepper : IMutationReceiver
     /// Populates it with the mutations that result from running the current ones. Also adds the ran mutations to the
     /// <see cref="MutationLog" />.
     /// </summary>
-    private void ProcessMutations()
-    {
-        var baseMutations = PendingMutations.ToList();
-
-        var substepContext = new NecoSubstepContext(PendingMovements, baseMutations);
-
-        // RUN MUTATION FUNCTIONS
-
-        // First run the Prepare() and remove the mutation if it wants to cancel
-        for (var i = baseMutations.Count - 1; i >= 0; i--) {
-            // i can't believe i have to use this stupid loop
-            if (baseMutations[i].Prepare(substepContext, Field.AsReadOnly())) {
-                baseMutations.RemoveAt(i);
-            }
-        }
-
-        // Then run the mutate passes
-        foreach (var func in BaseMutation.ExecutionOrder) {
-            foreach (var mutation in baseMutations) {
-                func.Invoke(mutation, substepContext, Field);
-            }
-        }
-
-        var tempMutations = new List<BaseMutation>();
-
-        foreach (var (pos, unit) in Field.GetAllUnits()) {
-            foreach (var mutation in baseMutations) {
-                var reaction = unit.Reactions.SingleOrDefault(r => r.MutationType == mutation.GetType());
-                if (reaction is { }) {
-                    tempMutations.AddRange(reaction.Reaction(new(unit), new(Field.AsReadOnly()), mutation));
-                }
-            }
-        }
-
-        // Prepare the mutations for next run
-        foreach (var mutation in baseMutations) {
-            tempMutations.AddRange(mutation.GetResultantMutations(Field.AsReadOnly()));
-        }
-
-        PendingMutations.Clear();
-
-        foreach (var mutation in tempMutations) {
-            PendingMutations.Add(mutation);
-        }
-    }
-
     private void EnqueueMutationFromAction(NecoUnitId uid, BehaviorOutcome result)
     {
         switch (result) {

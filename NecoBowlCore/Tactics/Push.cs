@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using NecoBowl.Core.Input;
 using NecoBowl.Core.Machine;
+using NecoBowl.Core.Model;
 
 namespace NecoBowl.Core.Sport.Tactics;
 
@@ -11,16 +12,13 @@ namespace NecoBowl.Core.Sport.Tactics;
 /// </summary>
 internal class Push : INecoPushInformation
 {
-    private readonly Dictionary<NecoPlayerId, bool> EndPlayRequested = new();
+    private readonly Dictionary<NecoPlayerId, bool> EndTurnRequested = new();
     public readonly NecoFieldParameters FieldParameters;
 
     /// <summary>Stores the <see cref="Plan" /> of each player, indexed by the player role.</summary>
     public readonly ImmutableDictionary<NecoPlayerRole, Plan> Plans;
 
-    private bool _isPlayFinished;
-
     public Turn CurrentTurn;
-    private PlayMachine? TempPlay;
 
     public Push(NecoPlayerPair players, NecoFieldParameters fieldParameters)
     {
@@ -28,21 +26,10 @@ internal class Push : INecoPushInformation
         CurrentTurn = new(0, players);
 
         Plans = Enum.GetValues<NecoPlayerRole>().ToImmutableDictionary(r => r, r => new Plan());
-        EndPlayRequested = Enum.GetValues<NecoPlayerRole>().ToDictionary(r => players[r].Id, _ => false);
+        EndTurnRequested = Enum.GetValues<NecoPlayerRole>().ToDictionary(r => players[r].Id, _ => false);
     }
 
     public bool IsTurnFinished => CurrentTurn.Finished;
-
-    public bool IsPlayFinished {
-        get => TempPlay is { } && _isPlayFinished;
-        set {
-            if (TempPlay is null) {
-                throw new InvalidOperationException("cannot change play state without an active play");
-            }
-
-            _isPlayFinished = value;
-        }
-    }
 
     public uint CurrentTurnIndex => CurrentTurn.TurnIndex;
     public uint CurrentBaseMoney => CurrentTurn.BaseMoney;
@@ -54,7 +41,7 @@ internal class Push : INecoPushInformation
 
     public NecoInputResponse SendInput(NecoInput input)
     {
-        if (input is NecoInput.RequestEndPlay endPlayInput) {
+        if (input is NecoInput.RequestEndTurn endPlayInput) {
             return ProcessInput(endPlayInput);
         }
 
@@ -87,12 +74,8 @@ internal class Push : INecoPushInformation
             throw new InvalidOperationException("cannot advance push before finishing the previous one");
         }
 
-        if (TempPlay is null || !TempPlay.IsFinished) {
-            throw new InvalidOperationException("cannot advance push before running play");
-        }
-
-        foreach (var (key, _) in EndPlayRequested) {
-            EndPlayRequested[key] = false;
+        foreach (var (key, _) in EndTurnRequested) {
+            EndTurnRequested[key] = false;
         }
 
         CurrentTurn = CurrentTurn.NextTurn();
@@ -122,7 +105,7 @@ internal class Push : INecoPushInformation
             foreach (var cardPlay in plays) {
                 if (cardPlay.Card.IsUnitCard()) {
                     field[cardPlay.Position] = field[cardPlay.Position] with {
-                        Unit = new Unit unitCard!.ToUnit(cardPlay.Player),
+                        Unit = new(((UnitCardModel)cardPlay.Card.CardModel).Model),
                     };
                 }
             }
@@ -131,19 +114,17 @@ internal class Push : INecoPushInformation
         return field;
     }
 
-    private NecoInputResponse ProcessInput(NecoInput.RequestEndPlay input)
+    private NecoInputResponse ProcessInput(NecoInput.RequestEndTurn input)
     {
-        if (TempPlay is null) {
-            throw new NecoInputException("cannot end play before play has started");
+        // TODO Run an extra copy of the play in here that does any meta-board changes
+
+        if (EndTurnRequested[input.PlayerId]) {
+            return NecoInputResponse.Illegal("end play already requested by this player");
         }
 
-        if (EndPlayRequested[input.PlayerId]) {
-            return NecoInputResponse.Illegal("end play already requested");
-        }
-
-        EndPlayRequested[input.PlayerId] = true;
-        if (EndPlayRequested.All(kv => kv.Value)) {
-            TempPlay.IsFinished = true;
+        EndTurnRequested[input.PlayerId] = true;
+        if (EndTurnRequested.All(kv => kv.Value)) {
+            CurrentTurn.Finish();
             AdvancePushStage();
         }
 

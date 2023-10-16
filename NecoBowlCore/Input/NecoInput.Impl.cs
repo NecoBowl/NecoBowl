@@ -33,9 +33,9 @@ public abstract partial class NecoInput
         }
     }
 
-    public sealed class RequestEndPlay : NecoInput
+    public sealed class RequestEndTurn : NecoInput
     {
-        public RequestEndPlay(Player player)
+        public RequestEndTurn(Player player)
             : base(player)
         {
         }

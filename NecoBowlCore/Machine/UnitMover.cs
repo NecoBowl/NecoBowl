@@ -11,12 +11,12 @@ internal class UnitMover
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
     private readonly Dictionary<Unit, TransientUnit> MovementsList;
-    private readonly IMutationReceiver MutationReceiver;
+    private readonly IPlayfieldChangeReceiver MutationReceiver;
 
     private readonly Playfield Playfield;
 
     public UnitMover(
-        IMutationReceiver receiver, Playfield playfield, IEnumerable<TransientUnit> movements)
+        IPlayfieldChangeReceiver receiver, Playfield playfield, IEnumerable<TransientUnit> movements)
     {
         MutationReceiver = receiver;
         Playfield = playfield;
@@ -94,7 +94,15 @@ internal class UnitMover
 
                 case SpaceImmigrantRemovalReason.Combat combat: {
                     foreach (var opponent in combat.Other) {
-                        MutationReceiver.BufferMutation(new UnitAttacks(unit.ToReport(), opponent.ToReport(), change.Movement.NewPos));
+                        if (opponent.NewPos != change.Movement.NewPos) {
+                            MutationReceiver.BufferMutation(
+                                new UnitAttacksBetweenSpaces(
+                                    unit, opponent.Unit, (change.Movement.NewPos, opponent.NewPos)));
+                        }
+                        else {
+                            MutationReceiver.BufferMutation(
+                                new UnitAttacksOnSpace(unit, opponent.Unit, change.Movement.NewPos));
+                        }
                     }
 
                     break;
@@ -284,9 +292,9 @@ internal abstract class SpaceImmigrantRemovalReason
 
     public sealed class Combat : SpaceImmigrantRemovalReason
     {
-        public readonly IEnumerable<Unit> Other;
+        public readonly IEnumerable<TransientUnit> Other;
 
-        public Combat(IEnumerable<Unit> other)
+        public Combat(IEnumerable<TransientUnit> other)
         {
             Other = other;
         }
@@ -320,7 +328,19 @@ internal class WinnerList : IEnumerable<TransientUnit>
 
     public readonly TransientUnit Winner;
 
-    public WinnerList(IEnumerable<IGrouping<int, TransientUnit>> collection)
+    public static WinnerList? FromWinnerGroups(IEnumerable<IGrouping<int, TransientUnit>> collection)
+    {
+        collection = collection.ToList();
+        if (!collection.Any())
+            return null;
+
+        if (collection.First().Count() != 1)
+            return null;
+        
+        return new WinnerList(collection);
+    }
+
+    private WinnerList(IEnumerable<IGrouping<int, TransientUnit>> collection)
     {
         collection = collection.ToList();
 

@@ -155,7 +155,7 @@ internal class TransientPlayfield : ITransientSpaceContentsGetter
                 if (swapper is { }) {
                     emigrantSwapper = swapper;
                     var spaceSwapPair = new UnitMovementPair(Emigrant, swapper);
-                    if (swapper.Unit.CanAttackOther(Emigrant.Unit)) {
+                    if (swapper.Unit.CanAttackOther(Emigrant.Unit) && spaceSwapPair.UnitsAreEnemies()) {
                         combats[swapper.Unit] = new() { Emigrant };
                     }
                     else {
@@ -171,7 +171,7 @@ internal class TransientPlayfield : ITransientSpaceContentsGetter
 
             foreach (var pair in combinations) {
                 foreach (var movement in pair) {
-                    if (movement.Unit.CanAttackOther(pair.OtherMovement(movement).Unit)) {
+                    if (movement.Unit.CanAttackOther(pair.OtherMovement(movement).Unit) && pair.UnitsAreEnemies()) {
                         if (!combats.ContainsKey(movement.Unit)) {
                             combats[movement.Unit] = new();
                         }
@@ -205,12 +205,10 @@ internal class TransientPlayfield : ITransientSpaceContentsGetter
                 return removals;
             }
 
-            winners = bestVictoryLevels.Any()
-                ? new WinnerList(
-                    bestVictoryLevels
-                        .GroupBy(kv => (int)kv.Value, kv => kv.Key)
-                        .OrderBy(g => g.Key))
-                : null;
+            var victoryLevelGroupings = bestVictoryLevels
+                .GroupBy(kv => (int)kv.Value, kv => kv.Key)
+                .OrderBy(g => g.Key);
+            winners = WinnerList.FromWinnerGroups(victoryLevelGroupings); 
 
             // Create a removal reason for each unit not on the final space
             foreach (var immigrant in immigrants) {
@@ -219,7 +217,7 @@ internal class TransientPlayfield : ITransientSpaceContentsGetter
                 }
 
                 if (combats.TryGetValue(immigrant.Unit, out var targets)) {
-                    removals.Add(new(immigrant, new SpaceImmigrantRemovalReason.Combat(targets.Select(m => m.Unit))));
+                    removals.Add(new(immigrant, new SpaceImmigrantRemovalReason.Combat(targets)));
                 }
                 else if (winners?.AuxiliaryWinners.Contains(immigrant) ?? false) {
                     removals.Add(new(immigrant, new SpaceImmigrantRemovalReason.PickedUp(winners.Winner.Unit)));

@@ -40,6 +40,11 @@ public class NecoBowlContext
         return Match.CurrentPush.SendInput(input);
     }
 
+    public PlayerTurn GetTurn(NecoPlayerRole role)
+    {
+        return new(Players.FromRole(role).Id, Match.CurrentPush.CurrentTurn.CardPlaysByRole[role].Select(p => p.ToReport()));
+    }
+
     public Plan GetPlan(NecoPlayerRole role)
     {
         return new(Match.CurrentPush.Plans[role]);

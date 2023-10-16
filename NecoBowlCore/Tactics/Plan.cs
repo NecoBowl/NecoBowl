@@ -30,7 +30,7 @@ internal class Plan
     {
         internal Reports.Plan.CardPlay ToReport()
         {
-            return new(Position, Card);
+            return new(Player, Position, Card);
         }
     }
 }

@@ -69,9 +69,10 @@ public class NewStepperTests
             mutations,
             Has.EquivalentMutationsTo(
                 new UnitBumps(unitWest.ToReport(), AbsoluteDirection.West),
-                new UnitAttacks(
+                new UnitAttacksOnSpace(
                     unitNorth.ToReport(),
-                    unitWest.ToReport()),
+                    unitWest.ToReport(),
+                    (0, 1)),
                 new UnitTakesDamage(unitWest.ToReport(), (uint)unitNorth.Power)));
     }
 
@@ -84,12 +85,14 @@ public class NewStepperTests
         Assert.That(
             mutations,
             Has.EquivalentMutationsTo(
-                new UnitAttacks(
+                new UnitAttacksBetweenSpaces(
                     unitA1,
-                    unitA2),
-                new UnitAttacks(
                     unitA2,
-                    unitA1),
+                    ((0, 0), (0, 1))),
+                new UnitAttacksBetweenSpaces(
+                    unitA2,
+                    unitA1,
+                    ((0, 1), (0, 0))),
                 new UnitTakesDamage(unitA1, (uint)unitA2.Power),
                 new UnitTakesDamage(unitA2, (uint)unitA1.Power)));
     }
@@ -380,7 +383,6 @@ public class NewStepperTests
         var mutations = PlayMachine.Step().ToList();
     }
 
-#if false
     [Test]
     public void Tag_Bossy_UnitTakesTopPriority()
     {
@@ -399,7 +401,7 @@ public class NewStepperTests
         Field[3, 0] = new(unitTest1);
         Field[2, 0] = new(unitTest2);
 
-        Play.Step();
+        PlayMachine.Step();
 
         Assert.That(
             Field,
@@ -408,7 +410,7 @@ public class NewStepperTests
                     { (0, 0), unitControl2 },
                     { (1, 1), unitControl1 },
                     { (3, 1), unitTest2 },
-                    { (3, 0), unitTest1 }
+                    { (3, 0), unitTest1 },
                 }));
     }
 
@@ -421,15 +423,14 @@ public class NewStepperTests
             RelativeDirection.Up,
             new[] { NecoUnitTag.Bossy },
             Player1);
-        var ball = new NecoUnit(NecoUnitModelCustom.Item(), Player1.Id);
+        var ball = new Unit(UnitModelCustom.Item(), Player1.Id);
 
         Field[0, 1] = new(unit1);
         Field[1, 0] = new(unit2);
         Field[1, 1] = new(ball);
 
-        Play.Step();
+        PlayMachine.Step();
     }
-#endif
 }
 
 public record MutationChecker

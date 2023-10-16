@@ -19,12 +19,12 @@ public class UnitPushes : BaseMutation
     public override string Description
         => $"{Pusher} pushes {Receiver} to the {Direction}";
 
-    internal override void EarlyMutate(Playfield field, NecoSubstepContext substepContext)
+    internal override void EarlyMutate(Playfield field, IPlayfieldChangeReceiver substepContext)
     {
         var pusher = field.GetUnit(Pusher);
         var receiver = field.GetUnit(Receiver, out var receiverPos);
         if (field.IsInBounds(receiverPos + Direction.ToVector2i())) {
-            substepContext.AddEntry(receiver.Id, new(receiverPos + Direction.ToVector2i(), receiverPos, receiver));
+            substepContext.BufferMovement(new(receiverPos + Direction.ToVector2i(), receiverPos, receiver));
         }
     }
 }

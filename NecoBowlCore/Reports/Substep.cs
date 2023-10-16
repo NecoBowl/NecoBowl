@@ -15,7 +15,7 @@ public class Substep
     }
 
     internal Substep(IEnumerable<BaseMutation> mutations, IEnumerable<TransientUnit> movements)
-        : this(mutations, movements.ToDictionary(m => m.Unit.Id, m => new Movement(m.OldPos, m.NewPos)))
+        : this(mutations, movements.ToDictionary(m => m.Unit.Id, m => new Movement(m.Unit, m.OldPos, m.NewPos)))
     {
     }
 }

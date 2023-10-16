@@ -17,7 +17,7 @@ public class UnitPicksUpItem : BaseMutation
 
     internal override NecoUnitId[] ExtractedUnits => new[] { Item.Id };
 
-    internal override bool Prepare(NecoSubstepContext context, ReadOnlyPlayfield field)
+    internal override bool Prepare(IPlayfieldChangeReceiver context, ReadOnlyPlayfield field)
     {
         if (field.GetUnit(Subject).Carrier is { }) {
             throw new NecoBowlException("a unit with an inventory cannot be picked up");

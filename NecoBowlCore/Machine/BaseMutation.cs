@@ -16,7 +16,7 @@ namespace NecoBowl.Core.Machine;
 /// </remarks>
 public abstract class BaseMutation
 {
-    internal static readonly Action<BaseMutation, NecoSubstepContext, Playfield>[] ExecutionOrder = {
+    internal static readonly Action<BaseMutation, IPlayfieldChangeReceiver, Playfield>[] ExecutionOrder = {
         (m, s, f) => m.Pass1Mutate(f), (m, s, f) => m.Pass2Mutate(f), (m, s, f) => m.Pass3Mutate(f),
     };
 
@@ -38,7 +38,7 @@ public abstract class BaseMutation
 
     /// <summary>Perform any pre-pass checks.</summary>
     /// <returns><c>true</c> if this unit should be removed from the processing queue, otherwise <c>false</c>.</returns>
-    internal virtual bool Prepare(NecoSubstepContext context, ReadOnlyPlayfield field)
+    internal virtual bool Prepare(IPlayfieldChangeReceiver context, ReadOnlyPlayfield field)
     {
         return false;
     }
@@ -55,38 +55,13 @@ public abstract class BaseMutation
     {
     }
 
-    internal virtual void EarlyMutate(Playfield field, NecoSubstepContext substepContext)
+    internal virtual void EarlyMutate(Playfield field, IPlayfieldChangeReceiver substepContext)
     {
     }
 
     internal virtual IEnumerable<BaseMutation> GetResultantMutations(ReadOnlyPlayfield field)
     {
         yield break;
-    }
-}
-
-internal class NecoSubstepContext
-{
-    private readonly Dictionary<NecoUnitId, TransientUnit> Dict;
-    private readonly List<BaseMutation> Mutations;
-
-    public NecoSubstepContext(
-        Dictionary<NecoUnitId, TransientUnit> dict,
-        List<BaseMutation> mutations)
-    {
-        Dict = dict;
-        Mutations = mutations;
-    }
-
-    public void AddEntry(NecoUnitId unit, TransientUnit movement)
-    {
-        Dict[unit] = movement;
-    }
-
-    public bool HasEntryOfType(NecoUnitId uid, Type type, object? exclusion = null)
-    {
-        var mut = Mutations.FirstOrDefault(m => m.Subject == uid && m.GetType() == type && m != exclusion);
-        return mut is { };
     }
 }
 

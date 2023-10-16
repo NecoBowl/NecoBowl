@@ -18,7 +18,7 @@ internal class PlayMachine
     private readonly bool LogFieldAscii;
     private readonly PlayStepper PlayStepper;
 
-    public bool IsFinished;
+    public bool IsFinished => StepCount > 100;
 
     public uint StepCount;
 
