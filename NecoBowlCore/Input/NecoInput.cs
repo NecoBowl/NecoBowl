@@ -17,12 +17,7 @@ public abstract partial class NecoInput
 
     public override string ToString()
     {
-        return GetType().GetProperties()
-            .Select(info => (info.Name, Value: info.GetValue(this, null) ?? "(null)"))
-            .Aggregate(
-                new StringBuilder(),
-                (sb, pair) => sb.AppendLine($"{pair.Name}: {pair.Value}"),
-                sb => sb.ToString());
+        return $"{PlayerId}:{GetType().Name}" + (DryRun ? " (dry)" : string.Empty);
     }
 }
 

@@ -130,14 +130,15 @@ internal class Turn
 
     private NecoInputResponse ProcessInput(NecoInput.SetPlanMod input)
     {
-        if (!CardPlays.Values.Any(list => list.Any(cp => cp.Card == input.Card))) {
-            throw new NecoInputException($"card {input.Card} not found in this turn");
+        var card = CardPlays.Values.SelectMany(v => v, (l, c) => c).SingleOrDefault(c => c.Card.CardId == input.CardId)?.Card;
+        if (card is null) {
+            throw new NecoInputException($"card {input.CardId} not found in this turn");
         }
 
         if (input.DryRun)
             return NecoInputResponse.Success();
         
-        input.Card.Options.SetValue(input.OptionIdentifier, input.OptionValue);
+        card.Options.SetValue(input.OptionIdentifier, input.OptionValue);
         return NecoInputResponse.Success();
     }
 }

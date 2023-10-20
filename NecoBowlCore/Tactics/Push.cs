@@ -13,7 +13,7 @@ namespace NecoBowl.Core.Sport.Tactics;
 /// </summary>
 internal class Push : INecoPushInformation
 {
-    private readonly Dictionary<NecoPlayerId, bool> EndTurnRequested = new();
+    private readonly Dictionary<NecoPlayerId, bool> EndTurnRequested;
     public readonly NecoFieldParameters FieldParameters;
 
     /// <summary>Stores the <see cref="Plan" /> of each player, indexed by the player role.</summary>
@@ -27,7 +27,7 @@ internal class Push : INecoPushInformation
         CurrentTurn = new(0, players);
 
         Plans = Enum.GetValues<NecoPlayerRole>().ToImmutableDictionary(r => r, r => new Plan());
-        EndTurnRequested = Enum.GetValues<NecoPlayerRole>().ToDictionary(r => players[r].Id, _ => false);
+        EndTurnRequested = players.Enumerate().ToDictionary(p => p.Id, _ => false);
     }
 
     public bool IsTurnFinished => CurrentTurn.Finished;
@@ -134,6 +134,10 @@ internal class Push : INecoPushInformation
 
         EndTurnRequested[input.PlayerId] = true;
         if (EndTurnRequested.All(kv => kv.Value)) {
+            foreach (var k in EndTurnRequested.Keys) {
+                EndTurnRequested[k] = false;
+            }
+            
             CurrentTurn.Finish();
             AdvancePushStage();
         }

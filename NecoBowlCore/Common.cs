@@ -1,12 +1,14 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
+using Newtonsoft.Json.Converters;
 
 [assembly: InternalsVisibleTo("NecoBowlTest")]
 
 
 namespace NecoBowl.Core;
 
-public enum AbsoluteDirection : uint
+public enum AbsoluteDirection : int
 {
     North = 0,
     NorthEast = 1,
@@ -18,7 +20,7 @@ public enum AbsoluteDirection : uint
     NorthWest = 7
 }
 
-public enum RelativeDirection : uint
+public enum RelativeDirection : int
 {
     Up,
     UpRight,

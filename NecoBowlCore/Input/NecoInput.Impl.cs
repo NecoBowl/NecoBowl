@@ -21,14 +21,14 @@ public abstract partial class NecoInput
 
     public sealed class SetPlanMod : NecoInput
     {
-        public Card Card { get; private set; }
+        public NecoCardId CardId { get; private set; }
         public string OptionIdentifier { get; private set; }
         public object OptionValue { get; private set; }
 
-        public SetPlanMod(NecoPlayerId player, Card card, string optionIdentifier, object optionValue, bool dryRun = false)
+        public SetPlanMod(NecoPlayerId player, NecoCardId cardId, string optionIdentifier, object optionValue, bool dryRun = false)
             : base(player, dryRun)
         {
-            Card = card;
+            CardId = cardId;
             OptionIdentifier = optionIdentifier;
             OptionValue = optionValue;
         }
