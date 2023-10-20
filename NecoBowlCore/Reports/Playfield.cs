@@ -2,6 +2,7 @@ using NecoBowl.Core.Machine;
 
 namespace NecoBowl.Core.Reports;
 
+// TODO Make this fully immutable
 public record Playfield : BaseReport
 {
     private readonly ReadOnlyPlayfield Field;

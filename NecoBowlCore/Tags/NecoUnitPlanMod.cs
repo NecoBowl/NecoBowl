@@ -155,7 +155,7 @@ public class CardOptionPermission<T> : CardOptionPermission
     }
 }
 
-public record NecoCardOptionItem(string OptionDisplay, object OptionValue);
+public record NecoCardOptionItem(string OptionIdentifier, object OptionValue);
 
 public class InvalidModException : Exception
 {

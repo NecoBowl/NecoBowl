@@ -5,6 +5,7 @@ namespace NecoBowl.Core.Model;
 public abstract class CardModel
 {
     public abstract string Name { get; }
+    public virtual string InternalName => Name;
     public abstract int Cost { get; }
 
     public virtual IEnumerable<CardOptionPermission> OptionPermissions { get; }

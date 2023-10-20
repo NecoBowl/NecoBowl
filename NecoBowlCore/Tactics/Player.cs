@@ -1,29 +1,48 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 namespace NecoBowl.Core.Sport.Tactics;
 
 [SuppressMessage("ReSharper", "EmptyConstructor")]
-public readonly record struct NecoPlayerId()
+public record NecoPlayerId
 {
-    public readonly Guid Value = Guid.NewGuid();
-    public bool IsNeutral => Value == default;
-}
-
-public class Player
-{
-    public static readonly Player NeutralPlayer = new(default);
-    public readonly NecoPlayerId Id = new();
-
-    public Player()
+    public Guid Id { get; set; }
+    
+    public override string ToString()
     {
+        return $"@P:{Id.ToString().Substring(0, 6)}";
     }
-
-    internal Player(NecoPlayerId id)
+    
+    [JsonConstructor]
+    public NecoPlayerId(Guid id)
     {
         Id = id;
     }
 
-    public bool IsNeutral => Id.IsNeutral;
+    public static NecoPlayerId Random() => new(Guid.NewGuid());
+}
+
+public class Player
+{
+    public static readonly Player NeutralPlayer = new(new(Guid.Empty));
+
+    public readonly NecoPlayerId Id;
+
+    public Player()
+    {
+        Id = NecoPlayerId.Random();
+    }
+
+    [JsonConstructor]
+    public Player(NecoPlayerId id)
+    {
+        Id = id;
+    }
+
+    public override string ToString()
+    {
+        return Id.ToString();
+    }
 }
 
 public record class NecoPlayerPair(Player Offense, Player Defense)

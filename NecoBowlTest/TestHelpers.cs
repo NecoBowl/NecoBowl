@@ -22,7 +22,7 @@ internal static class TestHelpers
         NecoUnitTag[]? tags = null,
         Player? player = null)
     {
-        return new(UnitModelCustom.Mover(direction: direction, tags: tags), player?.Id ?? new());
+        return new(UnitModelCustom.Mover(direction: direction, tags: tags), player?.Id ?? new(Guid.NewGuid()));
     }
 
     public static Unit UnitThrower(Player player)

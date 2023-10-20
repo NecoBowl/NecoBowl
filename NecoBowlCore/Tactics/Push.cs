@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using NecoBowl.Core.Input;
 using NecoBowl.Core.Machine;
 using NecoBowl.Core.Model;
+using NecoBowl.Core.Tactics;
 
 namespace NecoBowl.Core.Sport.Tactics;
 
@@ -41,8 +42,8 @@ internal class Push : INecoPushInformation
 
     public NecoInputResponse SendInput(NecoInput input)
     {
-        if (input is NecoInput.RequestEndTurn endPlayInput) {
-            return ProcessInput(endPlayInput);
+        if (input is NecoInput.RequestEndTurn endTurnInput) {
+            return ProcessInput(endTurnInput);
         }
 
         return CurrentTurn.TakeInput(input);
@@ -78,6 +79,10 @@ internal class Push : INecoPushInformation
             EndTurnRequested[key] = false;
         }
 
+        foreach (var (role, plan) in Plans) {
+            plan.AddCardPlays(CurrentTurn.CardPlaysByRole[role]);
+        }
+
         CurrentTurn = CurrentTurn.NextTurn();
     }
 
@@ -104,8 +109,10 @@ internal class Push : INecoPushInformation
 
             foreach (var cardPlay in plays) {
                 if (cardPlay.Card.IsUnitCard()) {
+                    // Spawn unit from card
+                    var unit = ((UnitCard)cardPlay.Card);
                     field[cardPlay.Position] = field[cardPlay.Position] with {
-                        Unit = new(((UnitCardModel)cardPlay.Card.CardModel).Model),
+                        Unit = unit.ToUnit(cardPlay.Player)
                     };
                 }
             }
@@ -119,8 +126,11 @@ internal class Push : INecoPushInformation
         // TODO Run an extra copy of the play in here that does any meta-board changes
 
         if (EndTurnRequested[input.PlayerId]) {
-            return NecoInputResponse.Illegal("end play already requested by this player");
+            return NecoInputResponse.Illegal("end turn already requested by this player");
         }
+
+        if (input.DryRun)
+            return NecoInputResponse.Success();
 
         EndTurnRequested[input.PlayerId] = true;
         if (EndTurnRequested.All(kv => kv.Value)) {

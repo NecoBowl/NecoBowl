@@ -47,21 +47,12 @@ public class NecoBowlContext
 
     public Plan GetPlan(NecoPlayerRole role)
     {
-        return new(Match.CurrentPush.Plans[role]);
+        var plays = Match.CurrentPush.Plans[role].GetCardPlays().ToList();
+        return new(plays.Select(p => new Plan.CardPlay(p)));
     }
 
     public Play GetPlay()
     {
         return new(Match.CurrentPush.CreatePlay(true));
-    }
-
-    public void FinishTurn()
-    {
-        Match.CurrentPush.FinishTurn();
-    }
-
-    public void AdvancePush()
-    {
-        Match.CurrentPush.AdvancePushStage();
     }
 }

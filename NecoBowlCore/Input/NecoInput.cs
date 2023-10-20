@@ -1,3 +1,5 @@
+using System.Text;
+using System.Text.Json.Serialization;
 using NecoBowl.Core.Sport.Tactics;
 
 namespace NecoBowl.Core.Input;
@@ -5,10 +7,22 @@ namespace NecoBowl.Core.Input;
 public abstract partial class NecoInput
 {
     public NecoPlayerId PlayerId;
+    public bool DryRun;
 
-    public NecoInput(Player player)
+    public NecoInput(NecoPlayerId playerId, bool dryRun)
     {
-        PlayerId = player.Id;
+        PlayerId = playerId;
+        DryRun = dryRun;
+    }
+
+    public override string ToString()
+    {
+        return GetType().GetProperties()
+            .Select(info => (info.Name, Value: info.GetValue(this, null) ?? "(null)"))
+            .Aggregate(
+                new StringBuilder(),
+                (sb, pair) => sb.AppendLine($"{pair.Name}: {pair.Value}"),
+                sb => sb.ToString());
     }
 }
 

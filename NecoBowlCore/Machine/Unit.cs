@@ -1,8 +1,10 @@
 using System.Text.RegularExpressions;
 using NecoBowl.Core.Model;
+using NecoBowl.Core.Reports;
 using NecoBowl.Core.Sport.Tactics;
 using NecoBowl.Core.Tags;
 using NLog;
+using Plan = NecoBowl.Core.Sport.Tactics.Plan;
 
 namespace NecoBowl.Core.Machine;
 
@@ -44,7 +46,7 @@ internal sealed class Unit : IEquatable<Unit>
     public Unit? Carrier;
     public int DamageTaken;
 
-    public Unit(UnitModel unitModel, string discriminator, NecoPlayerId ownerId)
+    public Unit(UnitModel unitModel, string discriminator, NecoPlayerId ownerId, Plan.CardPlay? play = null)
     {
         Id = new();
 
@@ -57,13 +59,12 @@ internal sealed class Unit : IEquatable<Unit>
         ActionStack = new(unitModel.Actions.Reverse());
     }
 
-    public Unit(UnitModel unitModel, NecoPlayerId playerId)
-        : this(unitModel, "", playerId)
+    private void InitializeFromCardPlay(Plan.CardPlay play)
     {
     }
 
-    internal Unit(UnitModel unitModel)
-        : this(unitModel, "", new())
+    public Unit(UnitModel unitModel, NecoPlayerId playerId, Plan.CardPlay? play = null)
+        : this(unitModel, "", playerId, play)
     {
     }
 

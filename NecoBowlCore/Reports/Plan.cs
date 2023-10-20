@@ -13,9 +13,14 @@ public record Plan : BaseReport
         return CardPlays.SingleOrDefault(p => p.Position == pos);
     }
 
-    internal Plan(Sport.Tactics.Plan realPlan)
+    public IEnumerable<CardPlay> GetCardPlays()
     {
-        CardPlays = realPlan.GetCardPlays().Select(p => p.ToReport()).ToImmutableList();
+        return CardPlays;
+    }
+
+    internal Plan(IEnumerable<CardPlay> plays)
+    {
+        CardPlays = plays.ToImmutableList();
     }
 
     public record CardPlay
@@ -29,6 +34,13 @@ public record Plan : BaseReport
             PlayerId = playerId;
             Position = position;
             Card = card;
+        }
+
+        internal CardPlay(Sport.Tactics.Plan.CardPlay realPlay)
+        {
+            PlayerId = realPlay.Player;
+            Position = realPlay.Position;
+            Card = realPlay.Card;
         }
     }
 }

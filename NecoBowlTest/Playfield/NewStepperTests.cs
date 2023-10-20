@@ -124,7 +124,7 @@ public class NewStepperTests
             Field[(1, 1) - direction.ToVector2i()] = new(unit);
         }
 
-        var ball = new Unit(new BuiltInDefinitions.Ball());
+        var ball = new Unit(new BuiltInDefinitions.Ball(), Player.NeutralPlayer.Id);
         Field[1, 1] = new(ball);
 
         Assert.That(

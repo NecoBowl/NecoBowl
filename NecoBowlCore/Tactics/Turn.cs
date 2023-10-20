@@ -35,12 +35,6 @@ internal class Turn
         }
     }
 
-    private Turn(uint turnIndex, NecoPlayerPair playerPair, CardPlayMap plays)
-        : this(turnIndex, playerPair)
-    {
-        CardPlays = new(plays);
-    }
-
     public bool Finished { get; private set; }
     public uint BaseMoney => 10;
 
@@ -66,7 +60,7 @@ internal class Turn
     /// </summary>
     public Turn NextTurn()
     {
-        return new(TurnIndex + 1, PlayerPair, CardPlays);
+        return new(TurnIndex + 1, PlayerPair);
     }
 
     public IEnumerable<NecoInput> GetInputs()
@@ -125,7 +119,12 @@ internal class Turn
             return NecoInputResponse.Illegal($"The space {input.Position} is already occupied.");
         }
 
+        // Bail out before placing card
+        if (input.DryRun) 
+            return NecoInputResponse.Success();
+        
         CardPlays[input.PlayerId].Add(new(input.PlayerId, input.Card, input.Position));
+
         return NecoInputResponse.Success();
     }
 
@@ -135,6 +134,9 @@ internal class Turn
             throw new NecoInputException($"card {input.Card} not found in this turn");
         }
 
+        if (input.DryRun)
+            return NecoInputResponse.Success();
+        
         input.Card.Options.SetValue(input.OptionIdentifier, input.OptionValue);
         return NecoInputResponse.Success();
     }

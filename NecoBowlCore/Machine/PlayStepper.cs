@@ -131,7 +131,7 @@ internal class PlayStepper : IPlayfieldChangeReceiver
         // TODO Modularize
         foreach (var (pos, unit) in Field.GetAllUnits().Where(unit => unit.Item2.Tags.Contains(NecoUnitTag.Pusher))) {
             var movement = PendingMovements[unit.Id];
-            if (movement.IsChange) {
+            if (movement.IsChange && Field.IsInBounds(movement.NewPos)) {
                 if (Field.TryGetUnit(movement.NewPos, out var targetUnit)) {
                     PendingMutations.Add(new UnitPushes(unit.Id, targetUnit!.Id, movement.AsDirection()));
                 }
